@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'login.dart'; // pastikan path sesuai
-
+import 'login.dart'; // Pastikan path ini sudah benar
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,6 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
+    // Timer untuk pindah ke halaman login setelah 3 detik
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
@@ -22,8 +22,8 @@ class _SplashScreenState extends State<SplashScreen> {
           transitionDuration: const Duration(milliseconds: 800),
           pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // Animasi gabungan Fade + Slide
-            const begin = Offset(1.0, 0.0); // dari kanan
+            // Animasi transisi geser dari kanan dan muncul (fade)
+            const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
             const curve = Curves.easeInOut;
 
@@ -45,13 +45,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mengambil ukuran layar untuk membuat logo responsif
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          'assets/splash.png',
-          width: 400,
-          height: 400,
+          'assets/splash.png', // Pastikan path aset ini sudah benar
+          // Mengatur lebar logo menjadi 60% dari lebar layar agar ukurannya pas
+          // di berbagai perangkat. Tinggi akan menyesuaikan secara otomatis.
+          width: screenWidth * 0.6,
         ),
       ),
     );
