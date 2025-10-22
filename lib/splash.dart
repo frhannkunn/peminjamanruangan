@@ -20,14 +20,18 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
-          pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const LoginPage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             // Animasi transisi geser dari kanan dan muncul (fade)
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;
             const curve = Curves.easeInOut;
 
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
             var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
 
             return SlideTransition(
@@ -55,7 +59,7 @@ class _SplashScreenState extends State<SplashScreen> {
           'assets/splash.png', // Pastikan path aset ini sudah benar
           // Mengatur lebar logo menjadi 60% dari lebar layar agar ukurannya pas
           // di berbagai perangkat. Tinggi akan menyesuaikan secara otomatis.
-          width: screenWidth * 0.6,
+          width: screenWidth * 0.7,
         ),
       ),
     );
