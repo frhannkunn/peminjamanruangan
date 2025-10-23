@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
           'assets/splash.png', // Pastikan path aset ini sudah benar
           // Mengatur lebar logo menjadi 60% dari lebar layar agar ukurannya pas
           // di berbagai perangkat. Tinggi akan menyesuaikan secara otomatis.
-          width: screenWidth * 0.6,
+          width: screenWidth * 0.7,
         ),
       ),
     );

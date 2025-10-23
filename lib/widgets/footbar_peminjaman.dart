@@ -1,3 +1,4 @@
+// footbar_peminjaman.dart
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +24,6 @@ class RuanganData {
   });
 }
 
-
 class FootbarPeminjaman extends StatefulWidget {
   final String username;
   final String role;
@@ -42,9 +42,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   int _selectedIndex = 0;
   RuanganData? _selectedRoom; // State ini hanya untuk tab Home
 
-  // DIHAPUS: Semua state dan fungsi yang tidak perlu sudah dibersihkan.
-  // Ini akan menghilangkan 4 peringatan kuning.
-
   // Fungsi ini HANYA untuk navigasi di dalam tab Home
   void _handleRoomTap(RuanganData roomData) {
     setState(() {
@@ -57,16 +54,61 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
       _selectedRoom = null;
     });
   }
-  
+
+  // --- 👇 PERUBAHAN DIMULAI DI SINI 👇 ---
+
+  // 1. BUAT FUNGSI BARU INI
+  // Fungsi ini akan menangani callback 'onBack' dari FormPeminjamanScreen
+  // saat dibuka dari alur Home.
+  void _handleFormBackFromHome(String? message) {
+    // 1. Tutup FormPeminjamanScreen
+    Navigator.of(context).pop();
+
+    // 2. Tampilkan SnackBar jika ada pesan
+    if (message != null && message.isNotEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message,
+              style: GoogleFonts.poppins(
+                  color: Colors.black87, fontWeight: FontWeight.w500),
+            ),
+            // Salin desain SnackBar dari peminjaman.dart agar konsisten
+            backgroundColor: const Color(0xFFE6F4EA),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Colors.green)),
+            elevation: 0,
+          ),
+        );
+      }
+
+      // 3. Jika pengajuan berhasil, pindah ke tab Peminjaman
+      if (message.contains('berhasil diajukan')) {
+        _onItemTapped(1); // Pindah ke tab Peminjaman (index 1)
+      }
+    }
+    // Jika message == null (hanya menekan 'Kembali'), kita hanya menutup
+    // form dan tetap di halaman Detail Ruangan, yang sudah benar.
+  }
+
+  // 2. MODIFIKASI FUNGSI INI
   // Fungsi ini HANYA untuk navigasi di dalam tab Home
   void _handleShowFormFromDetail(String roomName) {
-    // Langsung navigasi ke halaman form menggunakan Navigator standar
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => FormPeminjamanScreen(preSelectedRoom: roomName),
+        builder: (context) => FormPeminjamanScreen(
+          preSelectedRoom: roomName,
+          onBack: _handleFormBackFromHome, // <--- BERIKAN CALLBACK DI SINI
+        ),
       ),
     );
   }
+
+  // --- 👆 PERUBAHAN SELESAI DI SINI 👆 ---
 
   void _onItemTapped(int index) {
     setState(() {
@@ -93,7 +135,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   }
 
   Widget _buildPeminjamanTab() {
-    // Cukup tampilkan PeminjamanScreen. Simpel dan benar.
+    // Tidak perlu diubah. Alur PeminjamanScreen -> Form sudah benar.
     return const PeminjamanScreen();
   }
 
@@ -128,10 +170,16 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(icon: FontAwesomeIcons.houseLock, label: "Home", index: 0),
-              _buildNavItem(icon: Icons.airplay_outlined, label: "Peminjaman", index: 1),
-              _buildNavItem(icon: FontAwesomeIcons.bell, label: "Notifikasi", index: 2),
-              _buildNavItem(icon: FontAwesomeIcons.user, label: "Profil", index: 3),
+              _buildNavItem(
+                  icon: FontAwesomeIcons.houseLock, label: "Home", index: 0),
+              _buildNavItem(
+                  icon: Icons.airplay_outlined,
+                  label: "Peminjaman",
+                  index: 1),
+              _buildNavItem(
+                  icon: FontAwesomeIcons.bell, label: "Notifikasi", index: 2),
+              _buildNavItem(
+                  icon: FontAwesomeIcons.user, label: "Profil", index: 3),
             ],
           ),
         ),
