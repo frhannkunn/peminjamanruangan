@@ -8,8 +8,7 @@ class FormPeminjamanScreen extends StatefulWidget {
   final String? preSelectedRoom;
   final Function(String? message)? onBack;
 
-  const FormPeminjamanScreen({Key? key, this.preSelectedRoom, this.onBack})
-    : super(key: key);
+  const FormPeminjamanScreen({super.key, this.preSelectedRoom, this.onBack});
 
   @override
   State<FormPeminjamanScreen> createState() => _FormPeminjamanScreenState();
@@ -334,9 +333,10 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
-                    if (date != null)
+                    if (date != null) {
                       _tanggalController.text =
                           '${date.day}/${date.month}/${date.year}';
+                    }
                   },
                 ),
                 const SizedBox(height: 16),
@@ -479,8 +479,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       builder: (BuildContext context) =>
                           const TambahPenggunaDialog(),
                     );
-                    if (result != null)
+                    if (result != null) {
                       setState(() => _daftarPengguna.add(result));
+                    }
                   },
                   icon: const Icon(Icons.add, size: 20),
                   label: const Text('Tambah Pengguna'),
@@ -732,7 +733,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) => DropdownButtonFormField<String>(
-    value: value,
+    initialValue: value,
     decoration: InputDecoration(
       hintText: hint,
       hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[400]),

@@ -36,11 +36,11 @@ class DetailRuanganScreen extends StatelessWidget {
   final Function(String)? onShowForm;
 
   const DetailRuanganScreen({
-    Key? key,
+    super.key,
     required this.ruanganData,
     required this.onBack,
     this.onShowForm,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +245,7 @@ class DetailRuanganScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildWorkspaceHeader(),
                   const Divider(),
-                  ...workspaceList.map((ws) => _buildWorkspaceRow(ws, context)).toList(),
+                  ...workspaceList.map((ws) => _buildWorkspaceRow(ws, context)),
                 ],
               ),
             ),

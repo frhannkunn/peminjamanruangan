@@ -1,6 +1,7 @@
-// File: lib/pj/profile_pj.dart
+// File: lib/pj/profile_pj.dart (FONT POPPINS DITERAPKAN)
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
 // PERUBAHAN 1: Import widget logout yang sudah Anda buat
 import 'package:penru_mobile/logout.dart'; // pastikan path sesuai
 
@@ -15,9 +16,11 @@ class ProfilePjPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
+          // <-- Terapkan Poppins
           'Profil',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
+            // Ganti TextStyle -> GoogleFonts.poppins
             color: Colors.black,
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -31,20 +34,26 @@ class ProfilePjPage extends StatelessWidget {
           children: [
             _buildAvatar(),
             const SizedBox(height: 30),
-            _buildReadOnlyField(label: 'NIK', value: '222331'),
+            _buildReadOnlyField(label: 'NIK', value: '222331'), // Data dummy
             const SizedBox(height: 16),
             _buildReadOnlyField(
-                label: 'Nama', value: 'Gilang Bagus Ramadhan'),
+              label: 'Nama',
+              value: 'Kevin Sanjaya',
+            ), // Data dummy
             const SizedBox(height: 16),
             _buildReadOnlyField(
-                label: 'Email', value: 'gilang@polibatam.ac.id'),
+              label: 'Email',
+              value: 'kevin@polibatam.ac.id',
+            ), // Data dummy
             const SizedBox(height: 30),
-            
-            const Align(
+
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
+                // <-- Terapkan Poppins
                 'Data Tenaga Pendidik / Tenaga Kependidikan',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
+                  // Ganti TextStyle -> GoogleFonts.poppins
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -53,17 +62,20 @@ class ProfilePjPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            _buildReadOnlyField(label: 'Unit Kerja', value: 'Teknik Informatika'),
+            _buildReadOnlyField(
+              label: 'Unit Kerja',
+              value: 'Teknik Informatika',
+            ), // Data dummy
             const SizedBox(height: 16),
-            _buildReadOnlyField(label: 'Kode Dosen', value: 'GL'),
+            _buildReadOnlyField(label: 'Kode Dosen', value: 'KV'), // Data dummy
             const SizedBox(height: 16),
-            
+
             _buildWhatsAppField(),
             const SizedBox(height: 40),
 
             // PERUBAHAN 2: Gunakan LogoutWidget yang sudah Anda buat
-            const LogoutWidget(), 
-            
+            const LogoutWidget(), // Pastikan widget ini juga pakai Poppins
+
             const SizedBox(height: 20),
           ],
         ),
@@ -79,19 +91,21 @@ class ProfilePjPage extends StatelessWidget {
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFFF7D5E5),
+        color: const Color(0xFFF7D5E5), // Warna pink avatar
         border: Border.all(
-          color: const Color(0xFFC3A3C3),
+          color: const Color(0xFFC3A3C3), // Warna border avatar
           width: 1,
         ),
       ),
       alignment: Alignment.center,
-      child: const Text(
-        'KV',
-        style: TextStyle(
+      child: Text(
+        // <-- Terapkan Poppins
+        'KV', // Inisial
+        style: GoogleFonts.poppins(
+          // Ganti TextStyle -> GoogleFonts.poppins
           fontSize: 48,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF333333),
+          color: const Color(0xFF333333), // Warna teks avatar
         ),
       ),
     );
@@ -102,17 +116,25 @@ class ProfilePjPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          // <-- Terapkan Poppins
           label,
-          style: TextStyle(color: Colors.grey[700], fontSize: 14),
+          style: GoogleFonts.poppins(
+            color: Colors.grey[700],
+            fontSize: 14,
+          ), // Ganti TextStyle -> GoogleFonts.poppins
         ),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: value,
           readOnly: true,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ), // <-- Terapkan Poppins
           decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             filled: true,
             fillColor: Colors.grey[100],
             border: OutlineInputBorder(
@@ -120,6 +142,11 @@ class ProfilePjPage extends StatelessWidget {
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              // Added focusedBorder for consistency
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
@@ -134,8 +161,12 @@ class ProfilePjPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          // <-- Terapkan Poppins
           'WhatsApp',
-          style: TextStyle(color: Colors.grey[700], fontSize: 14),
+          style: GoogleFonts.poppins(
+            color: Colors.grey[700],
+            fontSize: 14,
+          ), // Ganti TextStyle -> GoogleFonts.poppins
         ),
         const SizedBox(height: 8),
         Container(
@@ -153,21 +184,30 @@ class ProfilePjPage extends StatelessWidget {
                     right: BorderSide(color: Colors.grey.shade300, width: 1),
                   ),
                 ),
-                child: const Row(
+                child: Row(
+                  // <-- Row ini const, jadi TextStyle di dalamnya tidak bisa pakai GoogleFonts
                   children: [
-                    Text('🇮🇩', style: TextStyle(fontSize: 20)),
-                    SizedBox(width: 8),
-                    Text('+62', style: TextStyle(fontWeight: FontWeight.w600)),
-                    Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    const Text('🇮🇩', style: TextStyle(fontSize: 20)),
+                    const SizedBox(width: 8),
+                    // Tidak bisa pakai GoogleFonts karena parent Widget const
+                    const Text(
+                      '+62',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
                   ],
                 ),
               ),
-              const Expanded(
+              Expanded(
+                // <-- Hapus const di sini agar bisa pakai GoogleFonts
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    '81212345678',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    // <-- Terapkan Poppins
+                    '81212345678', // Nomor WA dummy
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ), // Ganti TextStyle -> GoogleFonts.poppins
                   ),
                 ),
               ),

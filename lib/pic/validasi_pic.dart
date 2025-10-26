@@ -1,9 +1,10 @@
-// pic/validasi_pic.dart
+// File: lib/pic/validasi_pic.dart (FILTER LIST PENGGUNA HANYA ID 3)
 
 import 'package:flutter/material.dart';
-import 'home_pic.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'home_pic.dart'; // Pastikan path ini benar
 
-// --- MODEL DATA (tetap sama) ---
+// Model PeminjamanDetailModel (Tidak Berubah)
 class PeminjamanDetailModel {
   String jenisKegiatan;
   String namaKegiatan;
@@ -36,10 +37,12 @@ class PeminjamanDetailModel {
   });
 
   factory PeminjamanDetailModel.fromPeminjaman(Peminjaman p) {
+    // ... (Logika factory tidak berubah) ...
     const validJenisKegiatan = ['Perkuliahan', 'Rapat', 'Seminar'];
     const defaultPenanggungJawab = 'DL | Gilang Bagus Ramadhan, A.Md.Kom';
-    final mappedJenisKegiatan =
-        validJenisKegiatan.contains(p.jenisKegiatan) ? p.jenisKegiatan : 'Perkuliahan';
+    final mappedJenisKegiatan = validJenisKegiatan.contains(p.jenisKegiatan)
+        ? p.jenisKegiatan
+        : 'Perkuliahan';
     return PeminjamanDetailModel(
       jenisKegiatan: mappedJenisKegiatan,
       namaKegiatan: "PBL TRPL 3I8",
@@ -60,6 +63,22 @@ class PeminjamanDetailModel {
           "Nomor Workspace": "WS.GU.601.01",
           "Tipe Workspace": "NON PC",
         },
+        {
+          "ID": "4",
+          "Jenis Pengguna": "Dosen", //<- Ubah contoh data
+          "ID Pengguna": "11223",
+          "Pengguna Ruangan": "998877",
+          "Nomor Workspace": "WS.GU.601.02",
+          "Tipe Workspace": "PC",
+        },
+        {
+          "ID": "5",
+          "Jenis Pengguna": "Mahasiswa",
+          "ID Pengguna": "12345",
+          "Pengguna Ruangan": "67890",
+          "Nomor Workspace": "WS.GU.601.03",
+          "Tipe Workspace": "PC",
+        },
       ],
       status: p.status,
       statusColor: p.statusColor,
@@ -71,13 +90,13 @@ class PeminjamanDetailModel {
 class ValidasiPicPage extends StatefulWidget {
   final Peminjaman peminjamanData;
   final VoidCallback onBack;
-  final VoidCallback onNavigateToApproval; // Callback untuk navigasi
+  final Function(String id, String newStatus) onSave;
 
   const ValidasiPicPage({
     super.key,
     required this.peminjamanData,
     required this.onBack,
-    required this.onNavigateToApproval, // Tambahkan di constructor
+    required this.onSave,
   });
 
   @override
@@ -87,23 +106,148 @@ class ValidasiPicPage extends StatefulWidget {
 class _ValidasiPicPageState extends State<ValidasiPicPage> {
   late PeminjamanDetailModel _dataDetail;
 
+  // State untuk Form Approval
+  final _formKey = GlobalKey<FormState>();
+  String? _approvalValue;
+  final TextEditingController _komentarController = TextEditingController();
+
+  // State untuk List Pengguna
+  final TextEditingController _searchPenggunaController =
+      TextEditingController();
+  String _searchPenggunaQuery = '';
+  int _showEntries = 10;
+  final List<int> _showEntriesOptions = [10, 25, 50, 100];
+
   @override
   void initState() {
     super.initState();
     _dataDetail = PeminjamanDetailModel.fromPeminjaman(widget.peminjamanData);
+    _searchPenggunaController.addListener(() {
+      setState(() {
+        _searchPenggunaQuery = _searchPenggunaController.text;
+      });
+    });
   }
 
-  final List<String> _listJenisKegiatan = ['Perkuliahan', 'Rapat', 'Seminar'];
-  final List<String> _listPJ = [
-    'DL | Gilang Bagus Ramadhan, A.Md.Kom',
-    'Lainnya',
-  ];
-  final List<String> _listRuangan = [
-    'GU.601 - Workspace Virtual Reality',
-    'GU.604 - Workspace Multimedia',
-  ];
-  final List<String> _listJam = ['07.50', '09.00', '12.00'];
+  @override
+  void dispose() {
+    _komentarController.dispose();
+    _searchPenggunaController.dispose();
+    super.dispose();
+  }
 
+  // --- FUNGSI HELPER ---
+
+  Future<void> _showSuccessDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: SizedBox(
+            // Lebar Dialog
+            width: MediaQuery.of(context).size.width * 0.75,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.green, width: 2.5),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.green,
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Approval PIC\nberhasil disimpan.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    // Tombol OK
+                    width: 150,
+                    height: 45,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.deepPurpleAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.zero,
+                        elevation: 3,
+                      ),
+                      child: Text(
+                        'OK',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _simpanData() async {
+    if (_formKey.currentState!.validate()) {
+      await _showSuccessDialog();
+      widget.onSave(widget.peminjamanData.id.toString(), _approvalValue!);
+    }
+  }
+
+  Widget _buildButton(String label, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: SizedBox(
+        height: 45,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            elevation: 2,
+          ),
+          onPressed: onTap,
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,75 +256,341 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: widget.onBack,
         ),
-        title: const Text(
+        title: Text(
           'Validasi Detail',
-          style: TextStyle(color: Colors.black),
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 20),
-            _buildSectionFormUtama(),
-            _buildSectionDetailKegiatan(),
-            _buildSectionPeminjam(),
-            _buildSectionPenggunaan(),
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: 40,
-              ),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  // Menggunakan callback, bukan Navigator.push
-                  onPressed: widget.onNavigateToApproval,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4D79FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text(
-                    'Approval',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              _buildSectionFormUtama(),
+              _buildSectionDetailKegiatan(),
+              _buildSectionPeminjam(),
+              _buildSectionPenggunaan(),
+              _buildSectionListPengguna(), // <- Perubahan di sini
+              _buildSectionApproval(),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ... (Semua widget helper _build... lainnya tetap sama, tidak perlu diubah) ...
-  // ... (Saya akan sertakan di sini agar lengkap) ...
+  // --- WIDGET HELPER LIST PENGGUNA ---
+  Widget _buildPenggunaInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140, // Lebar label
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
+            ),
+          ),
+          Text(
+            ':',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET SECTION LIST PENGGUNA (FUNGSIONAL + FILTER ID) ---
+  Widget _buildSectionListPengguna() {
+    // Filter hanya ID 3
+    final List<Map<String, String>> filteredById = _dataDetail.listPengguna
+        .where((pengguna) => pengguna['ID'] == '3') // <-- FILTER ID DI SINI
+        .toList();
+
+    // Filter berdasarkan search query
+    final List<Map<String, String>> filteredList = filteredById.where((
+      pengguna,
+    ) {
+      final query = _searchPenggunaQuery.toLowerCase();
+      if (query.isEmpty) return true;
+      return pengguna.values.any(
+        (value) => value.toLowerCase().contains(query),
+      );
+    }).toList();
+
+    // Batasi jumlah entri (meskipun sekarang kemungkinan besar hanya 1 atau 0)
+    final List<Map<String, String>> listToShow = filteredList
+        .take(_showEntries)
+        .toList();
+
+    return _buildSectionCard(
+      title: 'List Pengguna Ruangan',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Show ',
+                    style: GoogleFonts.poppins(color: Colors.black54),
+                  ),
+                  Container(
+                    height: 35,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _showEntries,
+                        items: _showEntriesOptions.map((int value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text(
+                              value.toString(),
+                              style: GoogleFonts.poppins(fontSize: 14),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _showEntries = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  Text(
+                    ' entries',
+                    style: GoogleFonts.poppins(color: Colors.black54),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    'search : ',
+                    style: GoogleFonts.poppins(color: Colors.black54),
+                  ),
+                  Container(
+                    width: 120,
+                    height: 35,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.white,
+                    ),
+                    child: TextField(
+                      controller: _searchPenggunaController,
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: "Cari...",
+                        hintStyle: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        border: InputBorder.none,
+                        suffixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const Divider(height: 30),
+
+          if (listToShow.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Center(
+                child: Text(
+                  _searchPenggunaQuery.isEmpty
+                      ? 'Pengguna dengan ID 3 tidak ditemukan.'
+                      : 'Tidak ada hasil pencarian untuk pengguna ID 3.',
+                  style: GoogleFonts.poppins(color: Colors.grey),
+                ),
+              ),
+            )
+          else
+            ...listToShow.map((pengguna) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Column(
+                  children: [
+                    _buildPenggunaInfoRow('ID', pengguna['ID'] ?? '-'),
+                    _buildPenggunaInfoRow(
+                      'Jenis Pengguna',
+                      pengguna['Jenis Pengguna'] ?? '-',
+                    ),
+                    _buildPenggunaInfoRow(
+                      'ID Pengguna',
+                      pengguna['ID Pengguna'] ?? '-',
+                    ),
+                    _buildPenggunaInfoRow(
+                      'Pengguna Ruangan',
+                      pengguna['Pengguna Ruangan'] ?? '-',
+                    ),
+                    _buildPenggunaInfoRow(
+                      'Nomor Workspace',
+                      pengguna['Nomor Workspace'] ?? '-',
+                    ),
+                    _buildPenggunaInfoRow(
+                      'Tipe Workspace',
+                      pengguna['Tipe Workspace'] ?? '-',
+                    ),
+                    // Divider tidak perlu jika hanya 1 item
+                    // if (listToShow.last != pengguna)
+                    //   const Divider(height: 20),
+                  ],
+                ),
+              );
+            }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // --- SISA WIDGET BUILD LAINNYA ---
+
+  Widget _buildSectionApproval() {
+    return _buildSectionCard(
+      title: 'Form Approval PIC',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Approval PIC",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _approvalValue,
+            hint: Text(
+              "Pilih status approval",
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+            style: GoogleFonts.poppins(color: Colors.black),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFFF3F4F6),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: "Disetujui", child: Text("Disetujui")),
+              DropdownMenuItem(value: "Ditolak", child: Text("Ditolak")),
+            ],
+            onChanged: (value) {
+              setState(() => _approvalValue = value);
+            },
+            validator: (value) {
+              if (value == null) {
+                return "Harap pilih status approval";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Komentar",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _komentarController,
+            maxLines: 4,
+            style: GoogleFonts.poppins(color: Colors.black),
+            decoration: InputDecoration(
+              hintText: "Masukkan komentar",
+              hintStyle: GoogleFonts.poppins(color: Colors.grey),
+              filled: true,
+              fillColor: const Color(0xFFF3F4F6),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Komentar wajib diisi";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 30),
+          Row(children: [_buildButton("Simpan", Colors.green, _simpanData)]),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSectionFormUtama() {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1976D2),
+        color: const Color(0xFF1c36d2), // Warna baru
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Flexible(
+          Flexible(
             child: Text(
               'Form\nPengajuan\nPenggunaan\nRuangan',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -189,15 +599,18 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 10,
+            ), // Padding horizontal 24
             decoration: BoxDecoration(
-              color: const Color(0xFFF9A825),
+              color: _dataDetail.statusColor,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Text(
-              'Menunggu\nPersetujuan PIC\nRuangan',
+            child: Text(
+              _dataDetail.status.replaceAll(' ', '\n'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
@@ -215,23 +628,9 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       title: 'Detail Kegiatan dan Tanggung Jawab',
       content: Column(
         children: [
-          _buildFormDropdown(
-            'Jenis Kegiatan *',
-            _dataDetail.jenisKegiatan,
-            _listJenisKegiatan,
-            (newValue) {
-              setState(() => _dataDetail.jenisKegiatan = newValue!);
-            },
-          ),
-          _buildFormTextField('Nama Kegiatan *', _dataDetail.namaKegiatan),
-          _buildFormDropdown(
-            'Penanggung Jawab *',
-            _dataDetail.penanggungJawab,
-            _listPJ,
-            (newValue) {
-              setState(() => _dataDetail.penanggungJawab = newValue!);
-            },
-          ),
+          _buildFormDropdown('Jenis Kegiatan', _dataDetail.jenisKegiatan),
+          _buildFormTextField('Nama Kegiatan', _dataDetail.namaKegiatan),
+          _buildFormDropdown('Penanggung Jawab', _dataDetail.penanggungJawab),
         ],
       ),
     );
@@ -242,10 +641,10 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       title: 'Detail Peminjaman Ruangan',
       content: Column(
         children: [
-          _buildFormTextField('NIM / NIK / Unit Pengaju *', _dataDetail.nimNip),
-          _buildFormTextField('Nama Pengaju *', _dataDetail.namaPengaju),
+          _buildFormTextField('NIM / NIK / Unit Pengaju', _dataDetail.nimNip),
+          _buildFormTextField('Nama Pengaju', _dataDetail.namaPengaju),
           _buildFormTextField(
-            'Alamat E-mail Pengaju *',
+            'Alamat E-mail Pengaju',
             _dataDetail.emailPengaju,
           ),
         ],
@@ -258,37 +657,18 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       title: 'Detail Penggunaan Ruangan',
       content: Column(
         children: [
-          _buildFormDropdown('Ruangan *', _dataDetail.ruangan, _listRuangan,
-              (
-            newValue,
-          ) {
-            setState(() => _dataDetail.ruangan = newValue!);
-          }),
-          _buildDatePicker(
-            'Tanggal Penggunaan *',
-            _dataDetail.tanggalPenggunaan,
-          ),
+          _buildFormDropdown('Ruangan', _dataDetail.ruangan),
+          _buildDatePicker('Tanggal Penggunaan', _dataDetail.tanggalPenggunaan),
           Row(
             children: [
               Expanded(
-                child: _buildFormDropdown(
-                  'Jam Mulai *',
-                  _dataDetail.jamMulai,
-                  _listJam,
-                  (newValue) {
-                    setState(() => _dataDetail.jamMulai = newValue!);
-                  },
-                ),
+                child: _buildFormDropdown('Jam Mulai', _dataDetail.jamMulai),
               ),
               const SizedBox(width: 15),
               Expanded(
                 child: _buildFormDropdown(
-                  'Jam Selesai *',
+                  'Jam Selesai',
                   _dataDetail.jamSelesai,
-                  _listJam,
-                  (newValue) {
-                    setState(() => _dataDetail.jamSelesai = newValue!);
-                  },
                 ),
               ),
             ],
@@ -298,62 +678,114 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     );
   }
 
-  Widget _buildFormTextField(String label, String value) {
+  Widget _buildFormTextField(String label, String value, {Widget? suffixIcon}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            initialValue: value,
+            readOnly: true,
+            style: GoogleFonts.poppins(color: Colors.black),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: suffixIcon,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 15,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFormDropdown(
-    String label,
-    String selectedValue,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
+  Widget _buildFormDropdown(String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      child: DropdownButtonFormField<String>(
-        value: selectedValue,
-        decoration: InputDecoration(
-          labelText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          contentPadding:
-              const EdgeInsets.symmetric(
-            horizontal: 15,
-            vertical: 15,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
           ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        items: items.map((String value) {
-          return DropdownMenuItem(value: value, child: Text(value));
-        }).toList(),
-        onChanged: onChanged,
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: value,
+            style: GoogleFonts.poppins(color: Colors.black),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 15,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: value,
+                child: Text(
+                  value,
+                  style: GoogleFonts.poppins(color: Colors.black),
+                ),
+              ),
+            ],
+            onChanged: null,
+            icon: const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildDatePicker(String label, String value) {
-    return _buildFormTextField(label, value);
+    return _buildFormTextField(
+      label,
+      value,
+      suffixIcon: Icon(
+        Icons.calendar_today_outlined,
+        color: Colors.grey[600],
+        size: 20,
+      ),
+    );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required Widget content,
-    bool showStatus = false,
-    bool wrapTitle = false,
-    EdgeInsetsGeometry? margin,
-  }) {
+  Widget _buildSectionCard({required String title, required Widget content}) {
     return Container(
-      margin: margin ?? const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+      margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -370,36 +802,22 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
             decoration: const BoxDecoration(
-              color: Color(0xFF1976D2),
+              color: Color(0xFF1c36d2), // Warna Baru
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(15),
                 topRight: Radius.circular(15),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: wrapTitle ? null : 1,
-                    overflow:
-                        wrapTitle ? TextOverflow.clip : TextOverflow.ellipsis,
-                  ),
-                ),
-                if (showStatus)
-                  _buildStatusBadge(
-                    _dataDetail.status,
-                    _dataDetail.statusColor,
-                  ),
-              ],
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Padding(padding: const EdgeInsets.all(15.0), child: content),
@@ -407,25 +825,4 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       ),
     );
   }
-
-  Widget _buildStatusBadge(String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      constraints: const BoxConstraints(minWidth: 100),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color, width: 1),
-      ),
-      child: Text(
-        status,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
+} // Penutup Class _ValidasiPicPageState

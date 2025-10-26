@@ -1,9 +1,8 @@
-// lib/pic/profile_pic.dart
+// lib/pic/profile_pic.dart (IMPORT DIPERBAIKI)
 
-import 'package:flutter/material.dart';
-// PERUBAHAN 1: Import widget logout yang sudah Anda buat
-// Pastikan path ini sesuai dengan struktur folder Anda.
-import 'package:penru_mobile/logout.dart'; // pastikan path sesuai
+import 'package:flutter/material.dart'; // <-- Diperbaiki di sini
+import 'package:google_fonts/google_fonts.dart';
+import 'package:penru_mobile/logout.dart'; // Pastikan path ini benar
 
 class ProfilePicPage extends StatelessWidget {
   const ProfilePicPage({super.key});
@@ -13,10 +12,10 @@ class ProfilePicPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Profil",
-          style: TextStyle(
-            color: Colors.black87,
+          style: GoogleFonts.poppins(
+            color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -32,15 +31,9 @@ class ProfilePicPage extends StatelessWidget {
             const SizedBox(height: 20),
             _buildProfileAvatar(),
             const SizedBox(height: 40),
-            _buildInfoTextField(
-              label: 'NIK',
-              value: '222331',
-            ),
+            _buildInfoTextField(label: 'NIK', value: '222331'),
             const SizedBox(height: 20),
-            _buildInfoTextField(
-              label: 'Nama',
-              value: 'Gilang Bagus Ramadhan',
-            ),
+            _buildInfoTextField(label: 'Nama', value: 'Gilang Bagus Ramadhan'),
             const SizedBox(height: 20),
             _buildInfoTextField(
               label: 'Email',
@@ -49,12 +42,12 @@ class ProfilePicPage extends StatelessWidget {
             const SizedBox(height: 30),
             const Divider(),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Data Tenaga Pendidik / Tenaga Kependidikan',
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black54,
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 24),
@@ -63,29 +56,22 @@ class ProfilePicPage extends StatelessWidget {
               value: 'Teknik Informatika',
             ),
             const SizedBox(height: 20),
-            _buildInfoTextField(
-              label: 'Kode Dosen',
-              value: 'GL',
-            ),
+            _buildInfoTextField(label: 'Kode Dosen', value: 'GL'),
             const SizedBox(height: 20),
-            _buildWhatsAppField(
-              label: 'WhatsApp',
-              value: '+62',
-            ),
+            _buildWhatsAppField(label: 'WhatsApp', value: '+62'),
             const SizedBox(height: 40),
 
-            // PERUBAHAN 2: Tambahkan Divider dan LogoutWidget di sini
             const Divider(),
             const SizedBox(height: 10),
             const LogoutWidget(),
-            const SizedBox(height: 20), // Jarak di paling bawah
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  // Widget untuk Avatar Profil
+  // Widget untuk Avatar Profil (LINGKARAN BIRU DIHAPUS)
   Widget _buildProfileAvatar() {
     return Center(
       child: Container(
@@ -93,23 +79,16 @@ class ProfilePicPage extends StatelessWidget {
         height: 130,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.blue.shade300,
-          border: Border.all(color: Colors.blue.shade300, width: 4),
+          color: Colors.pink.shade100, // Hanya lingkaran pink muda
+          border: Border.all(color: Colors.white, width: 4), // Border putih
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.pink.shade100,
-            border: Border.all(color: Colors.white, width: 4),
-          ),
-          child: const Center(
-            child: Text(
-              'RY',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+        child: Center(
+          child: Text(
+            'GL',
+            style: GoogleFonts.poppins(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
             ),
           ),
         ),
@@ -124,21 +103,20 @@ class ProfilePicPage extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
+          style: GoogleFonts.poppins(color: Colors.black, fontSize: 14),
         ),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: value,
           readOnly: true,
-          style: const TextStyle(color: Colors.black54, fontSize: 15),
+          style: GoogleFonts.poppins(color: Colors.black, fontSize: 15),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -160,21 +138,20 @@ class ProfilePicPage extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
+          style: GoogleFonts.poppins(color: Colors.black, fontSize: 14),
         ),
         const SizedBox(height: 8),
         TextFormField(
-          initialValue: '81212345678', // Nomornya ditaruh di sini
+          initialValue: '81212345678',
           readOnly: true,
-          style: const TextStyle(color: Colors.black54, fontSize: 15),
+          style: GoogleFonts.poppins(color: Colors.black, fontSize: 15),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -188,24 +165,17 @@ class ProfilePicPage extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '🇮🇩',
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  const Text('🇮🇩', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 8),
                   Text(
-                    value, // Menampilkan "+62"
-                    style: TextStyle(
-                      color: Colors.grey[700],
+                    value,
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    height: 20,
-                    width: 1,
-                    color: Colors.grey.shade300,
-                  ),
+                  Container(height: 20, width: 1, color: Colors.grey.shade300),
                   const SizedBox(width: 8),
                 ],
               ),

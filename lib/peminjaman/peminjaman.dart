@@ -345,7 +345,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               color: Colors.grey[700])),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
-          value: _selectedGedung,
+          initialValue: _selectedGedung,
           hint: const Text("Semua Gedung"),
           isExpanded: true,
           decoration: _inputDecoration(),
@@ -371,7 +371,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               color: Colors.grey[700])),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
-          value: _selectedStatus,
+          initialValue: _selectedStatus,
           isExpanded: true,
           decoration: _inputDecoration(),
           items: [

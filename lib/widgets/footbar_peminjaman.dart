@@ -23,7 +23,6 @@ class RuanganData {
   });
 }
 
-
 class FootbarPeminjaman extends StatefulWidget {
   final String username;
   final String role;
@@ -57,7 +56,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
       _selectedRoom = null;
     });
   }
-  
+
   // Fungsi ini HANYA untuk navigasi di dalam tab Home
   void _handleShowFormFromDetail(String roomName) {
     // Langsung navigasi ke halaman form menggunakan Navigator standar
@@ -107,10 +106,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       // DESAIN ANDA TIDAK SAYA UBAH SAMA SEKALI
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -128,10 +124,26 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(icon: FontAwesomeIcons.houseLock, label: "Home", index: 0),
-              _buildNavItem(icon: Icons.airplay_outlined, label: "Peminjaman", index: 1),
-              _buildNavItem(icon: FontAwesomeIcons.bell, label: "Notifikasi", index: 2),
-              _buildNavItem(icon: FontAwesomeIcons.user, label: "Profil", index: 3),
+              _buildNavItem(
+                icon: FontAwesomeIcons.houseLock,
+                label: "Home",
+                index: 0,
+              ),
+              _buildNavItem(
+                icon: Icons.airplay_outlined,
+                label: "Peminjaman",
+                index: 1,
+              ),
+              _buildNavItem(
+                icon: FontAwesomeIcons.bell,
+                label: "Notifikasi",
+                index: 2,
+              ),
+              _buildNavItem(
+                icon: FontAwesomeIcons.user,
+                label: "Profil",
+                index: 3,
+              ),
             ],
           ),
         ),

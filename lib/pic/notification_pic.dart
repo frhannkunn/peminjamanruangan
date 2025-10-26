@@ -1,16 +1,15 @@
-// lib/pic/notifikasi_pic.dart
+// lib/pic/notifikasi_pic.dart (FONT POPPINS DITERAPKAN)
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
 
 // 1. Buat Model Data untuk Notifikasi
 class Notifikasi {
-  // --- PERBAIKAN 1: Jadikan semua field 'final' ---
   final String namaPengaju;
   final String namaRuangan;
   final String tanggal;
   final String jam;
 
-  // --- PERBAIKAN 2: Tambahkan 'const' pada constructor ---
   const Notifikasi({
     required this.namaPengaju,
     required this.namaRuangan,
@@ -21,11 +20,8 @@ class Notifikasi {
 
 // 2. Buat Halaman Utama Notifikasi
 class NotifikasiPicPage extends StatelessWidget {
-  // Constructor sekarang bisa tetap 'const' karena field di bawah sudah benar-benar const
   const NotifikasiPicPage({super.key});
 
-  // 3. Buat Data Mock Sesuai Gambar
-  // Sekarang ini adalah list yang valid karena Notifikasi(...) sudah const
   final List<Notifikasi> _notifikasiList = const [
     Notifikasi(
       namaPengaju: "budi santoso",
@@ -52,9 +48,13 @@ class NotifikasiPicPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text(
+        title: Text(
+          // <-- Terapkan Poppins
           "Notifikasi",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.grey[100],
         centerTitle: true,
@@ -84,9 +84,10 @@ class NotifikasiPicPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
+                  // <-- Terapkan Poppins
                   "Anda memiliki pengajuan peminjaman ruangan",
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Colors.black87,
@@ -94,8 +95,9 @@ class NotifikasiPicPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
+                  // <-- Terapkan Poppins
                   "Pengajuan dari ${notifikasi.namaPengaju} untuk pengajuan Ruangan ${notifikasi.namaRuangan} pada ${notifikasi.tanggal}, ${notifikasi.jam}\nMenunggu keputusan Anda.",
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.grey[600],
                     height: 1.4,

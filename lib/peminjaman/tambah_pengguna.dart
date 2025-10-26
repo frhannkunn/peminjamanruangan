@@ -18,7 +18,7 @@ class Pengguna {
 
 
 class TambahPenggunaDialog extends StatefulWidget {
-  const TambahPenggunaDialog({Key? key}) : super(key: key);
+  const TambahPenggunaDialog({super.key});
 
   @override
   _TambahPenggunaDialogState createState() => _TambahPenggunaDialogState();
@@ -115,5 +115,5 @@ class _TambahPenggunaDialogState extends State<TambahPenggunaDialog> {
   Widget _buildLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(text, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)));
   Widget _buildInstructionText(String text) => Padding(padding: const EdgeInsets.only(top: 4.0), child: Text(text, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])));
   Widget _buildTextField({required TextEditingController controller, required String hintText, TextInputType keyboardType = TextInputType.text, FormFieldValidator<String>? validator}) => TextFormField(controller: controller, keyboardType: keyboardType, style: GoogleFonts.poppins(fontSize: 14), decoration: InputDecoration(hintText: hintText, hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[400]), filled: true, fillColor: Colors.grey.shade100, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), validator: validator);
-  Widget _buildDropdown({required String? value, required String hint, required List<String> items, required ValueChanged<String?> onChanged, FormFieldValidator<String>? validator}) => DropdownButtonFormField<String>(value: value, decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]), filled: true, fillColor: Colors.grey.shade100, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), items: items.map((String item) => DropdownMenuItem<String>(value: item, child: Text(item, style: GoogleFonts.poppins(fontSize: 14)))).toList(), onChanged: onChanged, validator: validator);
+  Widget _buildDropdown({required String? value, required String hint, required List<String> items, required ValueChanged<String?> onChanged, FormFieldValidator<String>? validator}) => DropdownButtonFormField<String>(initialValue: value, decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]), filled: true, fillColor: Colors.grey.shade100, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), items: items.map((String item) => DropdownMenuItem<String>(value: item, child: Text(item, style: GoogleFonts.poppins(fontSize: 14)))).toList(), onChanged: onChanged, validator: validator);
 }

@@ -1,14 +1,15 @@
-// File: lib/pj/home_pj.dart (Full Text Status Chip)
+// File: lib/pj/home_pj.dart (HEADER BARU DITERAPKAN)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
-// Model data (tidak berubah)
+// Model data (Tidak berubah)
 class PeminjamanPj {
   final String id;
   final String ruangan;
-  final String? status;
+  String? status;
   final DateTime tanggalPinjam;
   final String jamKegiatan;
   final String namaKegiatan;
@@ -23,19 +24,36 @@ class PeminjamanPj {
     required this.namaKegiatan,
     required this.jenisKegiatan,
   });
+
+  PeminjamanPj copyWith({String? status}) {
+    return PeminjamanPj(
+      id: id,
+      ruangan: ruangan,
+      status: status ?? this.status,
+      tanggalPinjam: tanggalPinjam,
+      jamKegiatan: jamKegiatan,
+      namaKegiatan: namaKegiatan,
+      jenisKegiatan: jenisKegiatan,
+    );
+  }
 }
 
 class HomePjPage extends StatefulWidget {
   final Function(PeminjamanPj peminjaman) onPeminjamanSelected;
-  const HomePjPage({super.key, required this.onPeminjamanSelected});
+  final Function(Function(String, String)) onDataUpdated;
+
+  const HomePjPage({
+    super.key,
+    required this.onPeminjamanSelected,
+    required this.onDataUpdated,
+  });
 
   @override
   State<HomePjPage> createState() => _HomePjPageState();
 }
 
 class _HomePjPageState extends State<HomePjPage> {
-  // Hanya data Peminjam 1
-  final List<PeminjamanPj> _peminjamanList = [
+  List<PeminjamanPj> _peminjamanList = [
     PeminjamanPj(
       id: "6608",
       ruangan: "WS.TA.12.3B.02",
@@ -48,104 +66,205 @@ class _HomePjPageState extends State<HomePjPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    widget.onDataUpdated(_updatePeminjamanStatus);
+    initializeDateFormatting('id_ID', null);
+  }
+
+  void _updatePeminjamanStatus(String id, String newStatus) {
+    if (mounted) {
+      setState(() {
+        final index = _peminjamanList.indexWhere((p) => p.id == id);
+        if (index != -1) {
+          final oldPeminjaman = _peminjamanList[index];
+          _peminjamanList[index] = oldPeminjaman.copyWith(status: newStatus);
+          _peminjamanList = List.from(_peminjamanList);
+        }
+      });
+    }
+  }
+
+  // --- BUILD UTAMA (DIUBAH) ---
+  @override
   Widget build(BuildContext context) {
+    // Mengganti Scaffold lama dengan struktur Stack + SingleChildScrollView
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FC),
-      body: CustomScrollView(
-        slivers: [_buildSliverHeader(), _buildSliverContent()],
+      backgroundColor: Colors.white, // Background putih untuk konten
+      body: Stack(
+        children: [
+          // Lapisan 1: Konten Scrollable
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Jarak seukuran header + sedikit overlap kartu
+                const SizedBox(height: 150),
+                // Container putih untuk konten (filter, list, etc.)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(
+                    top: 75, // Padding atas agar tidak tertutup kartu summary
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.white, // Warna background konten
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildControls(), // Filter & Search
+                      const SizedBox(height: 20),
+                      // Membangun list peminjaman (ambil dari _buildSliverContent)
+                      ...List.generate(_peminjamanList.length, (index) {
+                        return _buildPeminjamanGroup(
+                          _peminjamanList[index],
+                          index + 1,
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Lapisan 2: Header Biru Melengkung dan Kartu Summary
+          _buildHeaderAndCardsPJ(), // Fungsi header baru
+        ],
       ),
     );
   }
+  // --- AKHIR BUILD UTAMA ---
 
-  Widget _buildSliverHeader() {
-    // Kode _buildSliverHeader tidak berubah
-    return SliverAppBar(
-      expandedHeight: 180.0,
-      backgroundColor: const Color(0xFF1A39D9),
-      pinned: false,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          children: [
-            const Positioned(
+  // --- FUNGSI HEADER BARU (Diadaptasi dari home_pic.dart) ---
+  Widget _buildHeaderAndCardsPJ() {
+    return Stack(
+      clipBehavior: Clip.none, // Penting agar kartu bisa keluar
+      alignment: Alignment.topCenter,
+      children: [
+        // Header Biru Melengkung
+        Container(
+          height: 180, // Tinggi header
+          decoration: const BoxDecoration(
+            color: Color(0xFF1c36d2), // Warna biru solid
+            borderRadius: BorderRadius.only(
+              // Melengkung di bawah
+              bottomLeft: Radius.circular(15), // Sesuaikan radius jika perlu
+              bottomRight: Radius.circular(15),
+            ),
+          ),
+          child: Padding(
+            // Padding untuk teks sapaan
+            padding: const EdgeInsets.only(
               top: 60,
               left: 20,
+            ), // Sesuaikan top padding
+            child: Align(
+              alignment: Alignment.topLeft,
               child: Text(
-                'Hai, Kevin!',
-                style: TextStyle(
+                'Hai, Kevin!', // Teks sapaan sesuai gambar
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            Positioned(
-              top: 110,
-              left: 15,
-              right: 15,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _summaryCard('Perlu Divalidasi', '5'),
-                  _summaryCard('Akan Dipakai', '4'),
-                  _summaryCard('Total Aktif', '7'),
-                ],
+          ),
+        ),
+
+        // Kartu summary diposisikan agar "mengambang"
+        Positioned(
+          top: 130, // Posisi vertikal kartu (sesuaikan jika perlu)
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Gunakan _summaryCard yang sudah ada di file ini
+                // Pastikan parameternya (title, count) atau (count, title)
+                // Di kode Anda: _summaryCard(String title, String count)
+                _summaryCard('Perlu Divalidasi', '5'),
+                _summaryCard('Akan Dipakai', '4'),
+                _summaryCard('Total Aktif', '7'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  // --- AKHIR FUNGSI HEADER BARU ---
+
+  // --- FUNGSI BAWAAN (SEDikit Modifikasi Font) ---
+
+  // Fungsi ini dipanggil dari _buildHeaderAndCardsPJ
+  // Tambahkan GoogleFonts jika belum
+  Widget _summaryCard(String title, String count) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 5),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Tukar posisi sesuai gambar baru
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              // Terapkan Poppins dan warna hitam
+              style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              count,
+              // Terapkan Poppins
+              style: GoogleFonts.poppins(
+                fontSize: 20, // Ukuran font angka
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF0D47A1), // Warna angka
               ),
             ),
           ],
         ),
       ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(20.0),
-        child: Container(
-          height: 20.0,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF4F7FC),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.0),
-              topRight: Radius.circular(20.0),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSliverContent() {
-    // Kode _buildSliverContent tidak berubah
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 10.0, bottom: 20.0),
-              child: _buildControls(),
-            );
-          }
-          final peminjamanIndex = index - 1;
-          if (peminjamanIndex < _peminjamanList.length) {
-            return _buildPeminjamanGroup(
-              _peminjamanList[peminjamanIndex],
-              peminjamanIndex + 1,
-            );
-          }
-          return null;
-        }, childCount: _peminjamanList.length + 1),
-      ),
     );
   }
 
   Widget _buildPeminjamanGroup(PeminjamanPj peminjaman, int index) {
-    // Kode _buildPeminjamanGroup tidak berubah
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12.0, top: index == 1 ? 10.0 : 20.0),
+          padding: EdgeInsets.only(
+            bottom: 12.0,
+            top: index == 1 ? 0 : 20.0,
+          ), // Adjust top padding
           child: Text(
             'Peminjam Ruangan $index',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // Terapkan Poppins
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         _buildPeminjamanCard(peminjaman),
@@ -158,17 +277,18 @@ class _HomePjPageState extends State<HomePjPage> {
       'd MMMM yyyy',
       'id_ID',
     ).format(peminjaman.tanggalPinjam);
-    final bool needsApproval =
-        peminjaman.status == "Menunggu Persetujuan Penanggung Jawab";
     final bool isApproved = peminjaman.status == "Disetujui";
-    String displayStatus =
-        peminjaman.status ?? 'Status Tidak Diketahui'; // Teks asli
-    Color statusColor = needsApproval
+    String displayStatus = peminjaman.status ?? 'Status Tidak Diketahui';
+    Color statusColor =
+        (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
         ? Colors.orange.shade400
-        : (isApproved ? Colors.green : Colors.grey);
-    String buttonText = needsApproval
+        : (isApproved
+              ? Colors.green
+              : Colors.red); // Ganti abu jadi merah jika ditolak
+    String buttonText =
+        (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
         ? 'Detail Approval'
-        : (isApproved ? 'Detail' : 'Lihat');
+        : (isApproved ? 'Detail' : 'Ditolak'); // Teks tombol jika ditolak
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -213,12 +333,10 @@ class _HomePjPageState extends State<HomePjPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              // --- PERUBAHAN PADA STATUS CHIP ---
               if (peminjaman.status != null)
                 Flexible(
-                  // Gunakan Flexible agar chip bisa mengecil jika perlu
+                  // Bungkus dengan Flexible agar bisa wrap jika teks panjang
                   child: Container(
-                    // constraints: const BoxConstraints(maxWidth: 130), // Constraint bisa dihapus atau disesuaikan
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -228,7 +346,7 @@ class _HomePjPageState extends State<HomePjPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      displayStatus, // Tampilkan teks asli
+                      displayStatus,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
@@ -237,11 +355,10 @@ class _HomePjPageState extends State<HomePjPage> {
                         height: 1.2,
                       ),
                       softWrap: true, // Izinkan wrap
-                      overflow: TextOverflow.visible,
+                      overflow: TextOverflow.visible, // Tampilkan jika overflow
                     ),
                   ),
                 ),
-              // --- AKHIR PERUBAHAN CHIP ---
             ],
           ),
           const SizedBox(height: 16),
@@ -279,56 +396,16 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // Helper widgets (tidak berubah)
-  Widget _summaryCard(String title, String count) {
-    /* ... */
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0D47A1),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildControls() {
-    /* ... */
+    // Terapkan Poppins di sini juga
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Show',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
             ),
             const SizedBox(width: 10),
             Container(
@@ -348,7 +425,9 @@ class _HomePjPageState extends State<HomePjPage> {
                           value: v,
                           child: Text(
                             v,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       )
@@ -358,24 +437,25 @@ class _HomePjPageState extends State<HomePjPage> {
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
+            Text(
               'entries',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
             ),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            const Text(
+            Text(
               'Search:',
-              style: TextStyle(fontSize: 15, color: Colors.black54),
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: SizedBox(
                 height: 45,
                 child: TextField(
+                  style: GoogleFonts.poppins(), // Font input search
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
@@ -390,6 +470,7 @@ class _HomePjPageState extends State<HomePjPage> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
                   ),
+                  onChanged: (value) {},
                 ),
               ),
             ),
@@ -400,7 +481,7 @@ class _HomePjPageState extends State<HomePjPage> {
   }
 
   Widget _buildDetailRow(String label, String value) {
-    /* ... */
+    // Terapkan Poppins
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -410,14 +491,20 @@ class _HomePjPageState extends State<HomePjPage> {
             width: 120,
             child: Text(
               label,
-              style: TextStyle(color: Colors.grey[700], fontSize: 14),
+              style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 14),
             ),
           ),
-          const Text(':  ', style: TextStyle(color: Colors.grey)),
+          Text(
+            ':  ',
+            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+          ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
             ),
           ),
         ],

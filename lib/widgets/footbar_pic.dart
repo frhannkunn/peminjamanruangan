@@ -1,11 +1,11 @@
-// widgets/footbar_pic.dart
+// File: lib/widgets/footbar_pic.dart (FONT POPPINS DITERAPKAN)
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
 import '../pic/home_pic.dart';
 import '../pic/validasi_pic.dart';
-import '../pic/approval_pic.dart';
 import '../pic/notification_pic.dart';
-import '../pic/profile_pic.dart'; // <-- 1. TAMBAHKAN IMPORT INI
+import '../pic/profile_pic.dart';
 
 class FootbarPic extends StatefulWidget {
   const FootbarPic({super.key});
@@ -17,31 +17,48 @@ class FootbarPic extends StatefulWidget {
 class _FootbarPicState extends State<FootbarPic> {
   int _selectedIndex = 0;
   Peminjaman? _selectedPeminjaman;
-  bool _isShowingApprovalPage = false;
 
-  // ... (Semua fungsi _showDetailPage, _navigateToHome, dll. tetap sama)
+  Function(String id, String newStatus)? _updateHomeDataCallback;
+
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = <Widget>[
+      ValidasiPage(
+        onPeminjamanSelected: _showDetailPage,
+        onDataUpdated: _setUpdateCallback,
+      ),
+      const NotifikasiPicPage(),
+      const ProfilePicPage(),
+    ];
+  }
+
   void _showDetailPage(Peminjaman peminjaman) {
     setState(() {
       _selectedPeminjaman = peminjaman;
     });
   }
 
-  void _navigateToHome() {
+  void _navigateToHome({String? updatedId, String? newStatus}) {
+    if (updatedId != null &&
+        newStatus != null &&
+        _updateHomeDataCallback != null) {
+      _updateHomeDataCallback!(updatedId, newStatus);
+    }
+
     setState(() {
       _selectedPeminjaman = null;
-      _isShowingApprovalPage = false;
     });
   }
 
-  void _showApprovalPage() {
-    setState(() {
-      _isShowingApprovalPage = true;
-    });
-  }
-
-  void _hideApprovalPage() {
-    setState(() {
-      _isShowingApprovalPage = false;
+  void _setUpdateCallback(Function(String id, String newStatus) callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateHomeDataCallback = callback;
+      }
     });
   }
 
@@ -58,30 +75,16 @@ class _FootbarPicState extends State<FootbarPic> {
 
   @override
   Widget build(BuildContext context) {
-    // --- 2. GANTI ISI LIST PAGES DI SINI ---
-    final List<Widget> pages = <Widget>[
-      ValidasiPage(onPeminjamanSelected: _showDetailPage),
-      const NotifikasiPicPage(),
-      const ProfilePicPage(), // <-- UBAH BARIS INI
-    ];
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: _isShowingApprovalPage
-          ? ApprovalPicPage(
-              peminjamanData: _selectedPeminjaman!,
-              onBack: _hideApprovalPage,
-              onSave: _navigateToHome,
-            )
-          : _selectedPeminjaman != null
+      body: _selectedPeminjaman != null
           ? ValidasiPicPage(
               peminjamanData: _selectedPeminjaman!,
-              onBack: _navigateToHome,
-              onNavigateToApproval: _showApprovalPage,
+              onBack: () => _navigateToHome(updatedId: null, newStatus: null),
+              onSave: (id, newStatus) =>
+                  _navigateToHome(updatedId: id, newStatus: newStatus),
             )
-          : pages.elementAt(_selectedIndex),
-
-      // ... (Sisa kode bottomNavigationBar tetap sama)
+          : IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: SafeArea(
         child: Container(
           height: 85,
@@ -143,7 +146,8 @@ class _FootbarPicState extends State<FootbarPic> {
                 ),
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  // <-- Terapkan Poppins
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
@@ -151,7 +155,11 @@ class _FootbarPicState extends State<FootbarPic> {
                 ),
               )
             else
-              Text(label, style: TextStyle(color: inactiveColor, fontSize: 12)),
+              Text(
+                label,
+                // <-- Terapkan Poppins
+                style: GoogleFonts.poppins(color: inactiveColor, fontSize: 12),
+              ),
           ],
         ),
       ),
