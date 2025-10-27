@@ -1,6 +1,24 @@
+// profil.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:penru_mobile/logout.dart'; // pastikan path sesuai
+
+// ➕ CLASS BARU UNTUK MENYIMPAN DATA PROFIL
+class UserProfile {
+  final String nim;
+  final String nama;
+  final String email;
+
+  UserProfile({required this.nim, required this.nama, required this.email});
+}
+
+// ➕ DATA MOCK YANG BISA DIAKSES GLOBAL (UNTUK REQ 1)
+final mockUserProfile = UserProfile(
+  nim: "434241155",
+  nama: "VERON TAMPAN",
+  email: "veron@gmail.com",
+);
+// --- AKHIR PENAMBAHAN ---
 
 class ProfilScreen extends StatelessWidget {
   const ProfilScreen({super.key});
@@ -9,7 +27,6 @@ class ProfilScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // 🔹 AppBar diubah sesuai desain baru
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -30,17 +47,15 @@ class ProfilScreen extends StatelessWidget {
           ),
         ),
       ),
-      // 🔹 Body diubah total sesuai desain baru
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar dengan Inisial
               const CircleAvatar(
                 radius: 60,
-                backgroundColor: Color.fromARGB(255, 97, 221, 93), // Warna pink muda
+                backgroundColor: Color.fromARGB(255, 97, 221, 93),
                 child: Text(
                   "VT",
                   style: TextStyle(
@@ -52,24 +67,23 @@ class ProfilScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // Info Fields
+              // ✏️ Menggunakan data dari mock object
               _buildInfoField(
                 label: "NIK / NIM",
-                value: "434241155",
+                value: mockUserProfile.nim, // <-- Diubah
               ),
               const SizedBox(height: 20),
               _buildInfoField(
                 label: "Nama",
-                value: "VERON TAMPAN",
+                value: mockUserProfile.nama, // <-- Diubah
               ),
               const SizedBox(height: 20),
               _buildInfoField(
                 label: "Email",
-                value: "veron@gmail.com",
+                value: mockUserProfile.email, // <-- Diubah
               ),
               const SizedBox(height: 40),
 
-              // 🔹 Logout Widget tetap ada sesuai permintaan
               LogoutWidget(),
             ],
           ),
@@ -78,7 +92,7 @@ class ProfilScreen extends StatelessWidget {
     );
   }
 
-  // Widget helper untuk membuat label dan text field
+  // (Widget helper _buildInfoField tidak berubah)
   Widget _buildInfoField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +107,7 @@ class ProfilScreen extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: TextEditingController(text: value),
-          readOnly: true, // Membuat field tidak bisa diedit
+          readOnly: true,
           style: GoogleFonts.poppins(color: Colors.black87),
           decoration: InputDecoration(
             contentPadding:

@@ -5,11 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../peminjaman/home_peminjaman.dart';
 import '../peminjaman/peminjaman.dart';
 import '../peminjaman/notifikasi.dart';
-import '../peminjaman/profil.dart';
+import '../peminjaman/profil.dart'; // ➕ IMPORT PROFIL
 import '../peminjaman/detail_ruangan.dart';
 import '../peminjaman/form_peminjaman.dart';
 
-// Class RuanganData (tidak diubah)
+// ... (Class RuanganData tetap sama) ...
 class RuanganData {
   final String title;
   final String code;
@@ -23,6 +23,7 @@ class RuanganData {
     required this.imageUrl,
   });
 }
+
 
 class FootbarPeminjaman extends StatefulWidget {
   final String username;
@@ -40,9 +41,8 @@ class FootbarPeminjaman extends StatefulWidget {
 
 class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   int _selectedIndex = 0;
-  RuanganData? _selectedRoom; // State ini hanya untuk tab Home
+  RuanganData? _selectedRoom;
 
-  // Fungsi ini HANYA untuk navigasi di dalam tab Home
   void _handleRoomTap(RuanganData roomData) {
     setState(() {
       _selectedRoom = roomData;
@@ -57,14 +57,9 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
   // --- 👇 PERUBAHAN DIMULAI DI SINI 👇 ---
 
-  // 1. BUAT FUNGSI BARU INI
-  // Fungsi ini akan menangani callback 'onBack' dari FormPeminjamanScreen
-  // saat dibuka dari alur Home.
   void _handleFormBackFromHome(String? message) {
-    // 1. Tutup FormPeminjamanScreen
     Navigator.of(context).pop();
 
-    // 2. Tampilkan SnackBar jika ada pesan
     if (message != null && message.isNotEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +71,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            // Salin desain SnackBar dari peminjaman.dart agar konsisten
             backgroundColor: const Color(0xFFE6F4EA),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
@@ -89,23 +83,21 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
         );
       }
 
-      // 3. Jika pengajuan berhasil, pindah ke tab Peminjaman
+      // ✏️ LOGIKA INI TETAP BERFUNGSI UNTUK REQ 6
       if (message.contains('berhasil diajukan')) {
-        _onItemTapped(1); // Pindah ke tab Peminjaman (index 1)
+        _onItemTapped(1);
       }
     }
-    // Jika message == null (hanya menekan 'Kembali'), kita hanya menutup
-    // form dan tetap di halaman Detail Ruangan, yang sudah benar.
   }
 
-  // 2. MODIFIKASI FUNGSI INI
-  // Fungsi ini HANYA untuk navigasi di dalam tab Home
+  // ✏️ FUNGSI INI DIUBAH UNTUK MENGIRIM DATA PROFIL (REQ 1)
   void _handleShowFormFromDetail(String roomName) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FormPeminjamanScreen(
           preSelectedRoom: roomName,
-          onBack: _handleFormBackFromHome, // <--- BERIKAN CALLBACK DI SINI
+          onBack: _handleFormBackFromHome,
+          userProfile: mockUserProfile, // <-- Kirim data profil
         ),
       ),
     );
@@ -115,7 +107,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
   void _onItemTapped(int index) {
     setState(() {
-      // Selalu reset state detail ruangan jika berpindah tab
       _selectedRoom = null;
       _selectedIndex = index;
     });
@@ -138,12 +129,12 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   }
 
   Widget _buildPeminjamanTab() {
-    // Tidak perlu diubah. Alur PeminjamanScreen -> Form sudah benar.
     return const PeminjamanScreen();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ... (Sisa build method dan _buildNavItem tidak berubah) ...
     final List<Widget> pages = [
       _buildHomeTab(),
       _buildPeminjamanTab(),
@@ -153,7 +144,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
-      // DESAIN ANDA TIDAK SAYA UBAH SAMA SEKALI
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
@@ -197,7 +187,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     );
   }
 
-  // DESAIN ANDA TIDAK SAYA UBAH SAMA SEKALI
   Widget _buildNavItem({
     required IconData icon,
     required String label,

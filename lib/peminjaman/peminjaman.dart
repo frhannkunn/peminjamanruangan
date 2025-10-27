@@ -1,10 +1,12 @@
+// peminjaman.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'form_peminjaman.dart'; // PENTING: Untuk menampilkan form
-import 'qr.dart'; // <-- PERUBAHAN 1: Import file qr.dart
+import 'form_peminjaman.dart';
+import 'qr.dart';
+import 'profil.dart'; // ➕ IMPORT PROFIL UNTUK DAPATKAN MOCK DATA
 
-// Class PeminjamanData dengan tambahan 'totalPeminjam'
+// ... (Class PeminjamanData tetap sama) ...
 class PeminjamanData {
   final String id;
   final String ruangan;
@@ -14,7 +16,7 @@ class PeminjamanData {
   final String namaKegiatan;
   final String namaPengaju;
   final DateTime tanggalPinjam;
-  final int totalPeminjam; // <-- Ditambahkan
+  final int totalPeminjam;
   final String jamMulai;
   final String jamSelesai;
   bool isExpanded;
@@ -28,7 +30,7 @@ class PeminjamanData {
     required this.namaKegiatan,
     required this.namaPengaju,
     required this.tanggalPinjam,
-    required this.totalPeminjam, // <-- Ditambahkan
+    required this.totalPeminjam,
     required this.jamMulai,
     required this.jamSelesai,
     this.isExpanded = false,
@@ -44,13 +46,14 @@ class PeminjamanData {
       namaKegiatan: namaKegiatan,
       namaPengaju: namaPengaju,
       tanggalPinjam: tanggalPinjam,
-      totalPeminjam: totalPeminjam, // <-- Ditambahkan
+      totalPeminjam: totalPeminjam,
       jamMulai: jamMulai,
       jamSelesai: jamSelesai,
       isExpanded: isExpanded ?? this.isExpanded,
     );
   }
 }
+
 
 class PeminjamanScreen extends StatefulWidget {
   const PeminjamanScreen({super.key});
@@ -67,7 +70,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
 
-  // List data dummy yang telah diperbarui
+  // ... (List data dummy _peminjamanList tetap sama) ...
   final List<PeminjamanData> _peminjamanList = [
     PeminjamanData(
       id: '6608',
@@ -141,6 +144,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     ),
   ];
 
+
+  // ✏️ DIUBAH UNTUK MENGIRIM DATA PROFIL (REQ 1)
   void _showForm() {
     setState(() {
       _isShowingForm = true;
@@ -173,6 +178,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
+  // ... (Sisa fungsi _selectDate, _showDisetujuiMenu, _getStatusColor, dispose tidak berubah) ...
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
@@ -184,23 +190,20 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     }
   }
 
-  // --- PERUBAHAN 2: Fungsi baru untuk menampilkan menu pop-up ---
   void _showDisetujuiMenu(
       BuildContext context, PeminjamanData peminjaman) async {
-    // Dapatkan posisi dan ukuran tombol yang ditekan
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
 
     await showMenu(
       context: context,
-      // Posisikan menu relatif terhadap tombol
       position: RelativeRect.fromLTRB(
-        offset.dx, // Tepi kiri
-        offset.dy + size.height, // Tepat di bawah tombol
-        offset.dx + size.width, // Tepi kanan
+        offset.dx,
+        offset.dy + size.height,
+        offset.dx + size.width,
         offset.dy +
-            size.height * 2, // Batas bawah (asumsi)
+            size.height * 2,
       ),
       items: [
         PopupMenuItem(
@@ -217,12 +220,9 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
     ).then((value) {
-      // Tangani item yang dipilih
       if (value == 'detail') {
-        // TODO: Ganti ini dengan navigasi ke halaman detail lengkap jika ada
         print("Navigasi ke Detail Screen (Belum dibuat)");
       } else if (value == 'qr') {
-        // Navigasi ke QrScreen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -232,10 +232,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       }
     });
   }
-  // --- AKHIR PERUBAHAN 2 ---
 
-
-  // Fungsi status color yang diperbarui
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Disetujui':
@@ -243,7 +240,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       case 'Ditolak':
         return Colors.red;
       case 'Draft':
-        return const Color(0xFFF9A825); // Warna orange/kuning 'Draft' di gambar
+        return const Color(0xFFF9A825);
       case 'Menunggu Persetujuan PJ':
       case 'Menunggu Persetujuan PIC':
       case 'Menunggu Persetujuan':
@@ -259,15 +256,19 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
     if (_isShowingForm) {
+      // ✏️ KIRIM DATA PROFIL KE FORM (REQ 1)
       return FormPeminjamanScreen(
         onBack: (message) => _hideForm(message),
+        userProfile: mockUserProfile, // <-- Kirim data profil
       );
     }
 
     return Scaffold(
+      // ... (Sisa UI Scaffold, _buildSearchFilterCard, dropdown, datepicker, _inputDecoration, _buildPeminjamanList, _buildPeminjamanCard, _buildCardDetailRow, _buildCardFooterButtons tidak berubah) ...
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
@@ -303,14 +304,13 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildPeminjamanList(), // <-- Widget list peminjaman
+            _buildPeminjamanList(),
           ],
         ),
       ),
     );
   }
 
-  // (Widget-widget filter tidak berubah)
   Widget _buildSearchFilterCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -379,8 +379,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             'Draft',
             'Disetujui',
             'Ditolak',
-            'Menunggu Persetujuan PJ', // <-- Tambahan
-            'Menunggu Persetujuan PIC' // <-- Tambahan
+            'Menunggu Persetujuan PJ',
+            'Menunggu Persetujuan PIC'
           ]
               .map((String value) => DropdownMenuItem<String>(
                   value: value,
@@ -430,9 +430,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             borderSide: const BorderSide(color: Color(0xFF0D47A1))),
         hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]));
   }
-  // --- (AKHIR DARI WIDGET FILTER) ---
 
-  // Widget _buildPeminjamanList
   Widget _buildPeminjamanList() {
     final filteredList = _peminjamanList.where((p) {
       final searchLower = _searchController.text.toLowerCase();
@@ -474,14 +472,12 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
           itemCount: filteredList.length,
           itemBuilder: (context, index) {
             final peminjaman = filteredList[index];
-            // Ganti ExpansionTile dengan Card kustom
             return _buildPeminjamanCard(peminjaman);
           },
         ),
     ]);
   }
 
-  // --- Widget Kustom Kartu (DENGAN LOGIKA BARU) ---
   Widget _buildPeminjamanCard(PeminjamanData peminjaman) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -492,11 +488,10 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian Header (Judul, ID, Panah)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded( // Mencegah overflow jika judul panjang
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -516,7 +511,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                     ],
                   ),
                 ),
-                // Tombol Panah (Toggle)
                 IconButton(
                   icon: Icon(
                     peminjaman.isExpanded
@@ -533,7 +527,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            // Chip Status
             Align(
               alignment: Alignment.centerLeft,
               child: Chip(
@@ -551,10 +544,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               ),
             ),
-
-            // --- INI BAGIAN YANG DIUBAH SESUAI PERMINTAAN ANDA ---
-            // Detail HANYA akan tampil jika isExpanded = true
-            // dan statusnya bukan 'Ditolak'.
             if (peminjaman.isExpanded && peminjaman.status != 'Ditolak') ...[
               const Divider(height: 24),
               _buildCardDetailRow(
@@ -565,7 +554,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                 'Total Peminjam:',
                 peminjaman.totalPeminjam > 0
                     ? '${peminjaman.totalPeminjam} orang'
-                    : '-', // Tampilkan '-' jika 0
+                    : '-',
               ),
               _buildCardDetailRow(
                 'Tanggal Pinjam:',
@@ -574,9 +563,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               _buildCardDetailRow(
                   'Waktu:', '${peminjaman.jamMulai} - ${peminjaman.jamSelesai}'),
             ],
-            // --- AKHIR PERUBAHAN LOGIKA ---
-
-            // Bagian Footer (Tombol)
             const SizedBox(height: 12),
             _buildCardFooterButtons(peminjaman),
           ],
@@ -585,7 +571,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     );
   }
 
-  // Widget helper baru untuk baris detail di dalam kartu
   Widget _buildCardDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -593,7 +578,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 130, // Lebar tetap untuk label
+            width: 130,
             child: Text(
               label,
               style: GoogleFonts.poppins(
@@ -602,7 +587,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
           ),
           Expanded(
             child: Text(
-              value.isEmpty ? '-' : value, // Tampilkan '-' jika value kosong
+              value.isEmpty ? '-' : value,
               style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -614,24 +599,20 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     );
   }
 
-  // --- PERUBAHAN 3: Modifikasi _buildCardFooterButtons ---
   Widget _buildCardFooterButtons(PeminjamanData peminjaman) {
-    // Terapkan logika tombol berdasarkan status
     switch (peminjaman.status) {
       case 'Disetujui':
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Gunakan Builder untuk mendapatkan context yang tepat untuk showMenu
             Builder(
               builder: (BuildContext buttonContext) {
                 return ElevatedButton(
                   onPressed: () {
-                    // Panggil fungsi yang menampilkan menu
                     _showDisetujuiMenu(buttonContext, peminjaman);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D47A1), // Biru tua
+                    backgroundColor: const Color(0xFF0D47A1),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
@@ -643,12 +624,9 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             ),
           ],
         );
-      // --- AKHIR PERUBAHAN 3 ---
-
       case 'Draft':
       case 'Menunggu Persetujuan PJ':
       case 'Menunggu Persetujuan PIC':
-        // Sesuai gambar 'Draft' dan permintaan 'Menunggu'
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -657,7 +635,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                 // Aksi untuk Batalkan Pengajuan
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700], // Merah
+                backgroundColor: Colors.red[700],
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
@@ -671,7 +649,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                 // Aksi untuk Edit
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[800], // Biru
+                backgroundColor: Colors.blue[800],
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
@@ -681,10 +659,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             ),
           ],
         );
-
       case 'Ditolak':
       default:
-        // Tidak ada tombol untuk status 'Ditolak' atau status lainnya
         return const SizedBox.shrink();
     }
   }
