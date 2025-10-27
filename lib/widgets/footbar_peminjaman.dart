@@ -55,8 +55,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     });
   }
 
-<<<<<<< HEAD
-=======
   // --- 👇 PERUBAHAN DIMULAI DI SINI 👇 ---
 
   // 1. BUAT FUNGSI BARU INI
@@ -74,15 +72,18 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
             content: Text(
               message,
               style: GoogleFonts.poppins(
-                  color: Colors.black87, fontWeight: FontWeight.w500),
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             // Salin desain SnackBar dari peminjaman.dart agar konsisten
             backgroundColor: const Color(0xFFE6F4EA),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Colors.green)),
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: Colors.green),
+            ),
             elevation: 0,
           ),
         );
@@ -98,7 +99,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   }
 
   // 2. MODIFIKASI FUNGSI INI
->>>>>>> a6730c600c4580d380dc08c64d61de3cc3523c62
   // Fungsi ini HANYA untuk navigasi di dalam tab Home
   void _handleShowFormFromDetail(String roomName) {
     Navigator.of(context).push(
@@ -171,7 +171,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(
-<<<<<<< HEAD
                 icon: FontAwesomeIcons.houseLock,
                 label: "Home",
                 index: 0,
@@ -191,17 +190,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
                 label: "Profil",
                 index: 3,
               ),
-=======
-                  icon: FontAwesomeIcons.houseLock, label: "Home", index: 0),
-              _buildNavItem(
-                  icon: Icons.airplay_outlined,
-                  label: "Peminjaman",
-                  index: 1),
-              _buildNavItem(
-                  icon: FontAwesomeIcons.bell, label: "Notifikasi", index: 2),
-              _buildNavItem(
-                  icon: FontAwesomeIcons.user, label: "Profil", index: 3),
->>>>>>> a6730c600c4580d380dc08c64d61de3cc3523c62
             ],
           ),
         ),
