@@ -1,4 +1,4 @@
-// File: lib/pic/home_pic.dart (PERBAIKAN WARNA FONT)
+// File: lib/pic/home_pic.dart (WARNA KUNING DIUBAH + TEKS PUTIH)
 
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -57,13 +57,24 @@ class _ValidasiPageState extends State<ValidasiPage> {
   List<Peminjaman> _peminjamanList = [
     Peminjaman(
       id: 6608,
-      kodeBooking: "WS.TA.12.3B.02",
+      kodeBooking: "GU.601.WM.01",
       tanggalPinjam: "18 Oktober 2025",
       jamKegiatan: "07.50 - 12.00",
       namaKegiatan: "Perkuliahan",
-      jenisKegiatan: "PBL TRPL 2I3",
+      jenisKegiatan: "Organisasi",
       status: "Menunggu Persetujuan PIC Ruangan",
-      statusColor: const Color(0xFFFFCC33), // <-- Warna Kuning
+      // --- PERUBAHAN WARNA KUNING ---
+      statusColor: const Color(0xFFFFC037),
+    ),
+    Peminjaman(
+      id: 6608, // ID Duplikat
+      kodeBooking: "GU.602.WM.01",
+      tanggalPinjam: "19 Oktober 2025",
+      jamKegiatan: "7.50 - 12.00",
+      namaKegiatan: "Perkuliahan",
+      jenisKegiatan: "Organisasi",
+      status: "Disetujui",
+      statusColor: const Color(0xFF00D800),
     ),
   ];
 
@@ -87,8 +98,8 @@ class _ValidasiPageState extends State<ValidasiPage> {
           String newStatusText;
 
           if (newStatus == "Disetujui") {
-            newStatusText = "Disetujui PIC";
-            newColor = Colors.green;
+            newStatusText = "Disetujui";
+            newColor = const Color(0xFF00D800);
           } else {
             newStatusText = "Ditolak PIC";
             newColor = Colors.red;
@@ -113,31 +124,45 @@ class _ValidasiPageState extends State<ValidasiPage> {
     {'value': '- Hanya Tampilkan Ruangan Saya -', 'isHeader': false},
     {'value': 'Gedung Utama', 'isHeader': true},
     {'value': 'GU.601 - Workspace Virtual Reality', 'isHeader': false},
-    {'value': 'GU.604 - Workspace Multimedia', 'isHeader': false},
-    {'value': 'GU.605 - Workspace Rendering', 'isHeader': false},
-    {'value': 'GU.606 - Workspace Rendering', 'isHeader': false},
+    {'value': 'GU.602 - Workspace Multimedia', 'isHeader': false},
+    {'value': 'GU.603 - Workspace Rendering', 'isHeader': false},
+    {'value': 'GU.604 - Workspace Rendering', 'isHeader': false},
   ];
 
   final List<String> _statusOptions = [
     '- Semua Status -',
     'Menunggu Persetujuan',
     'Disetujui',
-    'Ditolak',
-    'Sedang Dipakai',
+    'Ditolak PIC',
+    // 'Sedang Dipakai', // Dihapus
     'Selesai',
   ];
 
   List<Peminjaman> get _filteredPeminjamanList {
-    // int limit = int.tryParse(_selectedEntries) ?? 10; // Ini belum digunakan
+    List<Peminjaman> filteredByStatus = _peminjamanList;
+    if (_selectedStatus != null && _selectedStatus != '- Semua Status -') {
+      if (_selectedStatus == 'Menunggu Persetujui') {
+        filteredByStatus = _peminjamanList
+            .where(
+              (p) => p.status.toLowerCase().contains('menunggu persetujuan'),
+            )
+            .toList();
+      } else {
+        filteredByStatus = _peminjamanList
+            .where((p) => p.status == _selectedStatus)
+            .toList();
+      }
+    }
 
-    final filteredBySearch = _peminjamanList.where((peminjaman) {
+    final filteredBySearch = filteredByStatus.where((peminjaman) {
       final query = _searchQuery.toLowerCase();
+      if (query.isEmpty) return true;
       return peminjaman.kodeBooking.toLowerCase().contains(query) ||
           peminjaman.namaKegiatan.toLowerCase().contains(query) ||
-          peminjaman.jenisKegiatan.toLowerCase().contains(query);
+          peminjaman.jenisKegiatan.toLowerCase().contains(query) ||
+          peminjaman.status.toLowerCase().contains(query);
     }).toList();
 
-    // return filteredBySearch.take(limit).toList(); // Ini belum digunakan
     return filteredBySearch;
   }
 
@@ -149,21 +174,20 @@ class _ValidasiPageState extends State<ValidasiPage> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Lapisan 1: Konten Scrollable (Mulai dari bawah header)
         SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 150), // Jarak seukuran header (approx)
+              const SizedBox(height: 150),
               Container(
-                width: double.infinity, // Pastikan container mengisi lebar
+                width: double.infinity,
                 padding: const EdgeInsets.only(
-                  top: 75, // Padding atas (sudah diubah)
+                  top: 75,
                   left: 20,
                   right: 20,
                   bottom: 20,
                 ),
                 decoration: const BoxDecoration(
-                  color: Colors.white, // Background putih untuk konten
+                  color: Colors.white,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
@@ -172,24 +196,21 @@ class _ValidasiPageState extends State<ValidasiPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFilters(), // Filter
+                    _buildFilters(),
                     const SizedBox(height: 20),
-                    _buildDataList(), // List Kartu Peminjaman
+                    _buildDataList(),
                   ],
                 ),
               ),
             ],
           ),
         ),
-
-        // Lapisan 2: Header Biru Bergelombang dan Kartu Summary
         _buildHeaderAndCards(),
       ],
     );
   }
 
   Widget _buildFilters() {
-    // Dekorasi Shadow untuk menggantikan border
     final shadowDecoration = BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(10),
@@ -234,10 +255,7 @@ class _ValidasiPageState extends State<ValidasiPage> {
               value: item['value'],
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: Text(
-                  item['value'],
-                  style: GoogleFonts.poppins(), // Terapkan Poppins
-                ),
+                child: Text(item['value'], style: GoogleFonts.poppins()),
               ),
             );
           }).toList(),
@@ -249,7 +267,6 @@ class _ValidasiPageState extends State<ValidasiPage> {
           buttonStyleData: ButtonStyleData(
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            // --- Ganti dekorasi border ke shadow ---
             decoration: shadowDecoration,
           ),
           dropdownStyleData: DropdownStyleData(
@@ -293,10 +310,7 @@ class _ValidasiPageState extends State<ValidasiPage> {
                   value: item,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 0),
-                    child: Text(
-                      item,
-                      style: GoogleFonts.poppins(), // Terapkan Poppins
-                    ),
+                    child: Text(item, style: GoogleFonts.poppins()),
                   ),
                 ),
               )
@@ -309,7 +323,6 @@ class _ValidasiPageState extends State<ValidasiPage> {
           buttonStyleData: ButtonStyleData(
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            // --- Ganti dekorasi border ke shadow ---
             decoration: shadowDecoration,
           ),
           dropdownStyleData: DropdownStyleData(
@@ -349,32 +362,30 @@ class _ValidasiPageState extends State<ValidasiPage> {
               ),
             ),
             const SizedBox(width: 10),
-            // --- Modifikasi Search Bar (bungkus dengan Container) ---
             Expanded(
               child: Container(
                 height: 45,
                 decoration: shadowDecoration.copyWith(
-                  // Buat shadow search bar lebih bulat
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: TextField(
-                  style: GoogleFonts.poppins(), // Terapkan Poppins
+                  style: GoogleFonts.poppins(),
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value;
                     });
                   },
                   decoration: InputDecoration(
+                    hintText: "Cari...",
+                    hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
                     suffixIcon: Icon(Icons.search, color: Colors.grey.shade400),
-                    // Hapus semua border
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
-                    // Sesuaikan padding agar center
                     contentPadding: const EdgeInsets.only(
                       left: 15,
                       right: 15,
-                      top: 13, // (45 - 16 (font size)) / 2 + 2 (approx)
+                      top: 13,
                     ),
                   ),
                 ),
@@ -426,24 +437,41 @@ class _ValidasiPageState extends State<ValidasiPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                peminjaman.kodeBooking,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      peminjaman.kodeBooking,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ID: ${peminjaman.id}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              _buildStatusBadge(peminjaman.status, peminjaman.statusColor),
+              const SizedBox(width: 8),
+              Flexible(
+                child: _buildStatusBadge(
+                  peminjaman.status,
+                  peminjaman.statusColor,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'ID: ${peminjaman.id}',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 16), // Jarak pengganti divider
+          const SizedBox(height: 16),
           _buildDetailInfoRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
           const SizedBox(height: 8),
           _buildDetailInfoRow('Jam Kegiatan', peminjaman.jamKegiatan),
@@ -507,35 +535,38 @@ class _ValidasiPageState extends State<ValidasiPage> {
     );
   }
 
-  // --- FUNGSI INI TELAH DIPERBAIKI ---
+  // --- FUNGSI INI DIMODIFIKASI (HAPUS LOGIKA KONDISIONAL WARNA TEKS) ---
   Widget _buildStatusBadge(String status, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       decoration: BoxDecoration(
-        color: color, // Gunakan warna langsung untuk background
+        color: color,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Text(
         status,
+        textAlign: TextAlign.center,
+        softWrap: true,
         style: GoogleFonts.poppins(
-          // Logika diubah agar semua teks badge berwarna putih
-          color: Colors.white,
+          color: Colors.white, // <-- Selalu putih
           fontSize: 12,
           fontWeight: FontWeight.bold,
+          height: 1.2,
         ),
       ),
     );
   }
+  // --- AKHIR MODIFIKASI ---
 
   Widget _buildHeaderAndCards() {
     return Stack(
-      clipBehavior: Clip.none, // Penting agar kartu bisa keluar
+      clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
         Container(
-          height: 180, // Tinggi header
+          height: 180,
           decoration: const BoxDecoration(
-            color: Color(0xFF1c36d2), // Warna solid
+            color: Color(0xFF1c36d2),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(17),
               bottomRight: Radius.circular(17),
@@ -556,22 +587,18 @@ class _ValidasiPageState extends State<ValidasiPage> {
             ),
           ),
         ),
-
-        // Kartu summary diposisikan agar "mengambang"
         Positioned(
-          top: 130, // Sesuaikan posisi vertikal kartu
+          top: 130,
           left: 0,
           right: 0,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween, // Beri jarak antar kartu
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Pemanggilan fungsi sudah benar (Title, Count)
-                _summaryCard('Perlu Divalidasi', '3'),
-                _summaryCard('Akan Dipakai', '3'),
-                _summaryCard('Total Aktif', '8'),
+                _summaryCard('Menunggu PIC', '3'),
+                _summaryCard('Ditolak PIC', '3'),
+                _summaryCard('Disetujui', '8'),
               ],
             ),
           ),
@@ -580,19 +607,16 @@ class _ValidasiPageState extends State<ValidasiPage> {
     );
   }
 
-  // --- FUNGSI INI TELAH DIPERBAIKI ---
   Widget _summaryCard(String title, String count) {
     return Container(
-      width:
-          (MediaQuery.of(context).size.width - 60) /
-          3, // (Lebar layar - total padding/margin) / 3
+      width: (MediaQuery.of(context).size.width - 60) / 3,
       padding: const EdgeInsets.symmetric(vertical: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A000000), // Hex color with alpha
+            color: Color(0x1A000000),
             spreadRadius: 2,
             blurRadius: 8,
             offset: Offset(0, 4),
@@ -601,17 +625,14 @@ class _ValidasiPageState extends State<ValidasiPage> {
       ),
       child: Column(
         children: [
-          // Tampilkan Teks Label (title) dulu di atas
           Text(
-            title, // Menampilkan 'title' (parameter pertama)
+            title,
             textAlign: TextAlign.center,
-            // Diubah ke Colors.black
             style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
           ),
           const SizedBox(height: 4),
-          // Tampilkan Angka (count) di bawah
           Text(
-            count, // Menampilkan 'count' (parameter kedua)
+            count,
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
