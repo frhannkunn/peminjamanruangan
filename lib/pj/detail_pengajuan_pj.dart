@@ -1,20 +1,16 @@
-// File: lib/pj/detail_pengajuan_pj.dart (SYNC STATUS BOX STYLE WITH PIC)
+// File: lib/pj/detail_pengajuan_pj.dart (REFAKTOR AKHIR: LAYOUT PENGGUNA PJ)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'home_pj.dart'; // Import model PeminjamanPj
+import 'home_pj.dart';
 
 class DetailPengajuanPjPage extends StatefulWidget {
   final PeminjamanPj peminjaman;
-  final Function(String id, String status) onFinish;
 
-  const DetailPengajuanPjPage({
-    super.key,
-    required this.peminjaman,
-    required this.onFinish,
-  });
+  // Constructor sudah bersih, tidak lagi menerima 'onFinish'
+  const DetailPengajuanPjPage({super.key, required this.peminjaman});
 
   @override
   State<DetailPengajuanPjPage> createState() => _DetailPengajuanPjPageState();
@@ -25,13 +21,15 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
   String? _selectedApproval;
   final _komentarController = TextEditingController();
 
+  // --- DATA PENGGUNA YANG DIHARCODE ---
   final Map<String, String> _userData = const {
-    'ID': '32461',
-    'NIM': '5353544',
-    'Nama': 'usb',
-    'Nomor Workspace': 'WS.GU.601.01',
-    'Tipe Workspace': 'NON PC',
+    'ID': '1',
+    'NIM': '43424111',
+    'Nama': 'Ahmad Sharoni',
+    'Nomor Workspace': 'GU.601.WM.01',
+    'Jenis Pengguna': 'Mahasiswa', // Tambahkan field ini agar bisa ditampilkan
   };
+  // --- AKHIR DATA PENGGUNA YANG DIHARCODE ---
 
   @override
   void dispose() {
@@ -39,8 +37,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     super.dispose();
   }
 
-  // --- FUNGSI HELPER ---
-
+  // Dialog "OK" (Logika Navigator.pop sudah benar)
   Future<void> _showSuccessDialog() async {
     return showDialog<void>(
       context: context,
@@ -58,6 +55,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  // ... (Icon check, teks, dll tidak berubah) ...
                   Container(
                     width: 70,
                     height: 70,
@@ -87,8 +85,11 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                     height: 45,
                     child: ElevatedButton(
                       onPressed: () {
+                        // Tutup dialog
                         Navigator.of(dialogContext).pop();
-                        widget.onFinish(widget.peminjaman.id, updatedStatus);
+
+                        // Langsung tutup halaman dan kirim hasil
+                        Navigator.pop(context, updatedStatus);
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
@@ -123,13 +124,15 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     }
   }
 
+  // --- WIDGET TOMBOL SIMPAN ---
   Widget _buildButton(String label, Color color, VoidCallback onTap) {
     return Expanded(
       child: SizedBox(
         height: 45,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: color,
+            // Warna biru solid (seperti header card)
+            backgroundColor: const Color(0xFF1c36d2),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
@@ -149,7 +152,16 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
+  // --- WIDGET SECTION CARD ---
   Widget _buildSectionCard({required String title, required Widget content}) {
+    Color headerColor;
+    if (title == 'Form Approval Penanggung Jawab' ||
+        title == 'List Pengguna Ruangan') {
+      headerColor = const Color(0xFF1c36d2);
+    } else {
+      headerColor = const Color(0xFF4150FF);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20, left: 0, right: 0),
       decoration: BoxDecoration(
@@ -170,9 +182,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1c36d2), // Warna biru PJ
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: headerColor,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(15),
                 topRight: Radius.circular(15),
               ),
@@ -192,7 +204,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
     final bool needsApproval =
@@ -201,18 +212,18 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     final String displayStatus =
         widget.peminjaman.status ?? 'Status Tidak Diketahui';
     final Color statusColor = needsApproval
-        ? Colors.orange.shade400
-        : (isApproved ? Colors.green : Colors.red);
+        ? const Color(0xFFFFC037)
+        : (isApproved ? const Color(0xFF00D800) : Colors.red);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => widget.onFinish(
-            widget.peminjaman.id,
-            widget.peminjaman.status ?? 'Menunggu Persetujuan Penanggung Jawab',
-          ),
+          onPressed: () {
+            // Kirim kembali status LAMA (tidak berubah) jika menekan back
+            Navigator.pop(context, widget.peminjaman.status);
+          },
         ),
         title: Text(
           'Detail Pengajuan',
@@ -232,10 +243,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildFormHeaderCard(
-                displayStatus,
-                statusColor,
-              ), //<- Perubahan di sini
+              _buildFormHeaderCard(displayStatus, statusColor),
               const SizedBox(height: 24),
               _buildFormCard(displayStatus, statusColor),
               const SizedBox(height: 24),
@@ -253,18 +261,14 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  // --- WIDGET BUILD HELPERS LAINNYA ---
-
-  // FUNGSI INI YANG DIUBAH (STYLE STATUS BOX DISAMAKAN DENGAN PIC)
+  // --- INI ADALAH FUNGSI HEADER UTAMA ---
   Widget _buildFormHeaderCard(String status, Color statusColor) {
     String chipText = status;
-    // Pindah baris manual HANYA jika statusnya panjang (seperti di PIC)
     if (status == "Menunggu Persetujuan Penanggung Jawab") {
-      chipText = "Menunggu\nPersetujuan\nPenanggung\nJawab"; // Gunakan \n lagi
+      chipText = "Menunggu\nPersetujuan\nPenanggung\nJawab";
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1A39D9),
@@ -279,49 +283,49 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Flexible(
+          Expanded(
             child: Text(
-              'Form\nPengajuan\nPenggunaan\nRuangan', // Tetap pakai \n
+              'Form\nPengajuan\nPenggunaan\nRuangan',
               textAlign: TextAlign.left,
               style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
               ),
             ),
           ),
           const SizedBox(width: 10),
-          // --- STYLE KOTAK STATUS DISAMAKAN DENGAN PIC ---
+
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 10,
-            ), // Padding horizontal 24
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+            constraints: const BoxConstraints(minHeight: 50),
             decoration: BoxDecoration(
               color: statusColor,
-              borderRadius: BorderRadius.circular(15), // Radius 15
+              borderRadius: BorderRadius.circular(15),
             ),
-            child: Text(
-              chipText, // Gunakan chipText yang mungkin punya '\n'
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w600, // w600
-                fontSize: 12, // size 12
-                height: 1.3, // height 1.3
+            child: Center(
+              child: Text(
+                chipText,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  height: 1.3,
+                ),
+                softWrap: true,
+                overflow: TextOverflow.visible,
               ),
-              softWrap: true,
-              overflow: TextOverflow.visible,
             ),
           ),
-          // --- AKHIR PERUBAHAN STYLE ---
         ],
       ),
     );
   }
+  // --- AKHIR FUNGSI HEADER UTAMA ---
 
   Widget _buildFormCard(String status, Color statusColor) {
     return Container(
@@ -398,24 +402,58 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
+  // --- WIDGET LIST PENGGUNA DIPERBARUI ---
   Widget _buildUserListCard() {
+    // Kunci yang harus ditampilkan, sesuai urutan di gambar
+    final List<String> displayKeys = [
+      'ID',
+      'Jenis Pengguna',
+      'NIM',
+      'Nama',
+      'Nomor Workspace',
+    ];
+
+    // Ambil data yang ada di _userData dan petakan ke format tampilan
+    // Jika Jenis Pengguna tidak ada di _userData, kita asumsikan 'Mahasiswa'
+    final List<MapEntry<String, String>> finalEntries = displayKeys.map((key) {
+      String label = key;
+      String value = '-';
+
+      if (key == 'ID') {
+        label = 'ID';
+        value = _userData['ID'] ?? '-';
+      } else if (key == 'Jenis Pengguna') {
+        label = 'Jenis Pengguna';
+        // Asumsi Jenis Pengguna selalu Mahasiswa karena ada di _userData
+        value = _userData['Jenis Pengguna'] ?? 'Mahasiswa';
+      } else if (key == 'NIM') {
+        label = 'NIM / NIK';
+        value = _userData['NIM'] ?? '-';
+      } else if (key == 'Nama') {
+        label = 'Nama';
+        value = _userData['Nama'] ?? '-';
+      } else if (key == 'Nomor Workspace') {
+        label = 'No. Workspace';
+        value = _userData['Nomor Workspace'] ?? '-';
+      }
+
+      return MapEntry(label, value);
+    }).toList();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1c36d2), // Warna Biru PJ
-            borderRadius: const BorderRadius.only(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1c36d2), // Warna Biru PJ
+            borderRadius: BorderRadius.only(
               topLeft: Radius.circular(15),
               topRight: Radius.circular(15),
             ),
             boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 5,
-              ),
+              BoxShadow(color: Colors.grey, spreadRadius: 1, blurRadius: 5),
             ],
           ),
           child: Center(
@@ -448,113 +486,79 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           child: Column(
             children: [
               Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.center, // Vertically center items in Row
                 children: [
+                  // --- LABEL "Search" ---
                   Text(
-                    'Show',
+                    'Search:',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.black54,
+                      color: Colors.grey[700],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    height: 30,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: '10',
-                        icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-                        items: ['10', '25', '50']
-                            .map(
-                              (String v) => DropdownMenuItem<String>(
-                                value: v,
-                                child: Text(
-                                  v,
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) {},
+                  const SizedBox(width: 10),
+
+                  // --- KOTAK SEARCH MEMANJANG (Expanded) ---
+                  Expanded(
+                    child: SizedBox(
+                      height: 35,
+                      child: TextField(
+                        style: GoogleFonts.poppins(fontSize: 12),
+                        decoration: InputDecoration(
+                          hintText: "", // HINT TEXT DIHAPUS
+                          // --- PERBAIKAN: Hapus prefixIcon dan pindahkan ke suffixIcon ---
+                          // prefixIcon: const Icon(Icons.search, size: 18),
+                          suffixIcon: const Icon(Icons.search, size: 18),
+                          // --- AKHIR PERBAIKAN ---
+
+                          // Border dan styling kotak
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade400),
+                          ),
+                          // Padding di dalam TextField
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ), // Tambahkan padding horizontal agar teks tidak menempel ke kiri
+                        ),
+                        onChanged: (value) {},
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'entries',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: 150,
-                    height: 35,
-                    child: TextField(
-                      style: GoogleFonts.poppins(fontSize: 12),
-                      decoration: InputDecoration(
-                        hintText: "Search",
-                        hintStyle: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                        prefixIcon: const Icon(Icons.search, size: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (value) {},
                     ),
                   ),
                 ],
               ),
+              // --- JARAK DARI PAGINATION/SEARCH KE LIST DATA ---
               const SizedBox(height: 20),
+
+              // --- TAMPILAN DATA SESUAI PERMINTAAN GAMBAR ---
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
+                padding: const EdgeInsets.all(
+                  8,
+                ), // Kurangi padding total container
                 child: Column(
-                  children: _userData.entries.map((entry) {
-                    String label = entry.key;
-                    if (!label.contains(' ')) {
-                      label = label
-                          .replaceAllMapped(
-                            RegExp(r'[A-Z]'),
-                            (match) => ' ${match.group(0)}',
-                          )
-                          .trim();
-                    }
-                    return _buildUserDetailRow(label, entry.value);
+                  // Gunakan MapEntry yang baru untuk menghasilkan baris
+                  children: finalEntries.map((entry) {
+                    return _buildUserDetailRow(entry.key, entry.value);
                   }).toList(),
                 ),
               ),
+              // --- AKHIR TAMPILAN DATA ---
             ],
           ),
         ),
       ],
     );
   }
+  // --- AKHIR PERBAIKAN LIST PENGGUNA ---
 
   Widget _buildApprovalSection() {
     return _buildSectionCard(
@@ -666,7 +670,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           ),
           const SizedBox(height: 30),
           Row(
-            children: [_buildButton("Simpan", Colors.green, _submitApproval)],
+            children: [
+              _buildButton("Simpan", const Color(0xFF1c36d2), _submitApproval),
+            ],
           ),
         ],
       ),
@@ -730,6 +736,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
   }
 
   Widget _buildUserDetailRow(String label, String value) {
+    // --- METHOD INI SEKARANG DIGUNAKAN ULANG OLEH _buildUserListCard ---
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(

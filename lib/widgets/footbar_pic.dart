@@ -1,11 +1,13 @@
-// File: lib/widgets/footbar_pic.dart (FONT POPPINS DITERAPKAN)
+// File: lib/widgets/footbar_pic.dart (REVISI - Menggunakan IndexedStack)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
-import '../pic/home_pic.dart';
-import '../pic/validasi_pic.dart';
-import '../pic/notification_pic.dart';
-import '../pic/profile_pic.dart';
+import 'package:google_fonts/google_fonts.dart';
+// --- PERUBAHAN IMPORT ---
+// Import halaman-halaman yang akan ditampilkan di IndexedStack
+import '../pic/home_pic.dart'; // Pastikan nama file ini benar
+import '../pic/notification_pic.dart'; // Pastikan nama file ini benar
+import '../pic/profile_pic.dart'; // Pastikan nama file ini benar
+// --- AKHIR PERUBAHAN IMPORT ---
 
 class FootbarPic extends StatefulWidget {
   const FootbarPic({super.key});
@@ -16,60 +18,36 @@ class FootbarPic extends StatefulWidget {
 
 class _FootbarPicState extends State<FootbarPic> {
   int _selectedIndex = 0;
-  Peminjaman? _selectedPeminjaman;
 
-  Function(String id, String newStatus)? _updateHomeDataCallback;
+  // --- PERUBAHAN: HAPUS STATE NAVIGASI DETAIL ---
+  // Peminjaman? _selectedPeminjaman; // <-- Dihapus
+  // Function(String id, String newStatus)? _updateHomeDataCallback; // <-- Dihapus
+  // --- AKHIR PERUBAHAN ---
 
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-
     _pages = <Widget>[
-      ValidasiPage(
-        onPeminjamanSelected: _showDetailPage,
-        onDataUpdated: _setUpdateCallback,
-      ),
-      const NotifikasiPicPage(),
-      const ProfilePicPage(),
+      // --- PERUBAHAN: Daftar halaman untuk IndexedStack ---
+      const HomePicPage(), // Halaman Home/Validasi List
+      const NotifikasiPicPage(), // Halaman Notifikasi
+      const ProfilePicPage(), // Halaman Profil
+      // --- AKHIR PERUBAHAN ---
     ];
   }
 
-  void _showDetailPage(Peminjaman peminjaman) {
-    setState(() {
-      _selectedPeminjaman = peminjaman;
-    });
-  }
-
-  void _navigateToHome({String? updatedId, String? newStatus}) {
-    if (updatedId != null &&
-        newStatus != null &&
-        _updateHomeDataCallback != null) {
-      _updateHomeDataCallback!(updatedId, newStatus);
-    }
-
-    setState(() {
-      _selectedPeminjaman = null;
-    });
-  }
-
-  void _setUpdateCallback(Function(String id, String newStatus) callback) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _updateHomeDataCallback = callback;
-      }
-    });
-  }
+  // --- PERUBAHAN: HAPUS FUNGSI NAVIGASI DETAIL ---
+  // void _showDetailPage(Peminjaman peminjaman) { ... } // <-- Dihapus
+  // void _navigateToHome({String? updatedId, String? newStatus}) { ... } // <-- Dihapus
+  // void _setUpdateCallback(Function(String id, String newStatus) callback) { ... } // <-- Dihapus
+  // --- AKHIR PERUBAHAN ---
 
   void _onItemTapped(int index) {
     setState(() {
-      if (_selectedIndex != index) {
-        _navigateToHome();
-        _selectedIndex = index;
-      } else {
-        _navigateToHome();
-      }
+      _selectedIndex = index;
+      // Logika _navigateToHome() dihapus dari sini
     });
   }
 
@@ -77,14 +55,9 @@ class _FootbarPicState extends State<FootbarPic> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: _selectedPeminjaman != null
-          ? ValidasiPicPage(
-              peminjamanData: _selectedPeminjaman!,
-              onBack: () => _navigateToHome(updatedId: null, newStatus: null),
-              onSave: (id, newStatus) =>
-                  _navigateToHome(updatedId: id, newStatus: newStatus),
-            )
-          : IndexedStack(index: _selectedIndex, children: _pages),
+      // --- PERUBAHAN: Gunakan IndexedStack ---
+      body: IndexedStack(index: _selectedIndex, children: _pages),
+      // --- AKHIR PERUBAHAN ---
       bottomNavigationBar: SafeArea(
         child: Container(
           height: 85,
@@ -114,6 +87,7 @@ class _FootbarPicState extends State<FootbarPic> {
     );
   }
 
+  // Widget _buildNavItem tidak berubah
   Widget _buildNavItem(IconData iconData, String label, int index) {
     final bool isSelected = _selectedIndex == index;
     final Color activeColor = const Color(0xFF4D79FF);
@@ -146,7 +120,6 @@ class _FootbarPicState extends State<FootbarPic> {
                 ),
                 child: Text(
                   label,
-                  // <-- Terapkan Poppins
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 12.5,
@@ -157,7 +130,6 @@ class _FootbarPicState extends State<FootbarPic> {
             else
               Text(
                 label,
-                // <-- Terapkan Poppins
                 style: GoogleFonts.poppins(color: inactiveColor, fontSize: 12),
               ),
           ],

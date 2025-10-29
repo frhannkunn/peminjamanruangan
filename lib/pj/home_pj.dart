@@ -1,9 +1,11 @@
-// File: lib/pj/home_pj.dart (HEADER BARU DITERAPKAN)
+// File: lib/pj/home_pj.dart (REFAKTOR ALUR NAVIGASI)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // <-- Import Google Fonts
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'detail_pengajuan_pj.dart'; // Pastikan ini di-import
+import 'package:dropdown_button2/dropdown_button2.dart'; // <-- Import package tambahan
 
 // Model data (Tidak berubah)
 class PeminjamanPj {
@@ -39,77 +41,94 @@ class PeminjamanPj {
 }
 
 class HomePjPage extends StatefulWidget {
-  final Function(PeminjamanPj peminjaman) onPeminjamanSelected;
-  final Function(Function(String, String)) onDataUpdated;
-
-  const HomePjPage({
-    super.key,
-    required this.onPeminjamanSelected,
-    required this.onDataUpdated,
-  });
+  const HomePjPage({super.key});
 
   @override
   State<HomePjPage> createState() => _HomePjPageState();
 }
 
 class _HomePjPageState extends State<HomePjPage> {
+  // --- CATATAN: ---
+  // Sesuai permintaan Anda, data list dan summary card
+  // dibiarkan statis/hardcoded untuk prototipe.
+  // Filter dan Search juga belum diimplementasikan.
+  // --- --- --- ---
+
   List<PeminjamanPj> _peminjamanList = [
     PeminjamanPj(
       id: "6608",
-      ruangan: "WS.TA.12.3B.02",
+      ruangan: "GU.601.WM.01",
       status: "Menunggu Persetujuan Penanggung Jawab",
       tanggalPinjam: DateTime(2025, 10, 18),
       jamKegiatan: "07.50 - 12.00",
-      namaKegiatan: "Perkuliahan",
-      jenisKegiatan: "PBL TRPL 213",
+      namaKegiatan: "PBL TRPL 318",
+      jenisKegiatan: "Kerja Kelompok",
     ),
+  ];
+
+  // State untuk dropdown filter
+  String? _selectedStatusFilter = "-Semua Status-";
+  final List<String> _statusOptions = [
+    "-Semua Status-",
+    "Menunggu Persetujuan Penanggung Jawab",
+    "Disetujui",
+    "Ditolak",
   ];
 
   @override
   void initState() {
     super.initState();
-    widget.onDataUpdated(_updatePeminjamanStatus);
     initializeDateFormatting('id_ID', null);
   }
 
-  void _updatePeminjamanStatus(String id, String newStatus) {
-    if (mounted) {
-      setState(() {
-        final index = _peminjamanList.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          final oldPeminjaman = _peminjamanList[index];
-          _peminjamanList[index] = oldPeminjaman.copyWith(status: newStatus);
-          _peminjamanList = List.from(_peminjamanList);
-        }
-      });
+  // --- PERUBAHAN DI FUNGSI NAVIGASI ---
+  Future<void> _navigateToDetail(PeminjamanPj peminjaman) async {
+    final newStatus = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailPengajuanPjPage(peminjaman: peminjaman),
+      ),
+    );
+
+    if (newStatus != null) {
+      _updatePeminjamanStatus(peminjaman.id, newStatus);
     }
   }
 
-  // --- BUILD UTAMA (DIUBAH) ---
+  // Fungsi update status (Tidak berubah)
+  void _updatePeminjamanStatus(String id, String newStatus) {
+    setState(() {
+      final index = _peminjamanList.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        final oldPeminjaman = _peminjamanList[index];
+        _peminjamanList[index] = oldPeminjaman.copyWith(status: newStatus);
+        _peminjamanList = List.from(_peminjamanList);
+      }
+    });
+  }
+
+  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
-    // Mengganti Scaffold lama dengan struktur Stack + SingleChildScrollView
     return Scaffold(
-      backgroundColor: Colors.white, // Background putih untuk konten
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Lapisan 1: Konten Scrollable
           SingleChildScrollView(
             child: Column(
               children: [
-                // Jarak seukuran header + sedikit overlap kartu
                 const SizedBox(height: 150),
-                // Container putih untuk konten (filter, list, etc.)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.only(
-                    top: 75, // Padding atas agar tidak tertutup kartu summary
+                    top: 75,
                     left: 20,
                     right: 20,
                     bottom: 20,
                   ),
                   decoration: const BoxDecoration(
-                    color: Colors.white, // Warna background konten
+                    color: Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
@@ -118,9 +137,10 @@ class _HomePjPageState extends State<HomePjPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildControls(), // Filter & Search
+                      _buildControls(),
                       const SizedBox(height: 20),
-                      // Membangun list peminjaman (ambil dari _buildSliverContent)
+
+                      // List masih menggunakan _peminjamanList (bukan list terfilter)
                       ...List.generate(_peminjamanList.length, (index) {
                         return _buildPeminjamanGroup(
                           _peminjamanList[index],
@@ -134,40 +154,34 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
           // Lapisan 2: Header Biru Melengkung dan Kartu Summary
-          _buildHeaderAndCardsPJ(), // Fungsi header baru
+          _buildHeaderAndCardsPJ(),
         ],
       ),
     );
   }
-  // --- AKHIR BUILD UTAMA ---
 
-  // --- FUNGSI HEADER BARU (Diadaptasi dari home_pic.dart) ---
+  // --- FUNGSI HEADER ---
   Widget _buildHeaderAndCardsPJ() {
     return Stack(
-      clipBehavior: Clip.none, // Penting agar kartu bisa keluar
+      clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
         // Header Biru Melengkung
         Container(
-          height: 180, // Tinggi header
+          height: 180,
           decoration: const BoxDecoration(
-            color: Color(0xFF1c36d2), // Warna biru solid
+            color: Color(0xFF1c36d2),
             borderRadius: BorderRadius.only(
-              // Melengkung di bawah
-              bottomLeft: Radius.circular(15), // Sesuaikan radius jika perlu
+              bottomLeft: Radius.circular(15),
               bottomRight: Radius.circular(15),
             ),
           ),
           child: Padding(
-            // Padding untuk teks sapaan
-            padding: const EdgeInsets.only(
-              top: 60,
-              left: 20,
-            ), // Sesuaikan top padding
+            padding: const EdgeInsets.only(top: 60, left: 20),
             child: Align(
               alignment: Alignment.topLeft,
               child: Text(
-                'Hai, Kevin!', // Teks sapaan sesuai gambar
+                'Hai, Kevin!',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
@@ -177,10 +191,9 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
         ),
-
-        // Kartu summary diposisikan agar "mengambang"
+        // Kartu summary (Statis/Hardcoded)
         Positioned(
-          top: 130, // Posisi vertikal kartu (sesuaikan jika perlu)
+          top: 130,
           left: 0,
           right: 0,
           child: Container(
@@ -188,12 +201,9 @@ class _HomePjPageState extends State<HomePjPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Gunakan _summaryCard yang sudah ada di file ini
-                // Pastikan parameternya (title, count) atau (count, title)
-                // Di kode Anda: _summaryCard(String title, String count)
-                _summaryCard('Perlu Divalidasi', '5'),
-                _summaryCard('Akan Dipakai', '4'),
-                _summaryCard('Total Aktif', '7'),
+                _summaryCard('Menunggu Persetujuan', '5'),
+                _summaryCard('Disetujui', '4'),
+                _summaryCard('Ditolak', '7'),
               ],
             ),
           ),
@@ -201,12 +211,8 @@ class _HomePjPageState extends State<HomePjPage> {
       ],
     );
   }
-  // --- AKHIR FUNGSI HEADER BARU ---
 
-  // --- FUNGSI BAWAAN (SEDikit Modifikasi Font) ---
-
-  // Fungsi ini dipanggil dari _buildHeaderAndCardsPJ
-  // Tambahkan GoogleFonts jika belum
+  // ... (Fungsi _summaryCard dan _buildPeminjamanGroup tidak berubah) ...
   Widget _summaryCard(String title, String count) {
     return Expanded(
       child: Container(
@@ -226,21 +232,18 @@ class _HomePjPageState extends State<HomePjPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Tukar posisi sesuai gambar baru
             Text(
               title,
               textAlign: TextAlign.center,
-              // Terapkan Poppins dan warna hitam
               style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
             ),
             const SizedBox(height: 4),
             Text(
               count,
-              // Terapkan Poppins
               style: GoogleFonts.poppins(
-                fontSize: 20, // Ukuran font angka
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF0D47A1), // Warna angka
+                color: const Color(0xFF0D47A1),
               ),
             ),
           ],
@@ -254,13 +257,9 @@ class _HomePjPageState extends State<HomePjPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(
-            bottom: 12.0,
-            top: index == 1 ? 0 : 20.0,
-          ), // Adjust top padding
+          padding: EdgeInsets.only(bottom: 12.0, top: index == 1 ? 0 : 20.0),
           child: Text(
             'Peminjam Ruangan $index',
-            // Terapkan Poppins
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -272,6 +271,7 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
+  // --- _buildPeminjamanCard (Tidak berubah) ---
   Widget _buildPeminjamanCard(PeminjamanPj peminjaman) {
     final String formattedDate = DateFormat(
       'd MMMM yyyy',
@@ -281,16 +281,15 @@ class _HomePjPageState extends State<HomePjPage> {
     String displayStatus = peminjaman.status ?? 'Status Tidak Diketahui';
     Color statusColor =
         (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
-        ? Colors.orange.shade400
-        : (isApproved
-              ? Colors.green
-              : Colors.red); // Ganti abu jadi merah jika ditolak
+        ? const Color(0xFFFFC037)
+        : (isApproved ? const Color(0xFF00D800) : Colors.red);
     String buttonText =
         (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
         ? 'Detail Approval'
-        : (isApproved ? 'Detail' : 'Ditolak'); // Teks tombol jika ditolak
+        : (isApproved ? 'Detail' : 'Ditolak');
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 16), // Tambahkan margin bawah
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -307,35 +306,27 @@ class _HomePjPageState extends State<HomePjPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            peminjaman.ruangan,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      peminjaman.ruangan,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'ID: ${peminjaman.id}',
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+              Text(
+                'ID: ${peminjaman.id}',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[600],
+                  fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               if (peminjaman.status != null)
                 Flexible(
-                  // Bungkus dengan Flexible agar bisa wrap jika teks panjang
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -354,8 +345,8 @@ class _HomePjPageState extends State<HomePjPage> {
                         fontSize: 11,
                         height: 1.2,
                       ),
-                      softWrap: true, // Izinkan wrap
-                      overflow: TextOverflow.visible, // Tampilkan jika overflow
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
                   ),
                 ),
@@ -370,9 +361,9 @@ class _HomePjPageState extends State<HomePjPage> {
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
-              onPressed: () => widget.onPeminjamanSelected(peminjaman),
+              onPressed: () => _navigateToDetail(peminjaman),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A69FF),
+                backgroundColor: const Color(0xFF4150FF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -396,55 +387,124 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
+  // --- START PERBAIKAN DROPDOWN DAN SEARCH ---
   Widget _buildControls() {
-    // Terapkan Poppins di sini juga
+    // Shared decoration for consistent look (using alpha for opacity)
+    final inputDecoration = InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              'Show',
-              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              height: 35,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: '10',
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 20),
-                  items: ['10', '25', '50']
-                      .map(
-                        (String v) => DropdownMenuItem<String>(
-                          value: v,
-                          child: Text(
-                            v,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {},
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'entries',
-              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
-            ),
-          ],
+        // 1. Dropdown Filter Status
+        Text(
+          'Filter Status Peminjaman:',
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
         ),
+        const SizedBox(height: 8),
+
+        // --- UBAH DARI DropdownButtonFormField KE DropdownButton2 ---
+        DropdownButton2<String>(
+          value: _selectedStatusFilter,
+          isExpanded: true,
+
+          // Gunakan ButtonStyleData untuk styling field utama
+          buttonStyleData: ButtonStyleData(
+            height: 45,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+              color: Colors.white,
+            ),
+          ),
+
+          // Gunakan DropdownStyleData untuk styling menu pop-up (ESTETIK)
+          dropdownStyleData: DropdownStyleData(
+            maxHeight: 200,
+            width:
+                MediaQuery.of(context).size.width - 40, // Lebar layar - padding
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10), // Sudut membulat
+              color: Colors.white,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1A000000), // Shadow
+                  spreadRadius: 2,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            offset: const Offset(0, 0), // Posisi dropdown
+            scrollbarTheme: ScrollbarThemeData(
+              radius: const Radius.circular(40),
+              thickness: MaterialStateProperty.all(6),
+              thumbVisibility: MaterialStateProperty.all(true),
+            ),
+          ),
+
+          // Gunakan MenuItemStyleData untuk styling item di menu
+          menuItemStyleData: MenuItemStyleData(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            selectedMenuItemBuilder: (context, item) => Container(
+              color: Colors.blue.withOpacity(0.1), // Warna latar saat dipilih
+              child: item,
+            ),
+          ),
+
+          iconStyleData: IconStyleData(
+            icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+            iconSize: 24,
+            openMenuIcon: const Icon(
+              Icons.keyboard_arrow_up,
+              color: Colors.grey,
+            ),
+          ),
+
+          items: _statusOptions.map((String status) {
+            String shortStatus = status;
+            if (status == "Menunggu Persetujuan Penanggung Jawab") {
+              shortStatus = "Menunggu Persetujuan";
+            }
+            return DropdownMenuItem<String>(
+              value: status,
+              child: Text(
+                shortStatus,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+              ),
+            );
+          }).toList(),
+
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedStatusFilter = newValue;
+            });
+          },
+        ),
+
+        // --- END UBAH DropdownButtonFormField KE DropdownButton2 ---
         const SizedBox(height: 16),
+
+        // 2. Search Bar
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Search:',
@@ -455,10 +515,11 @@ class _HomePjPageState extends State<HomePjPage> {
               child: SizedBox(
                 height: 45,
                 child: TextField(
-                  style: GoogleFonts.poppins(), // Font input search
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
+                  style: GoogleFonts.poppins(),
+                  decoration: inputDecoration.copyWith(
+                    // Copy styling dari inputDecoration, lalu override
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    // Gunakan border radius yang lebih bulat untuk search
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: Colors.grey.shade300),
@@ -467,8 +528,13 @@ class _HomePjPageState extends State<HomePjPage> {
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
+                    hintText: "", // Hint text dihapus
+                    hintStyle: null, // Hapus styling hint
                   ),
                   onChanged: (value) {},
                 ),
@@ -479,9 +545,10 @@ class _HomePjPageState extends State<HomePjPage> {
       ],
     );
   }
+  // --- END PERBAIKAN DROPDOWN DAN SEARCH ---
 
+  // --- _buildDetailRow (Tidak berubah) ---
   Widget _buildDetailRow(String label, String value) {
-    // Terapkan Poppins
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -495,7 +562,7 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
           Text(
-            ':  ',
+            ':  ',
             style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
           ),
           Expanded(

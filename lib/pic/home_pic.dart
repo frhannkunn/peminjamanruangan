@@ -1,9 +1,11 @@
-// File: lib/pic/home_pic.dart (WARNA KUNING DIUBAH + TEKS PUTIH)
+// File: lib/pic/home_pic.dart (REFAKTOR ALUR NAVIGASI + PERBAIKAN ERROR + SINGLE CARD + FIX LAYOUT KARTU)
 
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'validasi_pic.dart'; // Pastikan path ini benar
 
+// Model Peminjaman (Tidak Berubah)
 class Peminjaman {
   final int id;
   final String kodeBooking;
@@ -39,86 +41,41 @@ class Peminjaman {
   }
 }
 
-class ValidasiPage extends StatefulWidget {
-  final Function(Peminjaman peminjaman) onPeminjamanSelected;
-  final Function(Function(String, String)) onDataUpdated;
-
-  const ValidasiPage({
-    super.key,
-    required this.onPeminjamanSelected,
-    required this.onDataUpdated,
-  });
+class HomePicPage extends StatefulWidget {
+  const HomePicPage({super.key});
 
   @override
-  State<ValidasiPage> createState() => _ValidasiPageState();
+  State<HomePicPage> createState() => _HomePicPageState();
 }
 
-class _ValidasiPageState extends State<ValidasiPage> {
-  List<Peminjaman> _peminjamanList = [
+class _HomePicPageState extends State<HomePicPage> {
+  final List<Peminjaman> _peminjamanList = [
     Peminjaman(
       id: 6608,
       kodeBooking: "GU.601.WM.01",
       tanggalPinjam: "18 Oktober 2025",
       jamKegiatan: "07.50 - 12.00",
-      namaKegiatan: "Perkuliahan",
-      jenisKegiatan: "Organisasi",
+      namaKegiatan: "PBL TRPL 318",
+      jenisKegiatan: "Kerja Kelompok",
       status: "Menunggu Persetujuan PIC Ruangan",
-      // --- PERUBAHAN WARNA KUNING ---
       statusColor: const Color(0xFFFFC037),
     ),
     Peminjaman(
-      id: 6608, // ID Duplikat
+      id: 6609,
       kodeBooking: "GU.602.WM.01",
       tanggalPinjam: "19 Oktober 2025",
       jamKegiatan: "7.50 - 12.00",
-      namaKegiatan: "Perkuliahan",
-      jenisKegiatan: "Organisasi",
+      namaKegiatan: "PBL TRPL 318",
+      jenisKegiatan: "Kerja Kelompok",
       status: "Disetujui",
       statusColor: const Color(0xFF00D800),
     ),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    widget.onDataUpdated(_updatePeminjamanStatus);
-  }
-
-  void _updatePeminjamanStatus(String id, String newStatus) {
-    if (mounted) {
-      setState(() {
-        final intId = int.tryParse(id);
-        if (intId == null) return;
-
-        final index = _peminjamanList.indexWhere((p) => p.id == intId);
-        if (index != -1) {
-          final oldPeminjaman = _peminjamanList[index];
-
-          Color newColor;
-          String newStatusText;
-
-          if (newStatus == "Disetujui") {
-            newStatusText = "Disetujui";
-            newColor = const Color(0xFF00D800);
-          } else {
-            newStatusText = "Ditolak PIC";
-            newColor = Colors.red;
-          }
-
-          _peminjamanList[index] = oldPeminjaman.copyWith(
-            status: newStatusText,
-            statusColor: newColor,
-          );
-
-          _peminjamanList = List.from(_peminjamanList);
-        }
-      });
-    }
-  }
-
+  // State filter (diabaikan untuk prototipe)
   String? _selectedRuangan = '- Hanya Tampilkan Ruangan Saya -';
   String? _selectedStatus = '- Semua Status -';
-  String _searchQuery = '';
+  // String _searchQuery = ''; // Dikomentari
 
   final List<Map<String, dynamic>> _ruanganOptions = [
     {'value': '- Hanya Tampilkan Ruangan Saya -', 'isHeader': false},
@@ -134,79 +91,101 @@ class _ValidasiPageState extends State<ValidasiPage> {
     'Menunggu Persetujuan',
     'Disetujui',
     'Ditolak PIC',
-    // 'Sedang Dipakai', // Dihapus
     'Selesai',
   ];
 
-  List<Peminjaman> get _filteredPeminjamanList {
-    List<Peminjaman> filteredByStatus = _peminjamanList;
-    if (_selectedStatus != null && _selectedStatus != '- Semua Status -') {
-      if (_selectedStatus == 'Menunggu Persetujui') {
-        filteredByStatus = _peminjamanList
-            .where(
-              (p) => p.status.toLowerCase().contains('menunggu persetujuan'),
-            )
-            .toList();
-      } else {
-        filteredByStatus = _peminjamanList
-            .where((p) => p.status == _selectedStatus)
-            .toList();
-      }
-    }
-
-    final filteredBySearch = filteredByStatus.where((peminjaman) {
-      final query = _searchQuery.toLowerCase();
-      if (query.isEmpty) return true;
-      return peminjaman.kodeBooking.toLowerCase().contains(query) ||
-          peminjaman.namaKegiatan.toLowerCase().contains(query) ||
-          peminjaman.jenisKegiatan.toLowerCase().contains(query) ||
-          peminjaman.status.toLowerCase().contains(query);
-    }).toList();
-
-    return filteredBySearch;
+  @override
+  void initState() {
+    super.initState();
   }
 
-  void _goToProsesValidasi(Peminjaman peminjaman) {
-    widget.onPeminjamanSelected(peminjaman);
+  void _updatePeminjamanStatus(int id, String newStatusResult) {
+    setState(() {
+      final index = _peminjamanList.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        final oldPeminjaman = _peminjamanList[index];
+        Color newColor;
+        String newStatusText;
+
+        if (newStatusResult == "Disetujui") {
+          newStatusText = "Disetujui";
+          newColor = const Color(0xFF00D800);
+        } else if (newStatusResult == "Ditolak") {
+          newStatusText = "Ditolak PIC";
+          newColor = Colors.red;
+        } else {
+          newStatusText = oldPeminjaman.status;
+          newColor = oldPeminjaman.statusColor;
+        }
+
+        if (newStatusText != oldPeminjaman.status) {
+          _peminjamanList[index] = oldPeminjaman.copyWith(
+            status: newStatusText,
+            statusColor: newColor,
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _navigateToDetail(Peminjaman peminjaman) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ValidasiPicPage(peminjamanData: peminjaman),
+      ),
+    );
+
+    if (result != null && result is String) {
+      _updatePeminjamanStatus(peminjaman.id, result);
+    }
+  }
+
+  List<Peminjaman> get _filteredPeminjamanList {
+    // Untuk prototipe, tampilkan semua saja
+    return _peminjamanList;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 150),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(
-                  top: 75,
-                  left: 20,
-                  right: 20,
-                  bottom: 20,
-                ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 150),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(
+                    top: 75,
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFilters(),
+                      const SizedBox(height: 20),
+                      _buildDataList(),
+                    ],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildFilters(),
-                    const SizedBox(height: 20),
-                    _buildDataList(),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        _buildHeaderAndCards(),
-      ],
+          _buildHeaderAndCards(),
+        ],
+      ),
     );
   }
 
@@ -216,7 +195,7 @@ class _ValidasiPageState extends State<ValidasiPage> {
       borderRadius: BorderRadius.circular(10),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.08),
+          color: Colors.black.withAlpha((255 * 0.08).round()),
           spreadRadius: 0,
           blurRadius: 10,
           offset: const Offset(0, 2),
@@ -370,11 +349,8 @@ class _ValidasiPageState extends State<ValidasiPage> {
                 ),
                 child: TextField(
                   style: GoogleFonts.poppins(),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
+                  // onChanged: (value) { // Dikomentari
+                  // },
                   decoration: InputDecoration(
                     hintText: "Cari...",
                     hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
@@ -399,24 +375,23 @@ class _ValidasiPageState extends State<ValidasiPage> {
 
   Widget _buildDataList() {
     final listToShow = _filteredPeminjamanList;
-
     if (listToShow.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Text(
-            'Tidak ada data peminjaman yang cocok.',
+            'Tidak ada data peminjaman.',
             style: GoogleFonts.poppins(color: Colors.grey),
           ),
         ),
       );
+    } else {
+      final firstPeminjaman = listToShow.first;
+      return _buildPeminjamanCard(firstPeminjaman);
     }
-
-    return Column(
-      children: listToShow.map((p) => _buildPeminjamanCard(p)).toList(),
-    );
   }
 
+  // --- INI ADALAH FUNGSI YANG DIPERBARUI LAYOUTNYA ---
   Widget _buildPeminjamanCard(Peminjaman peminjaman) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -436,33 +411,30 @@ class _ValidasiPageState extends State<ValidasiPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Baris 1: Kode Booking (sebagai judul utama)
+          Text(
+            peminjaman.kodeBooking,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8), // Jarak antara judul dan baris ID/Status
+          // Baris 2: Row untuk ID dan Status Badge (sejajar)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment:
+                CrossAxisAlignment.center, // Sejajarkan vertikal di tengah
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      peminjaman.kodeBooking,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'ID: ${peminjaman.id}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+              // Teks ID
+              Text(
+                'ID: ${peminjaman.id}',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12), // Jarak antara ID dan Status
+              // Status Badge (gunakan Flexible agar bisa wrap jika panjang)
               Flexible(
                 child: _buildStatusBadge(
                   peminjaman.status,
@@ -471,7 +443,9 @@ class _ValidasiPageState extends State<ValidasiPage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+
+          // --- AKHIR PERUBAHAN LAYOUT BARIS ID & STATUS ---
+          const SizedBox(height: 16), // Jarak ke detail berikutnya
           _buildDetailInfoRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
           const SizedBox(height: 8),
           _buildDetailInfoRow('Jam Kegiatan', peminjaman.jamKegiatan),
@@ -483,7 +457,7 @@ class _ValidasiPageState extends State<ValidasiPage> {
           Align(
             alignment: Alignment.centerRight,
             child: InkWell(
-              onTap: () => _goToProsesValidasi(peminjaman),
+              onTap: () => _navigateToDetail(peminjaman),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 18,
@@ -508,18 +482,19 @@ class _ValidasiPageState extends State<ValidasiPage> {
       ),
     );
   }
+  // --- AKHIR FUNGSI YANG DIPERBARUI LAYOUTNYA ---
 
   Widget _buildDetailInfoRow(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 120,
+          width: 120, // Adjust width as needed
           child: Text(
             label,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: Colors.grey, // Grey label color
             ),
           ),
         ),
@@ -535,49 +510,56 @@ class _ValidasiPageState extends State<ValidasiPage> {
     );
   }
 
-  // --- FUNGSI INI DIMODIFIKASI (HAPUS LOGIKA KONDISIONAL WARNA TEKS) ---
   Widget _buildStatusBadge(String status, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 15,
+        vertical: 8,
+      ), // Adjust padding
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(15), // Rounded corners
       ),
       child: Text(
         status,
         textAlign: TextAlign.center,
-        softWrap: true,
+        softWrap: true, // Allow text wrapping
         style: GoogleFonts.poppins(
-          color: Colors.white, // <-- Selalu putih
-          fontSize: 12,
+          color: Colors.white, // Always white for now
+          fontSize: 12, // Slightly smaller font size
           fontWeight: FontWeight.bold,
-          height: 1.2,
+          height: 1.2, // Adjust line height if wrapping occurs
         ),
       ),
     );
   }
-  // --- AKHIR MODIFIKASI ---
 
   Widget _buildHeaderAndCards() {
+    // Summary Card data is hardcoded for prototype
     return Stack(
-      clipBehavior: Clip.none,
+      clipBehavior: Clip.none, // Allow cards to overflow
       alignment: Alignment.topCenter,
       children: [
+        // Blue Header background
         Container(
-          height: 180,
+          height: 180, // Adjust height as needed
           decoration: const BoxDecoration(
-            color: Color(0xFF1c36d2),
+            color: Color(0xFF1c36d2), // Blue color
             borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(17),
+              bottomLeft: Radius.circular(17), // Rounded bottom corners
               bottomRight: Radius.circular(17),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.only(top: 50, left: 20),
+            // Add padding for the greeting text
+            padding: const EdgeInsets.only(
+              top: 50,
+              left: 20,
+            ), // Adjust top padding
             child: Align(
               alignment: Alignment.topLeft,
               child: Text(
-                'Hai, Rayan!',
+                'Hai, Rayan!', // Example name
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
@@ -587,8 +569,9 @@ class _ValidasiPageState extends State<ValidasiPage> {
             ),
           ),
         ),
+        // Positioned Summary Cards
         Positioned(
-          top: 130,
+          top: 130, // Position cards vertically
           left: 0,
           right: 0,
           child: Container(
@@ -596,9 +579,9 @@ class _ValidasiPageState extends State<ValidasiPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _summaryCard('Menunggu PIC', '3'),
-                _summaryCard('Ditolak PIC', '3'),
-                _summaryCard('Disetujui', '8'),
+                _summaryCard('Menunggu PIC', '3'), // Example data
+                _summaryCard('Ditolak PIC', '3'), // Example data
+                _summaryCard('Disetujui', '8'), // Example data
               ],
             ),
           ),
@@ -609,17 +592,17 @@ class _ValidasiPageState extends State<ValidasiPage> {
 
   Widget _summaryCard(String title, String count) {
     return Container(
-      width: (MediaQuery.of(context).size.width - 60) / 3,
+      width: (MediaQuery.of(context).size.width - 60) / 3, // Calculate width
       padding: const EdgeInsets.symmetric(vertical: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A000000),
+            color: Color(0x1A000000), // Shadow color with opacity
             spreadRadius: 2,
             blurRadius: 8,
-            offset: Offset(0, 4),
+            offset: Offset(0, 4), // Shadow position
           ),
         ],
       ),
@@ -634,7 +617,7 @@ class _ValidasiPageState extends State<ValidasiPage> {
           Text(
             count,
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 22, // Larger font size for count
               fontWeight: FontWeight.bold,
             ),
           ),

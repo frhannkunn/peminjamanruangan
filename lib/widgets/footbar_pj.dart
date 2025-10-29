@@ -1,11 +1,10 @@
-// File: lib/widgets/footbar_pj.dart (ICON/LABEL TAB PERTAMA DISAMAKAN DENGAN PIC)
+// File: lib/widgets/footbar_pj.dart (REFAKTOR BESAR)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../pj/home_pj.dart';
-import '../pj/detail_pengajuan_pj.dart';
-import '../pj/notification_pj.dart'; // Pastikan path dan nama file benar
-import '../pj/profile_pj.dart'; // Pastikan path dan nama file benar
+import '../pj/notification_pj.dart';
+import '../pj/profile_pj.dart';
 
 class FootbarPj extends StatefulWidget {
   const FootbarPj({super.key});
@@ -16,9 +15,6 @@ class FootbarPj extends StatefulWidget {
 
 class _FootbarPjState extends State<FootbarPj> {
   int _selectedIndex = 0;
-  PeminjamanPj? _selectedPeminjaman;
-
-  Function(String id, String newStatus)? _updateHomeDataCallback;
 
   late final List<Widget> _pages;
 
@@ -27,47 +23,15 @@ class _FootbarPjState extends State<FootbarPj> {
     super.initState();
     _pages = <Widget>[
       HomePjPage(
-        onPeminjamanSelected: _showDetailPage,
-        onDataUpdated: _setUpdateCallback,
       ),
       const NotificationPjPage(),
       const ProfilePjPage(),
     ];
   }
 
-  void _showDetailPage(PeminjamanPj peminjaman) {
-    setState(() {
-      _selectedPeminjaman = peminjaman;
-    });
-  }
-
-  void _navigateToHome({String? updatedId, String? newStatus}) {
-    if (updatedId != null &&
-        newStatus != null &&
-        _updateHomeDataCallback != null) {
-      _updateHomeDataCallback!(updatedId, newStatus);
-    }
-    setState(() {
-      _selectedPeminjaman = null;
-    });
-  }
-
-  void _setUpdateCallback(Function(String id, String newStatus) callback) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _updateHomeDataCallback = callback;
-      }
-    });
-  }
-
   void _onItemTapped(int index) {
     setState(() {
-      if (_selectedIndex != index) {
-        _navigateToHome();
-        _selectedIndex = index;
-      } else {
-        _navigateToHome();
-      }
+      _selectedIndex = index;
     });
   }
 
@@ -75,13 +39,11 @@ class _FootbarPjState extends State<FootbarPj> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: _selectedPeminjaman != null
-          ? DetailPengajuanPjPage(
-              peminjaman: _selectedPeminjaman!,
-              onFinish: (id, status) =>
-                  _navigateToHome(updatedId: id, newStatus: status),
-            )
-          : IndexedStack(index: _selectedIndex, children: _pages),
+      // --- LOGIKA BODY YANG JAUH LEBIH SEDERHANA ---
+      // Selalu tampilkan IndexedStack. Jangan pernah ganti dengan detail page.
+      body: IndexedStack(index: _selectedIndex, children: _pages),
+      // --- AKHIR PERUBAHAN BODY ---
+
       bottomNavigationBar: SafeArea(
         child: Container(
           height: 85,
@@ -101,13 +63,7 @@ class _FootbarPjState extends State<FootbarPj> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // --- PERUBAHAN DI SINI ---
-              _buildNavItem(
-                Icons.fact_check_outlined,
-                'Validasi',
-                0,
-              ), // Icon dan label diubah
-              // --- AKHIR PERUBAHAN ---
+              _buildNavItem(Icons.fact_check_outlined, 'Validasi', 0),
               _buildNavItem(Icons.notifications_none_outlined, 'Notifikasi', 1),
               _buildNavItem(Icons.account_circle_outlined, 'Profil', 2),
             ],
@@ -166,4 +122,4 @@ class _FootbarPjState extends State<FootbarPj> {
       ),
     );
   }
-} // Penutup class _FootbarPjState
+}
