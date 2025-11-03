@@ -215,6 +215,7 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: GridView.builder(
+                padding: EdgeInsets.zero, // jarak filter dan gambar
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
