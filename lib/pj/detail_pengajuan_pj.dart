@@ -1,4 +1,4 @@
-// File: lib/pj/detail_pengajuan_pj.dart (REFAKTOR AKHIR: LAYOUT PENGGUNA PJ)
+// File: lib/pj/detail_pengajuan_pj.dart (DIREVISI: PERBAIKAN TAMPILAN LIST PENGGUNA)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,15 +21,17 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
   String? _selectedApproval;
   final _komentarController = TextEditingController();
 
-  // --- DATA PENGGUNA YANG DIHARCODE ---
+  // --- DATA PENGGUNA BARU SESUAI PERMINTAAN (Dipastikan Konsisten) ---
   final Map<String, String> _userData = const {
-    'ID': '1',
-    'NIM': '43424111',
-    'Nama': 'Ahmad Sharoni',
+    'ID': '1234',
+    'Pengguna Ruangan': 'Ahmad Sahroni',
+    'Jenis Pengguna': 'Mahasiswa',
+    'ID Pengguna':
+        '434241121', // Diubah dari 'ID pengguna' menjadi 'ID Pengguna' agar seragam dengan Label
     'Nomor Workspace': 'GU.601.WM.01',
-    'Jenis Pengguna': 'Mahasiswa', // Tambahkan field ini agar bisa ditampilkan
+    'Tipe Workspace': 'NON PC',
   };
-  // --- AKHIR DATA PENGGUNA YANG DIHARCODE ---
+  // --- AKHIR DATA PENGGUNA BARU ---
 
   @override
   void dispose() {
@@ -37,7 +39,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     super.dispose();
   }
 
-  // Dialog "OK" (Logika Navigator.pop sudah benar)
+  // Dialog dan fungsi lainnya tetap sama...
+  // (Potongan kode tidak berubah)
+
   Future<void> _showSuccessDialog() async {
     return showDialog<void>(
       context: context,
@@ -261,7 +265,8 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  // --- INI ADALAH FUNGSI HEADER UTAMA ---
+  // Fungsi lainnya (_buildFormHeaderCard, _buildFormCard) tidak berubah...
+
   Widget _buildFormHeaderCard(String status, Color statusColor) {
     String chipText = status;
     if (status == "Menunggu Persetujuan Penanggung Jawab") {
@@ -325,7 +330,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
       ),
     );
   }
-  // --- AKHIR FUNGSI HEADER UTAMA ---
 
   Widget _buildFormCard(String status, Color statusColor) {
     return Container(
@@ -344,14 +348,8 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildReadOnlyField(
-            label: "Jenis Kegiatan",
-            value: widget.peminjaman.jenisKegiatan,
-          ),
-          _buildReadOnlyField(
-            label: "Nama Kegiatan",
-            value: widget.peminjaman.namaKegiatan,
-          ),
+          _buildReadOnlyField(label: "Nama Kegiatan", value: "PBL TRPL 318"),
+          _buildReadOnlyField(label: "Jenis Kegiatan", value: "Kerja Kelompok"),
           _buildReadOnlyField(
             label: "NIM / NIK / Unit Pengaju",
             value: "222331",
@@ -402,47 +400,23 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  // --- WIDGET LIST PENGGUNA DIPERBARUI ---
+  // --- PERBAIKAN: WIDGET LIST PENGGUNA DIPERBARUI (Logika Disederhanakan) ---
   Widget _buildUserListCard() {
-    // Kunci yang harus ditampilkan, sesuai urutan di gambar
+    // 1. Definisikan Kunci yang Ingin Ditampilkan (Urutan dan Label)
+    // Kunci di sini HARUS sama persis dengan kunci di Map _userData.
     final List<String> displayKeys = [
       'ID',
+      'Pengguna Ruangan',
       'Jenis Pengguna',
-      'NIM',
-      'Nama',
+      'ID Pengguna',
       'Nomor Workspace',
+      'Tipe Workspace',
     ];
-
-    // Ambil data yang ada di _userData dan petakan ke format tampilan
-    // Jika Jenis Pengguna tidak ada di _userData, kita asumsikan 'Mahasiswa'
-    final List<MapEntry<String, String>> finalEntries = displayKeys.map((key) {
-      String label = key;
-      String value = '-';
-
-      if (key == 'ID') {
-        label = 'ID';
-        value = _userData['ID'] ?? '-';
-      } else if (key == 'Jenis Pengguna') {
-        label = 'Jenis Pengguna';
-        // Asumsi Jenis Pengguna selalu Mahasiswa karena ada di _userData
-        value = _userData['Jenis Pengguna'] ?? 'Mahasiswa';
-      } else if (key == 'NIM') {
-        label = 'NIM / NIK';
-        value = _userData['NIM'] ?? '-';
-      } else if (key == 'Nama') {
-        label = 'Nama';
-        value = _userData['Nama'] ?? '-';
-      } else if (key == 'Nomor Workspace') {
-        label = 'No. Workspace';
-        value = _userData['Nomor Workspace'] ?? '-';
-      }
-
-      return MapEntry(label, value);
-    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ... (Container Header dan Search/TextField tidak berubah) ...
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -507,12 +481,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                         style: GoogleFonts.poppins(fontSize: 12),
                         decoration: InputDecoration(
                           hintText: "", // HINT TEXT DIHAPUS
-                          // --- PERBAIKAN: Hapus prefixIcon dan pindahkan ke suffixIcon ---
-                          // prefixIcon: const Icon(Icons.search, size: 18),
                           suffixIcon: const Icon(Icons.search, size: 18),
-                          // --- AKHIR PERBAIKAN ---
-
-                          // Border dan styling kotak
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -525,10 +494,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade400),
                           ),
-                          // Padding di dalam TextField
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
-                          ), // Tambahkan padding horizontal agar teks tidak menempel ke kiri
+                          ),
                         ),
                         onChanged: (value) {},
                       ),
@@ -539,15 +507,15 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
               // --- JARAK DARI PAGINATION/SEARCH KE LIST DATA ---
               const SizedBox(height: 20),
 
-              // --- TAMPILAN DATA SESUAI PERMINTAAN GAMBAR ---
+              // --- TAMPILAN DATA BARU (Mapping Langsung) ---
               Container(
-                padding: const EdgeInsets.all(
-                  8,
-                ), // Kurangi padding total container
+                padding: const EdgeInsets.all(8),
                 child: Column(
-                  // Gunakan MapEntry yang baru untuk menghasilkan baris
-                  children: finalEntries.map((entry) {
-                    return _buildUserDetailRow(entry.key, entry.value);
+                  children: displayKeys.map((key) {
+                    return _buildUserDetailRow(
+                      key, // Key juga berfungsi sebagai Label
+                      _userData[key] ?? '-', // Ambil nilai dari map
+                    );
                   }).toList(),
                 ),
               ),
@@ -559,6 +527,8 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
   // --- AKHIR PERBAIKAN LIST PENGGUNA ---
+
+  // Fungsi _buildApprovalSection, _buildReadOnlyField, _buildUserDetailRow tidak berubah...
 
   Widget _buildApprovalSection() {
     return _buildSectionCard(
@@ -736,7 +706,12 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
   }
 
   Widget _buildUserDetailRow(String label, String value) {
-    // --- METHOD INI SEKARANG DIGUNAKAN ULANG OLEH _buildUserListCard ---
+    // Label diubah jika diperlukan (untuk konsistensi label di UI)
+    String displayLabel = label;
+    if (label == 'ID Pengguna') {
+      displayLabel = 'ID Pengguna';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -744,7 +719,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           SizedBox(
             width: 140,
             child: Text(
-              label,
+              displayLabel,
               style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 13),
             ),
           ),
