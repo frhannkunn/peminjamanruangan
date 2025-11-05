@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../widgets/footbar_peminjaman.dart';
 import '../widgets/footbar_pj.dart';
 import '../widgets/footbar_pic.dart';
-
-// 1. 👇 IMPORT SERVICE YANG BARU DIBUAT
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -20,10 +18,10 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // 2. 👇 BUAT INSTANCE DARI AUTH SERVICE
+  // BUAT INSTANCE DARI AUTH SERVICE
   final AuthService _authService = AuthService();
 
-  // 3. 👇 FUNGSI _login() JADI JAUH LEBIH RINGKAS
+  // FUNGSI _login() JADI JAUH LEBIH RINGKAS
   Future<void> _login() async {
     String username = _usernameController.text;
     String password = _passwordController.text;
@@ -133,6 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                 controller: _usernameController,
                 decoration: InputDecoration(
                   hintText: "Enter your username",
+                  prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -151,6 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Enter your password",
+                  prefixIcon: const Icon(Icons.lock_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

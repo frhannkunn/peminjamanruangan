@@ -126,7 +126,7 @@ class DetailRuanganScreen extends StatelessWidget {
                         // ... Tombol Cek Ketersediaan
                         OutlinedButton(
                           onPressed: () {
-                            // TODO: Tambahkan logika untuk cek ketersediaan
+                            // Tambahkan logika untuk cek ketersediaan
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1565C0),
