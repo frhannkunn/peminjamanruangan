@@ -66,6 +66,7 @@ flutter:
     - assets/ruang1.jpg
     - assets/ruang2.jpg
     - assets/profile.png
+    - assets/room.jpg
 
   fonts:
     - family: Poppins
