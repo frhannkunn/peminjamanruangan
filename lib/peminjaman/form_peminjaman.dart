@@ -1,13 +1,18 @@
-// formpeminjaman.dart
+// form_peminjaman.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'tambah_pengguna.dart';
-import 'profil.dart'; 
+// ➖ HAPUS IMPORT 'profil.dart'
+// import 'profil.dart';
+// ➕ 1. GANTI DENGAN IMPORT USER SESSION
+import '../services/user_session.dart';
 
+// ➕ TAMBAHKAN BARIS INI TEPAT DI SINI
 enum FormStep { dataEntry, addUser }
 
+// ... (Class Booking tetap sama) ...
 class Booking {
   final String status;
   final String roomName;
@@ -27,6 +32,7 @@ class Booking {
 class FormPeminjamanScreen extends StatefulWidget {
   final String? preSelectedRoom;
   final Function(String? message)? onBack;
+  // Tipe data 'UserProfile' sekarang diambil dari user_session.dart
   final UserProfile userProfile;
 
   const FormPeminjamanScreen({
@@ -82,11 +88,13 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       _ruangan = widget.preSelectedRoom;
     }
 
-    _nimController.text = widget.userProfile.nim;
+    // ✏️ 2. REVISI BAGIAN INI
+    _nimController.text = widget.userProfile.nikOrNim; // ⬅️ Ganti dari .nim
     _namaPengajuController.text = widget.userProfile.nama;
     _emailController.text = widget.userProfile.email;
   }
 
+  // (Fungsi dispose tidak berubah)
   @override
   void dispose() {
     _nimController.dispose();
@@ -97,6 +105,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     super.dispose();
   }
 
+  // (Fungsi _getBookingsForDay tidak berubah)
   List<Booking> _getBookingsForDay(DateTime day, String roomName) {
     final normalizedDay = DateTime.utc(day.year, day.month, day.day);
 
@@ -139,6 +148,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     return bookingsForDay.where((b) => b.roomName == roomName).toList();
   }
 
+  // (Fungsi _onDaySelected tidak berubah)
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDate, selectedDay)) {
       setState(() {
@@ -152,6 +162,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     }
   }
 
+  // (Fungsi _pickDate tidak berubah)
   Future<void> _pickDate(BuildContext context) async {
     final date = await showDatePicker(
       context: context,
@@ -172,6 +183,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     }
   }
 
+  // (Fungsi _showSuccessDialog tidak berubah)
   Future<void> _showSuccessDialog(BuildContext context) async {
     return showDialog<void>(
       context: context,
@@ -239,31 +251,14 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
+  // (Fungsi _handleSubmit tidak berubah)
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
       _showSuccessDialog(context);
     }
   }
 
-  // (Fungsi _isFormDirty tidak lagi digunakan oleh _handleBackPress,
-  // tapi kita biarkan saja, mungkin berguna nanti)
-  // bool _isFormDirty() {
-  //   bool controllersDirty = _nimController.text != widget.userProfile.nim ||
-  //       _namaPengajuController.text != widget.userProfile.nama ||
-  //       _emailController.text != widget.userProfile.email ||
-  //       _namaKegiatanController.text.isNotEmpty;
-
-  //   bool dropdownsDirty = _jenisKegiatan != null ||
-  //       _penanggungJawab != null ||
-  //       _selectedDate != null ||
-  //       _jamMulai != null ||
-  //       _jamSelesai != null;
-    
-  //   bool roomDirty = _ruangan != null && _ruangan != widget.preSelectedRoom;
-
-  //   return controllersDirty || dropdownsDirty || roomDirty;
-  // }
-
+  // (Fungsi _showExitConfirmDialog tidak berubah)
   Future<void> _showExitConfirmDialog() async {
     return showDialog<void>(
       context: context,
@@ -281,7 +276,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.orange.shade300, width: 3)),
-                  child: Icon(Icons.priority_high_rounded, // <-- Icon sudah diperbaiki
+                  child: Icon(Icons.priority_high_rounded,
                       color: Colors.orange.shade600, size: 30),
                 ),
                 const SizedBox(height: 16),
@@ -327,7 +322,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                     ),
                     onPressed: () {
                       Navigator.of(dialogContext).pop();
-                      widget.onBack?.call(null); 
+                      widget.onBack?.call(null);
                     },
                     child: Text('Hapus Pengajuan',
                         style: GoogleFonts.poppins(
@@ -359,15 +354,13 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
-  // --- ✏️ PERUBAHAN DI SINI ✏️ ---
-  // Fungsi ini sekarang SELALU memanggil dialog,
-  // tidak peduli form kotor atau tidak.
+  // (Fungsi _handleBackPress tidak berubah)
   void _handleBackPress() {
-    // Selalu tampilkan dialog konfirmasi saat tombol back ditekan
     _showExitConfirmDialog();
   }
-  // --- AKHIR PERUBAHAN ---
 
+  // --- TIDAK ADA PERUBAHAN DESAIN DI BAWAH INI ---
+  // (Semua widget build Anda tidak berubah)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -382,7 +375,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed:
-              _handleBackPress, // <-- Logika baru sudah diterapkan di sini
+              _handleBackPress,
         ),
         centerTitle: true,
         title: Text(
@@ -401,8 +394,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildDataEntryStep(BuildContext context) {
-    // ... (Sisa kode _buildDataEntryStep tidak berubah) ...
-    // ... (Validasi, logika penguncian form, dll, semua tetap sama seperti sebelumnya) ...
     return Stack(
       children: [
         SingleChildScrollView(
@@ -587,7 +578,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 if (_ruangan != null) ...[
                   _buildCalendarSection(),
                   const SizedBox(height: 16),
-                ] else ... [
+                ] else ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -606,7 +597,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 _buildLabel('Jam Mulai'),
                 _buildDropdown(
                   value: _jamMulai,
@@ -720,7 +710,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
 
   Widget? _buildCustomDay(BuildContext context, DateTime day, DateTime focusedDay,
       {bool isSelected = false, bool isToday = false}) {
-    // ... (Fungsi ini tidak berubah) ...
     final isWeekend =
         day.weekday == DateTime.saturday || day.weekday == DateTime.sunday;
 
@@ -742,7 +731,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         textStyle =
             TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold);
       } else {
-        return null; 
+        return null;
       }
     } else if (isWeekend) {
       decoration = BoxDecoration(
@@ -767,11 +756,10 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildCalendarSection() {
-    // ... (Fungsi ini tidak berubah) ...
     if (_ruangan == null) {
-      return Container(); 
+      return Container();
     }
-    
+
     if (_selectedDate == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -853,7 +841,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildBookingList() {
-    // ... (Fungsi ini tidak berubah) ...
     final dayHeader = DateFormat('EEEE, d MMMM yyyy', 'id_ID')
         .format(_selectedDate!)
         .toUpperCase();
@@ -952,7 +939,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildAddUserStep(BuildContext context) {
-    // ... (Fungsi ini tidak berubah, logika Req 6 sudah ada di sini) ...
     return Column(
       children: [
         Padding(
@@ -1084,7 +1070,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildPenggunaCard(Pengguna pengguna, int index) {
-    // ... (Fungsi ini tidak berubah) ...
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1141,7 +1126,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildDetailRowCard(String label, String value) {
-    // ... (Fungsi ini tidak berubah) ...
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -1173,22 +1157,20 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildLabel(String text) {
-    // ... (Fungsi ini tidak berubah) ...
     return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
         ),
-      );
+      ),
+    );
   }
-  
+
   Widget _buildTextField({
-    // ... (Fungsi ini tidak berubah) ...
     required TextEditingController controller,
     String? hintText,
     TextInputType? keyboardType,
@@ -1232,7 +1214,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       );
 
   Widget _buildDropdown({
-    // ... (Fungsi ini tidak berubah) ...
     required String? value,
     required String hint,
     required List<String> items,
@@ -1275,26 +1256,25 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       );
 
   Widget _buildInfoRow(String label, String value) {
-    // ... (Fungsi ini tidak berubah) ...
     return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 90,
-              child: Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            Text(': ', style: GoogleFonts.poppins(fontSize: 13)),
-            Expanded(child: Text(value, style: GoogleFonts.poppins(fontSize: 13))),
-          ],
-        ),
-      );
+          ),
+          Text(': ', style: GoogleFonts.poppins(fontSize: 13)),
+          Expanded(child: Text(value, style: GoogleFonts.poppins(fontSize: 13))),
+        ],
+      ),
+    );
   }
 }

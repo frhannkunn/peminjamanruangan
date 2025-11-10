@@ -5,11 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../peminjaman/home_peminjaman.dart';
 import '../peminjaman/peminjaman.dart';
 import '../peminjaman/notifikasi.dart';
-// 💡 IMPORT INI SEKARANG JUGA MEMBAWA 'mockUserProfile'
-import '../peminjaman/profil.dart'; 
+import '../peminjaman/profil.dart';
 import '../peminjaman/detail_ruangan.dart';
 import '../peminjaman/form_peminjaman.dart';
-import '../models/room.dart'; 
+import '../models/room.dart';
+// ➕ 1. IMPORT USER SESSION
+import '../services/user_session.dart';
 
 class FootbarPeminjaman extends StatefulWidget {
   final String username;
@@ -29,18 +30,43 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   int _selectedIndex = 0;
   Room? _selectedRoom;
 
+  // ➕ 2. TAMBAHKAN STATE UNTUK PROFIL DAN LOADING
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true; // Kita beri nama beda agar tidak bingung
+
+  // ➕ 3. TAMBAHKAN INITSTATE UNTUK MEMUAT DATA USER
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // ➕ 4. BUAT FUNGSI UNTUK MEMUAT DATA USER (SAMA SEPERTI DI PROFIL)
+  Future<void> _loadUserProfile() async {
+    final profile = await UserSession.getUserProfile();
+    if (mounted) {
+      setState(() {
+        _userProfile = profile;
+        _isLoadingProfile = false;
+      });
+    }
+  }
+
+  // (Fungsi _handleRoomTap tidak berubah)
   void _handleRoomTap(Room roomData) {
     setState(() {
       _selectedRoom = roomData;
     });
   }
 
+  // (Fungsi _handleDetailBack tidak berubah)
   void _handleDetailBack() {
     setState(() {
       _selectedRoom = null;
     });
   }
 
+  // (Fungsi _handleFormBackFromHome tidak berubah)
   void _handleFormBackFromHome(String? message) {
     Navigator.of(context).pop();
 
@@ -73,26 +99,37 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     }
   }
 
-  
-
-  // ✏️ FUNGSI INI DIUBAH UNTUK MENGIRIM DATA PROFIL (REQ 1)
+  // ✏️ 5. FUNGSI INI SEKARANG DIPERBAIKI DENGAN NULL CHECK
   void _handleShowFormFromDetail(String roomName) {
+    // Tambahkan pengecekan
+    if (_isLoadingProfile) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tunggu, data profil sedang dimuat...")),
+      );
+      return;
+    }
+
+    if (_userProfile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal memuat data profil. Tidak bisa buka form.")),
+      );
+      return;
+    }
+
+    // Jika lolos pengecekan, baru navigasi
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => FormPeminjamanScreen(
           preSelectedRoom: roomName,
           onBack: _handleFormBackFromHome,
-          // ✅ 'mockUserProfile' ini sekarang adalah variabel
-          //    global dari file 'profil.dart'
-          userProfile: mockUserProfile, 
+          // ✅ Sekarang aman menggunakan _userProfile!
+          userProfile: _userProfile!,
         ),
       ),
     );
   }
-  
-  // --- 👆 PERUBAHAN SELESAI DI SINI 👆 ---
 
-
+  // (Fungsi _onItemTapped tidak berubah)
   void _onItemTapped(int index) {
     setState(() {
       _selectedRoom = null;
@@ -100,6 +137,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     });
   }
 
+  // (Fungsi _buildHomeTab tidak berubah)
   Widget _buildHomeTab() {
     if (_selectedRoom == null) {
       return HomePeminjaman(
@@ -116,6 +154,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     }
   }
 
+  // (Fungsi _buildPeminjamanTab tidak berubah)
   Widget _buildPeminjamanTab() {
     return const PeminjamanScreen();
   }
@@ -131,7 +170,10 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
-      // ... (Sisa build method dan _buildNavItem tidak berubah) ...
+      
+      // 
+      // 👇 TIDAK ADA PERUBAHAN DESAIN APAPUN DI BAWAH INI 👇
+      //
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(

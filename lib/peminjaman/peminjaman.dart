@@ -5,8 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'form_peminjaman.dart';
 import 'qr.dart';
-import 'profil.dart';
-import 'detail_peminjaman.dart'; // ➕ IMPORT FILE BARU
+// ➖ HAPUS IMPORT 'profil.dart' YANG LAMA
+// import 'profil.dart'; 
+import 'detail_peminjaman.dart';
+// ➕ 1. IMPORT USER SESSION
+import '../services/user_session.dart';
 
 // ... (Class PeminjamanData tetap sama) ...
 class PeminjamanData {
@@ -71,6 +74,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
 
+  // ... (List _peminjamanList Anda tidak berubah) ...
   final List<PeminjamanData> _peminjamanList = [
     PeminjamanData(
       id: '6601',
@@ -128,7 +132,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       jamSelesai: '11:00',
       isExpanded: false,
     ),
-    // ✏️ DATA INI DISESUAIKAN DENGAN GAMBAR
     PeminjamanData(
       id: '6699',
       ruangan: 'GU.601 - Workspace Virtual Reality',
@@ -159,12 +162,53 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     ),
   ];
 
+  // ➕ 2. TAMBAHKAN STATE UNTUK PROFIL
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true;
+
+  // ➕ 3. TAMBAHKAN INITSTATE UNTUK MEMUAT DATA USER
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // ➕ 4. BUAT FUNGSI UNTUK MEMUAT DATA USER
+  Future<void> _loadUserProfile() async {
+    final profile = await UserSession.getUserProfile();
+    if (mounted) {
+      setState(() {
+        _userProfile = profile;
+        _isLoadingProfile = false;
+      });
+    }
+  }
+
+  // ✏️ 5. REVISI FUNGSI _showForm UNTUK MENGECEK PROFIL
   void _showForm() {
+    // Cek dulu apakah profil sudah dimuat
+    if (_isLoadingProfile) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tunggu, data profil sedang dimuat...")),
+      );
+      return;
+    }
+
+    if (_userProfile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Gagal memuat data profil. Tidak bisa buka form.")),
+      );
+      return;
+    }
+
+    // Jika profil ada, baru tampilkan form
     setState(() {
       _isShowingForm = true;
     });
   }
 
+  // (Fungsi _hideForm tidak berubah)
   void _hideForm(String? message) {
     if (message != null && message.isNotEmpty) {
       if (mounted) {
@@ -191,6 +235,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
+  // (Fungsi _selectDate tidak berubah)
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
@@ -202,7 +247,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     }
   }
 
-  // Menu untuk 'Disetujui' dan 'Expired'
+  // (Fungsi _showDisetujuiMenu tidak berubah)
   void _showDisetujuiMenu(
       BuildContext context, PeminjamanData peminjaman) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -245,9 +290,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
-  // Menu untuk 'Draft' dan 'PIC' (Ada Edit)
-  void _showDraftMenu(
-      BuildContext context, PeminjamanData peminjaman) async {
+  // (Fungsi _showDraftMenu tidak berubah)
+  void _showDraftMenu(BuildContext context, PeminjamanData peminjaman) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
@@ -294,7 +338,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
-  // ➕ --- FUNGSI MENU BARU KHUSUS UNTUK 'PJ' ---
+  // (Fungsi _showPJMenu tidak berubah)
   void _showPJMenu(BuildContext context, PeminjamanData peminjaman) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
@@ -347,8 +391,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       }
     });
   }
-  // --- AKHIR FUNGSI BARU ---
 
+  // (Fungsi _getStatusColor tidak berubah)
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Disetujui':
@@ -368,6 +412,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     }
   }
 
+  // (Fungsi dispose tidak berubah)
   @override
   void dispose() {
     _searchController.dispose();
@@ -376,13 +421,53 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✏️ 6. REVISI BAGIAN BUILD INI
     if (_isShowingForm) {
+      // Jika state adalah "menampilkan form", kita cek dulu
+      // apakah profil sedang loading atau error.
+
+      if (_isLoadingProfile) {
+        // Tampilkan loading spinner jika profil belum siap
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (_userProfile == null) {
+        // Tampilkan error jika profil gagal dimuat
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => _hideForm(null),
+            ),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Gagal memuat data profil."),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => _hideForm(null),
+                  child: const Text("Kembali"),
+                )
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Jika profil sudah SIAP, tampilkan FormPeminjamanScreen
       return FormPeminjamanScreen(
         onBack: (message) => _hideForm(message),
-        userProfile: mockUserProfile,
+        userProfile: _userProfile!, // ⬅️ KIRIM DATA ASLI
       );
     }
 
+    // --- TIDAK ADA PERUBAHAN DESAIN DI BAWAH INI ---
+    // Jika tidak menampilkan form, tampilkan halaman daftar peminjaman
+    // (Kode Scaffold dan semua widget Anda tetap sama)
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -405,7 +490,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _showForm,
+                onPressed: _showForm, // ⬅️ Fungsi _showForm sudah di-update
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: Text("Ajukan Peminjaman",
                     style: GoogleFonts.poppins(
@@ -425,6 +510,18 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       ),
     );
   }
+
+  // (Sisa widget helper Anda TIDAK BERUBAH SAMA SEKALI)
+  // _buildSearchFilterCard()
+  // _buildDropdownGedung()
+  // _buildDropdownStatus()
+  // _buildDatePicker()
+  // _inputDecoration()
+  // _buildPeminjamanList()
+  // _buildPeminjamanCard()
+  // _buildCardDetailRow()
+  // _buildCardFooterButtons()
+  // ... (semua widget helper lainnya) ...
 
   Widget _buildSearchFilterCard() {
     return Container(
@@ -718,7 +815,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     );
   }
 
-  // --- ✏️ FUNGSI INI TELAH DI-UPDATE ---
   Widget _buildCardFooterButtons(PeminjamanData peminjaman) {
     switch (peminjaman.status) {
       case 'Disetujui':
@@ -747,7 +843,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
           ],
         );
 
-      // ✏️ CASE INI SEKARANG MEMANGGIL MENU BARU 'PJ'
       case 'Menunggu Persetujuan PJ':
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -787,7 +882,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
           ],
         );
 
-      // ✏️ CASE INI TETAP MENGGUNAKAN MENU 'DRAFT' (DENGAN EDIT)
       case 'Draft':
       case 'Menunggu Persetujuan PIC':
         return Row(

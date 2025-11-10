@@ -4,6 +4,7 @@ import '../widgets/footbar_peminjaman.dart';
 import '../widgets/footbar_pj.dart';
 import '../widgets/footbar_pic.dart';
 import '../services/auth_service.dart';
+import '../services/user_session.dart'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   // BUAT INSTANCE DARI AUTH SERVICE
   final AuthService _authService = AuthService();
 
-  // FUNGSI _login() JADI JAUH LEBIH RINGKAS
+  // FUNGSI _login()
   Future<void> _login() async {
     String username = _usernameController.text;
     String password = _passwordController.text;
@@ -34,9 +35,20 @@ class _LoginPageState extends State<LoginPage> {
       // Panggil service
       final user = await _authService.login(username, password);
 
+      // 
+      // ⬇️=================================================⬇️
+      //         ** INI ADALAH BARIS YANG DIPERBAIKI **
+      //    Menyimpan semua data user (NIK/NIM, Nama, Email, dll)
+      //    ke SharedPreferences agar bisa dibaca oleh halaman Profil.
+      //
+      await UserSession.saveUserData(user);
+      // ⬆️=================================================⬆️
+      //
+
       // Jika service sukses, 'user' akan berisi data
-      final String userRole = user['roles'];
-      final String userName = user['name'];
+      // Key 'roles' dan 'name' harus sesuai dengan JSON dari Laravel
+      final String userRole = user['roles'] ?? 'Mahasiswa'; // Default jika null
+      final String userName = user['name'] ?? 'User';      // Default jika null
 
       if (!mounted) return;
 
@@ -66,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const FootbarPic()),
         );
       } else {
+        // Default (jika rolenya tidak dikenal, arahkan ke suatu tempat)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const FootbarPic()),
@@ -87,11 +100,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Build method Anda SAMA PERSIS, tidak perlu diubah) ...
-    // ...
-    // ...
-    // ...
-    // ...
+    // (Build method Anda SAMA PERSIS, tidak perlu diubah)
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -100,8 +109,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ... (Desain Anda dari "Welcome to PENRU!" sampai password field) ...
-              // ... (Tidak ada yang diubah di sini) ...
               const SizedBox(height: 40),
               const Text(
                 "Welcome to PENRU!",
@@ -171,8 +178,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // 4. 👇 MODIFIKASI KECIL PADA TOMBOL LOGIN
               SizedBox(
                 width: double.infinity,
                 height: 50,
