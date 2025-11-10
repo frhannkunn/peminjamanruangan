@@ -175,7 +175,7 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
             const SizedBox(height: 20),
 
             // --- 3. INFO PIC RUANGAN ---
-            _buildPicInfo(),
+            _buildPicInfo(), // 👈 FUNGSI INI SEKARANG SUDAH DINAMIS
 
             const SizedBox(height: 20),
 
@@ -279,7 +279,14 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
 
   // --- (Helper Widgets) ---
   
+  // ❗️ INI BAGIAN YANG DIPERBARUI ❗️
   Widget _buildPicInfo() {
+    // Cek apakah data PIC ada di dalam list 'pics'
+    final bool hasPic = widget.ruanganData.pics.isNotEmpty;
+
+    // Ambil data PIC pertama jika ada
+    final picData = hasPic ? widget.ruanganData.pics.first : null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -306,24 +313,38 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
             ),
           ),
           const Divider(height: 20),
-          Text(
-            "Iqbal Afif, A.Md.Kom",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
+
+          // Tampilkan data PIC jika ada
+          if (hasPic && picData != null) ...[
+            Text(
+              picData.name, // 👈 DINAMIS
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "iqbal@polibatam.ac.id",
-            style: GoogleFonts.poppins(color: Colors.black54),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "WA: 82176549521",
-            style: GoogleFonts.poppins(
-              color: Colors.blue[600],
+            const SizedBox(height: 4),
+            Text(
+              picData.email, // 👈 DINAMIS
+              style: GoogleFonts.poppins(color: Colors.black54),
             ),
-          ),
+            const SizedBox(height: 4),
+            Text(
+              "WA: ${picData.whatsapp ?? '-'}", // 👈 DINAMIS (cek jika null)
+              style: GoogleFonts.poppins(
+                color: Colors.blue[600],
+              ),
+            ),
+          ] 
+          // Tampilkan pesan jika tidak ada PIC
+          else ...[
+            Text(
+              "PIC belum ditugaskan",
+              style: GoogleFonts.poppins(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ]
         ],
       ),
     );

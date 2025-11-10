@@ -3,15 +3,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart'; 
+// Pastikan path ke model Anda sudah benar
 import '../models/room.dart'; 
-// ➕ 1. TAMBAHKAN IMPORT INI
 import '../models/workspace.dart'; 
 
 class RoomService {
   
+  // URL base untuk API (10.0.2.2 adalah untuk emulator Android)
   final String baseUrl = 'http://10.0.2.2:8000/api'; 
 
-  // --- FUNGSI LAMA ANDA (SUDAH BENAR) ---
+  /**
+   * Mengambil semua ruangan, dikelompokkan berdasarkan gedung.
+   */
   Future<Map<String, List<Room>>> getGroupedRooms() async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('auth_token'); 
@@ -31,6 +34,7 @@ class RoomService {
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body);
+      // 'data' dari API /rooms adalah Map<String, dynamic>
       final data = body['data'] as Map<String, dynamic>;
 
       Map<String, List<Room>> groupedRooms = {};
@@ -52,8 +56,11 @@ class RoomService {
     }
   }
 
-  // --- 👇 2. TAMBAHKAN FUNGSI BARU INI (YANG HILANG) 👇 ---
-  
+  /**
+   * Mengambil semua workspace untuk satu ruangan (roomId).
+   * (FIXED v2) - Bisa menangani balasan API berupa List [...]
+   * ATAU balasan berupa Map {"data": [...]}.
+   */
   Future<List<Workspace>> getWorkspacesForRoom(int roomId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('auth_token');
@@ -62,7 +69,7 @@ class RoomService {
       throw Exception('Token tidak ditemukan. Silakan login ulang.');
     }
 
-    // 💡 Endpoint ini disesuaikan dengan ApiWorkspaceController.php Anda
+    // Panggil API dengan query parameter
     final String url = '$baseUrl/workspaces?rooms_id=$roomId';
 
     final response = await http.get(
@@ -75,16 +82,40 @@ class RoomService {
     );
 
     if (response.statusCode == 200) {
-      final body = json.decode(response.body);
+      // Decode body
+      final dynamic body = json.decode(response.body);
       
-      // 'data' dari API adalah List<dynamic>
-      final List listJson = body['data'] as List;
+      // =============================================
+      // ❗️ INI ADALAH LOGIKA YANG MEMPERBAIKI ERROR ANDA ❗️
+      // =============================================
+      
+      List<dynamic> listJson; // Variabel untuk menampung list
 
+      // Cek: Apakah 'body' adalah List? (Sesuai Postman Anda)
+      if (body is List) {
+        listJson = body;
+      } 
+      // Cek: Apakah 'body' adalah Map DAN punya key 'data'?
+      else if (body is Map<String, dynamic> && body.containsKey('data')) {
+        // Cek jika 'data'-nya null
+        if (body['data'] == null) {
+          return []; // Kembalikan list kosong
+        }
+        listJson = body['data'] as List;
+      }
+      // Jika 'body' null atau formatnya tidak dikenal
+      else {
+        return []; // Kembalikan list kosong
+      }
+      // =============================================
+      
+      // Ubah setiap item di 'listJson' menjadi objek Workspace
       return listJson.map((json) {
         return Workspace.fromJson(json as Map<String, dynamic>);
       }).toList();
 
     } else {
+      // Jika status code bukan 200 (misal 404 atau 500)
       try {
         final body = json.decode(response.body);
         throw Exception('Gagal memuat workspace: ${body['message']}');
@@ -93,5 +124,4 @@ class RoomService {
       }
     }
   }
-  // --- 👆 BATAS AKHIR FUNGSI BARU 👆 ---
 }

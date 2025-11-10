@@ -26,7 +26,7 @@ class UserProfile {
     return UserProfile(
       // Cek apakah API mengirim 'nik' (Dosen) atau 'nim' (Mahasiswa)
       nikOrNim: map['nik_nim'] ?? '',  // ⬅️ Ganti dari 'nik' ?? 'nim'
-      nama: map['name'] ?? '',       // ⬅️ Ganti dari 'nama'
+      nama: map['name'] ?? '',      // ⬅️ Ganti dari 'nama'
       email: map['email'] ?? '',
       unitKerja: map['unit_kerja'] ?? '', // Akan kosong jika Mahasiswa
       kodeDosen: map['kode_dosen'] ?? '', // Akan kosong jika Mahasiswa
