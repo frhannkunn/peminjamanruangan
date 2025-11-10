@@ -5,25 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../peminjaman/home_peminjaman.dart';
 import '../peminjaman/peminjaman.dart';
 import '../peminjaman/notifikasi.dart';
-import '../peminjaman/profil.dart'; // ➕ IMPORT PROFIL
+// 💡 IMPORT INI SEKARANG JUGA MEMBAWA 'mockUserProfile'
+import '../peminjaman/profil.dart'; 
 import '../peminjaman/detail_ruangan.dart';
 import '../peminjaman/form_peminjaman.dart';
-
-// ... (Class RuanganData tetap sama) ...
-class RuanganData {
-  final String title;
-  final String code;
-  final String type;
-  final String imageUrl;
-
-  RuanganData({
-    required this.title,
-    required this.code,
-    required this.type,
-    required this.imageUrl,
-  });
-}
-
+import '../models/room.dart'; 
 
 class FootbarPeminjaman extends StatefulWidget {
   final String username;
@@ -41,9 +27,9 @@ class FootbarPeminjaman extends StatefulWidget {
 
 class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
   int _selectedIndex = 0;
-  RuanganData? _selectedRoom;
+  Room? _selectedRoom;
 
-  void _handleRoomTap(RuanganData roomData) {
+  void _handleRoomTap(Room roomData) {
     setState(() {
       _selectedRoom = roomData;
     });
@@ -54,8 +40,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
       _selectedRoom = null;
     });
   }
-
-  // --- 👇 PERUBAHAN DIMULAI DI SINI 👇 ---
 
   void _handleFormBackFromHome(String? message) {
     Navigator.of(context).pop();
@@ -83,12 +67,13 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
         );
       }
 
-      // ✏️ LOGIKA INI TETAP BERFUNGSI UNTUK REQ 6
       if (message.contains('berhasil diajukan')) {
         _onItemTapped(1);
       }
     }
   }
+
+  
 
   // ✏️ FUNGSI INI DIUBAH UNTUK MENGIRIM DATA PROFIL (REQ 1)
   void _handleShowFormFromDetail(String roomName) {
@@ -97,13 +82,16 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
         builder: (context) => FormPeminjamanScreen(
           preSelectedRoom: roomName,
           onBack: _handleFormBackFromHome,
-          userProfile: mockUserProfile, // <-- Kirim data profil
+          // ✅ 'mockUserProfile' ini sekarang adalah variabel
+          //    global dari file 'profil.dart'
+          userProfile: mockUserProfile, 
         ),
       ),
     );
   }
-
+  
   // --- 👆 PERUBAHAN SELESAI DI SINI 👆 ---
+
 
   void _onItemTapped(int index) {
     setState(() {
@@ -134,7 +122,6 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Sisa build method dan _buildNavItem tidak berubah) ...
     final List<Widget> pages = [
       _buildHomeTab(),
       _buildPeminjamanTab(),
@@ -144,6 +131,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
+      // ... (Sisa build method dan _buildNavItem tidak berubah) ...
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(

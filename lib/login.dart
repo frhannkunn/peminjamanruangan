@@ -1,8 +1,9 @@
+// login.dart
 import 'package:flutter/material.dart';
 import '../widgets/footbar_peminjaman.dart';
 import '../widgets/footbar_pj.dart';
 import '../widgets/footbar_pic.dart';
-
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,85 +16,82 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  void _login() {
-  String username = _usernameController.text;
-  String password = _passwordController.text;
+  // BUAT INSTANCE DARI AUTH SERVICE
+  final AuthService _authService = AuthService();
 
-  // ... kode lainnya
-if (username == "mahasiswa" && password == "1234") {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Login berhasil ✅ (Mahasiswa)")),
-  );
+  // FUNGSI _login() JADI JAUH LEBIH RINGKAS
+  Future<void> _login() async {
+    String username = _usernameController.text;
+    String password = _passwordController.text;
 
-  Future.delayed(const Duration(milliseconds: 500), () {
-    Navigator.pushReplacement( // Sebaiknya gunakan pushReplacement agar tidak bisa kembali ke login
-      context,
-      MaterialPageRoute(
-        // BENAR: Ini akan membuka seluruh struktur halaman dengan footbar
-        builder: (context) => FootbarPeminjaman( 
-          username: username,
-          role: "Mahasiswa",
-        ),
-      ),
-    );
-  });
-}
-// ... kode lainnya
-   else if (username == "pj" && password == "1234") { 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Login berhasil ✅ (PJ)")),
-    );
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 700),
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const FootbarPj(),
-          transitionsBuilder:
-              (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
-      );
+    setState(() {
+      _isLoading = true;
     });
-  } else if (username == "pic" && password == "1234") {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Login berhasil sebagai PIC ✅")),
-    );
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 700),
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const FootbarPic(),
-          transitionsBuilder:
-              (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
+    try {
+      // Panggil service
+      final user = await _authService.login(username, password);
+
+      // Jika service sukses, 'user' akan berisi data
+      final String userRole = user['roles'];
+      final String userName = user['name'];
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login berhasil sebagai $userRole ✅")),
       );
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Username / Password salah ❌")),
-    );
+
+      // Arahkan berdasarkan role
+      if (userRole == 'Mahasiswa') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FootbarPeminjaman(
+              username: userName,
+              role: userRole,
+            ),
+          ),
+        );
+      } else if (userRole == 'Laboran Jurusan') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const FootbarPj()),
+        );
+      } else if (userRole == 'Dosen') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const FootbarPic()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const FootbarPic()),
+        );
+      }
+    } catch (e) {
+      // Tangkap error yang dilempar dari service
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        // Tampilkan pesan error dari service
+        SnackBar(content: Text(e.toString().replaceAll("Exception: ", ""))),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
+    // ... (Build method Anda SAMA PERSIS, tidak perlu diubah) ...
+    // ...
+    // ...
+    // ...
+    // ...
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -102,6 +100,8 @@ if (username == "mahasiswa" && password == "1234") {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ... (Desain Anda dari "Welcome to PENRU!" sampai password field) ...
+              // ... (Tidak ada yang diubah di sini) ...
               const SizedBox(height: 40),
               const Text(
                 "Welcome to PENRU!",
@@ -122,8 +122,6 @@ if (username == "mahasiswa" && password == "1234") {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Username field
               const Text(
                 "Username",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -133,6 +131,7 @@ if (username == "mahasiswa" && password == "1234") {
                 controller: _usernameController,
                 decoration: InputDecoration(
                   hintText: "Enter your username",
+                  prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -141,8 +140,6 @@ if (username == "mahasiswa" && password == "1234") {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Password field
               const Text(
                 "Password",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -153,6 +150,7 @@ if (username == "mahasiswa" && password == "1234") {
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: "Enter your password",
+                  prefixIcon: const Icon(Icons.lock_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -174,27 +172,39 @@ if (username == "mahasiswa" && password == "1234") {
               ),
               const SizedBox(height: 30),
 
-              // Login button
+              // 4. 👇 MODIFIKASI KECIL PADA TOMBOL LOGIN
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _login,
+                  // Nonaktifkan tombol saat loading
+                  onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A39D9), // biru
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "Masuk",
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      // Tampilkan loading spinner
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      // Tampilkan teks jika tidak loading
+                      : const Text(
+                          "Masuk",
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

@@ -16,7 +16,7 @@ class QrScreen extends StatelessWidget {
     final String waktuPinjam =
         "${DateFormat('dd MMMM yyyy').format(peminjaman.tanggalPinjam)} | ${peminjaman.jamMulai} - ${peminjaman.jamSelesai}";
 
-    // --- TODO: Data Hardcoded ---
+    // --- Data Hardcoded ---
     // Data ini tidak ada di class PeminjamanData Anda.
     // Ganti string hardcoded ini dengan data asli jika sudah Anda miliki.
     const String peminjamHardcoded = "18646 - Jtsoo";
@@ -101,7 +101,7 @@ class QrScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Implementasi fungsi Unduh QR Code
+                      // Implementasi fungsi Unduh QR Code
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0D47A1),

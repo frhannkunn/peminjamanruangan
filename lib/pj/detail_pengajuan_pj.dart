@@ -706,7 +706,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
   }
 
   Widget _buildUserDetailRow(String label, String value) {
-    // Label diubah jika diperlukan (untuk konsistensi label di UI)
     String displayLabel = label;
     if (label == 'ID Pengguna') {
       displayLabel = 'ID Pengguna';

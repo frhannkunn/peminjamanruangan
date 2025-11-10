@@ -1,37 +1,20 @@
+// peminjaman/detail_ruangan.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../widgets/footbar_peminjaman.dart';
-// Hapus import form_peminjaman karena tidak akan melakukan navigasi dari sini
-// import 'form_peminjaman.dart';
 
-// ... (Sisa kode Workspace tetap sama) ...
-class Workspace {
-  final String id;
-  final String nomorWs;
-  final String availability;
-  final String tipeWs;
+// ➕ 1. IMPORT MODEL DAN SERVICE YANG KITA BUTUHKAN
+import '../models/room.dart';
+import '../models/workspace.dart'; // Model dari API (WS-01, WS-02)
+import '../services/room_service.dart'; // Service yang mengambil list workspace
 
-  Workspace({
-    required this.id,
-    required this.nomorWs,
-    required this.availability,
-    required this.tipeWs,
-  });
-}
-
-final List<Workspace> workspaceList = [
-  Workspace(id: "391", nomorWs: "WS.TA.12.3B.01", availability: "Tersedia", tipeWs: "NON PC"),
-  Workspace(id: "392", nomorWs: "WS.TA.12.3B.02", availability: "Tersedia", tipeWs: "NON PC"),
-  Workspace(id: "393", nomorWs: "WS.TA.12.3B.03", availability: "Tersedia", tipeWs: "NON PC"),
-  Workspace(id: "394", nomorWs: "WS.TA.12.3B.04", availability: "Tersedia", tipeWs: "NON PC"),
-  Workspace(id: "395", nomorWs: "WS.TA.12.3B.05", availability: "Tersedia", tipeWs: "NON PC"),
-  Workspace(id: "396", nomorWs: "WS.TA.12.3B.06", availability: "Tersedia", tipeWs: "NON PC"),
-];
+// ❌ 2. 'class Workspace' DAN 'final List<Workspace> workspaceList'
+//    (Data statis dari file lama Anda sudah dihapus)
 
 
-class DetailRuanganScreen extends StatelessWidget {
-  final RuanganData ruanganData;
-  // PERBAIKAN 1: Jadikan 'onBack' required
+// ♻️ 3. DIUBAH MENJADI STATEFULWIDGET
+class DetailRuanganScreen extends StatefulWidget {
+  final Room ruanganData;
   final VoidCallback onBack;
   final Function(String)? onShowForm;
 
@@ -43,13 +26,41 @@ class DetailRuanganScreen extends StatelessWidget {
   });
 
   @override
+  State<DetailRuanganScreen> createState() => _DetailRuanganScreenState();
+}
+
+// ♻️ 4. CLASS 'STATE' BARU UNTUK MENAMPUNG LOGIKA
+class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
+  // ➕ 5. STATE UNTUK SERVICE DAN FUTURE
+  late final RoomService _roomService;
+  Future<List<Workspace>>? _workspacesFuture;
+
+  // ➕ 6. FUNGSI 'initState' (DIPANGGIL SAAT WIDGET DIBUAT)
+  @override
+  void initState() {
+    super.initState();
+    _roomService = RoomService(); // Sekarang 'RoomService' dikenali
+    // ➕ 7. PANGGIL API SAAT WIDGET DIBUAT
+    _loadWorkspaces();
+  }
+
+  // ➕ 8. FUNGSI UNTUK MEMUAT DATA WORKSPACE
+  void _loadWorkspaces() {
+    setState(() {
+      // Panggil service dari 'room_service.dart'
+      _workspacesFuture = _roomService.getWorkspacesForRoom(widget.ruanganData.id);
+    });
+  }
+
+  // ♻️ 9. FUNGSI 'build' SEKARANG ADA DI DALAM 'STATE'
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: onBack,
+          onPressed: widget.onBack, // Menggunakan 'widget.' untuk akses
         ),
         title: Text(
           "Detail Ruangan",
@@ -64,17 +75,24 @@ class DetailRuanganScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ... (Bagian gambar dan info ruangan tetap sama) ...
+            // --- 1. GAMBAR RUANGAN ---
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
-                ruanganData.imageUrl,
+                "assets/room.jpg", // Ganti dengan gambar default
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: 200,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                ),
               ),
             ),
             const SizedBox(height: 16),
+
+            // --- 2. INFO RUANGAN & TOMBOL ---
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -91,19 +109,20 @@ class DetailRuanganScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfo("Lokasi Ruangan", ruanganData.title),
-                  _buildInfo("Kode Ruangan", ruanganData.code),
-                  _buildInfo("Tipe Ruangan", ruanganData.type),
+                  _buildInfo("Gedung", widget.ruanganData.building),
+                  _buildInfo("Nama Ruangan", widget.ruanganData.name),
+                  _buildInfo("Kode Ruangan", widget.ruanganData.code),
+                  _buildInfo("Kapasitas", "${widget.ruanganData.capacity} orang"),
                   const SizedBox(height: 16),
                   Center(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // TOMBOL BORANG RUANGAN
                         ElevatedButton(
-                          // PERBAIKAN 2: Hapus Navigator.push, cukup panggil callback
                           onPressed: () {
-                            if (onShowForm != null) {
-                              onShowForm!(ruanganData.title);
+                            if (widget.onShowForm != null) {
+                              widget.onShowForm!(widget.ruanganData.name);
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -122,11 +141,13 @@ class DetailRuanganScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+                        
                         const SizedBox(height: 8),
-                        // ... Tombol Cek Ketersediaan
+
+                        // ➕ TOMBOL CEK KETERSEDIAAN (DIKEMBALIKAN)
                         OutlinedButton(
                           onPressed: () {
-                            // TODO: Tambahkan logika untuk cek ketersediaan
+                            // Tambahkan logika untuk cek ketersediaan
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1565C0),
@@ -150,54 +171,15 @@ class DetailRuanganScreen extends StatelessWidget {
                 ],
               ),
             ),
+            
             const SizedBox(height: 20),
-            // ... (Sisa kode untuk PIC dan List Workspace tetap sama) ...
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  )
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "PIC Ruangan",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const Divider(height: 20),
-                  Text(
-                    "Iqbal Afif, A.Md.Kom",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "iqbal@polibatam.ac.id",
-                    style: GoogleFonts.poppins(color: Colors.black54),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "WA: 82176549521",
-                    style: GoogleFonts.poppins(color: Colors.black54),
-                  ),
-                ],
-              ),
-            ),
+
+            // --- 3. INFO PIC RUANGAN ---
+            _buildPicInfo(),
+
             const SizedBox(height: 20),
+
+            // --- 4. LIST WORKSPACE (DINAMIS) ---
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -222,30 +204,70 @@ class DetailRuanganScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "Pilih workspace sesuai kebutuhan dan jadwalkan pemakaianmu sekarang.",
+                    "Temukan workspace yang mendukung produktivitasmu.",
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search",
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    ),
+                  
+                  // (Tambahkan Search bar Anda di sini jika ada)
+
+                  // ♻️ FUTUREBUILDER UNTUK MENAMPILKAN DATA
+                  FutureBuilder<List<Workspace>>(
+                    future: _workspacesFuture, // Menggunakan state future
+                    builder: (context, snapshot) {
+                      // Tampilkan Loading
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+
+                      // Tampilkan Error
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Text(
+                              'Gagal memuat workspace:\n${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: Colors.red[700]),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final List<Workspace> workspaces = snapshot.data ?? [];
+
+                      // Tampilkan jika kosong
+                      if (workspaces.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Text(
+                              'Workspace belum di buat PIC ruangan',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: Colors.grey[600]),
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Bangun list jika data ada
+                      return Column(
+                        children: [
+                          _buildWorkspaceHeader(),
+                          const Divider(),
+                          ...workspaces.map((ws) => _buildWorkspaceRow(ws, context)),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  _buildWorkspaceHeader(),
-                  const Divider(),
-                  ...workspaceList.map((ws) => _buildWorkspaceRow(ws, context)),
                 ],
               ),
             ),
@@ -254,7 +276,59 @@ class DetailRuanganScreen extends StatelessWidget {
       ),
     );
   }
-  // ... (Sisa fungsi helper _buildInfo, _buildWorkspaceRow, dll tetap sama) ...
+
+  // --- (Helper Widgets) ---
+  
+  Widget _buildPicInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "PIC Ruangan",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const Divider(height: 20),
+          Text(
+            "Iqbal Afif, A.Md.Kom",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "iqbal@polibatam.ac.id",
+            style: GoogleFonts.poppins(color: Colors.black54),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "WA: 82176549521",
+            style: GoogleFonts.poppins(
+              color: Colors.blue[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
   Widget _buildInfo(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -310,25 +384,28 @@ class DetailRuanganScreen extends StatelessWidget {
   }
   
   Widget _buildWorkspaceRow(Workspace ws, BuildContext context) {
+    final bool isTersedia = ws.availability.toLowerCase() == 'tersedia';
+    final Color availColor = isTersedia ? Colors.green.shade800 : Colors.red.shade800;
+    final Color availBgColor = isTersedia ? Colors.green.shade100 : Colors.red.shade100;
+    
+    final bool isNonPc = ws.tipeWs.toLowerCase() == 'non pc';
+    final Color tipeColor = isNonPc ? Colors.purple.shade800 : Colors.orange.shade800;
+    final Color tipeBgColor = isNonPc ? Colors.purple.shade100 : Colors.orange.shade100;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(ws.id, style: GoogleFonts.poppins(fontSize: 12)),
+          Text(ws.id.toString(), style: GoogleFonts.poppins(fontSize: 12)),
           Text(ws.nomorWs, style: GoogleFonts.poppins(fontSize: 12)),
-          _buildStatusChip(ws.availability, Colors.green.shade100, Colors.green.shade800),
-          _buildStatusChip(ws.tipeWs, Colors.purple.shade100, Colors.purple.shade800),
+          _buildStatusChip(ws.availability, availBgColor, availColor),
+          _buildStatusChip(ws.tipeWs, tipeBgColor, tipeColor),
           SizedBox(
             height: 30,
             child: ElevatedButton(
               onPressed: () {
-                // DI SINI JUGA JANGAN GUNAKAN NAVIGATOR.PUSH
-                // Mungkin bisa diubah untuk menampilkan detail workspace atau langsung ke form
-                // Untuk sekarang, kita samakan dengan tombol utama: panggil onShowForm
-                if (onShowForm != null) {
-                  onShowForm!(ruanganData.title);
-                }
+                // 💡 NANTI KITA AKAN ATUR NAVIGASI DI SINI
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade100,

@@ -1,10 +1,12 @@
-// peminjaman.dart
+// lib/peminjaman/peminjaman.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'form_peminjaman.dart';
 import 'qr.dart';
-import 'profil.dart'; // ➕ IMPORT PROFIL UNTUK DAPATKAN MOCK DATA
+import 'profil.dart';
+import 'detail_peminjaman.dart'; // ➕ IMPORT FILE BARU
 
 // ... (Class PeminjamanData tetap sama) ...
 class PeminjamanData {
@@ -54,7 +56,6 @@ class PeminjamanData {
   }
 }
 
-
 class PeminjamanScreen extends StatefulWidget {
   const PeminjamanScreen({super.key});
 
@@ -70,26 +71,39 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
 
-  // ... (List data dummy _peminjamanList tetap sama) ...
   final List<PeminjamanData> _peminjamanList = [
     PeminjamanData(
+      id: '6601',
+      ruangan: 'Lab Basis Data (TA.10.1)',
+      status: 'Peminjaman Expired',
+      penanggungJawab: 'Dosen C',
+      jenisKegiatan: 'Praktikum',
+      namaKegiatan: 'Praktikum KBD',
+      namaPengaju: 'Mahasiswa Y',
+      tanggalPinjam: DateTime(2025, 10, 10),
+      totalPeminjam: 20,
+      jamMulai: '09:00',
+      jamSelesai: '11:00',
+      isExpanded: false,
+    ),
+    PeminjamanData(
       id: '6608',
-      ruangan: 'TA.XII.4', // Sesuai gambar
+      ruangan: 'TA.XII.4',
       status: 'Disetujui',
-      penanggungJawab: 'Gilang Bagus', // Sesuai gambar
-      jenisKegiatan: 'Perkuliahan', // Sesuai gambar
+      penanggungJawab: 'Gilang Bagus',
+      jenisKegiatan: 'Perkuliahan',
       namaKegiatan: 'PBL TRPL318',
       namaPengaju: 'Gilang Bagus',
       tanggalPinjam: DateTime(2025, 10, 16),
-      totalPeminjam: 2, // Sesuai gambar
+      totalPeminjam: 2,
       jamMulai: '08:00',
       jamSelesai: '10:00',
-      isExpanded: false, // Default tertutup
+      isExpanded: false,
     ),
     PeminjamanData(
       id: '6607',
-      ruangan: 'TA.XII.3', // Sesuai gambar
-      status: 'Ditolak', // Sesuai gambar
+      ruangan: 'TA.XII.3',
+      status: 'Ditolak',
       penanggungJawab: 'Dosen B',
       jenisKegiatan: 'Rapat',
       namaKegiatan: 'Rapat Tim',
@@ -98,40 +112,41 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       totalPeminjam: 5,
       jamMulai: '13:00',
       jamSelesai: '14:00',
-      isExpanded: true, // Sesuai gambar (panah ke atas)
+      isExpanded: true,
     ),
     PeminjamanData(
-      id: '6608', // ID bisa sama jika merujuk pada pengajuan yg sama
-      ruangan: 'TA.XII.4', // Sesuai gambar
-      status: 'Draft', // Sesuai gambar
-      penanggungJawab: '', // Sesuai gambar (kosong)
-      jenisKegiatan: '', // Sesuai gambar (kosong)
+      id: '6608',
+      ruangan: 'TA.XII.4',
+      status: 'Draft',
+      penanggungJawab: '',
+      jenisKegiatan: '',
       namaKegiatan: 'Belum Diisi',
       namaPengaju: 'Gilang Bagus',
       tanggalPinjam: DateTime(2025, 10, 18),
-      totalPeminjam: 0, // Sesuai gambar (tidak tampil)
+      totalPeminjam: 0,
       jamMulai: '10:00',
       jamSelesai: '11:00',
-      isExpanded: false, // Default tertutup
+      isExpanded: false,
     ),
+    // ✏️ DATA INI DISESUAIKAN DENGAN GAMBAR
     PeminjamanData(
       id: '6699',
-      ruangan: 'Workspace (TA.12.3b)',
-      status: 'Menunggu Persetujuan PJ', // Sesuai permintaan
-      penanggungJawab: 'Dosen A',
+      ruangan: 'GU.601 - Workspace Virtual Reality',
+      status: 'Menunggu Persetujuan PJ',
+      penanggungJawab: 'Gilang bagus Ramadhan',
       jenisKegiatan: 'Perkuliahan',
-      namaKegiatan: 'PBL TRPL318',
-      namaPengaju: 'Gilang Bagus',
-      tanggalPinjam: DateTime(2025, 10, 17),
+      namaKegiatan: 'PBL TRPL 218',
+      namaPengaju: 'Gilang bagus Ramadhan',
+      tanggalPinjam: DateTime(2025, 9, 18),
       totalPeminjam: 3,
-      jamMulai: '10:00',
-      jamSelesai: '11:00',
+      jamMulai: '07:50',
+      jamSelesai: '12:00',
       isExpanded: false,
     ),
     PeminjamanData(
       id: '6700',
       ruangan: 'Lab IoT (GU.3.1)',
-      status: 'Menunggu Persetujuan PIC', // Sesuai permintaan
+      status: 'Menunggu Persetujuan PIC',
       penanggungJawab: 'Dosen C',
       jenisKegiatan: 'Praktikum',
       namaKegiatan: 'Praktikum IoT',
@@ -144,8 +159,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     ),
   ];
 
-
-  // ✏️ DIUBAH UNTUK MENGIRIM DATA PROFIL (REQ 1)
   void _showForm() {
     setState(() {
       _isShowingForm = true;
@@ -162,7 +175,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               style: GoogleFonts.poppins(
                   color: Colors.black87, fontWeight: FontWeight.w500),
             ),
-            backgroundColor: const Color(0xFFE6F4EA), // Warna hijau muda
+            backgroundColor: const Color(0xFFE6F4EA),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
             shape: RoundedRectangleBorder(
@@ -178,7 +191,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
-  // ... (Sisa fungsi _selectDate, _showDisetujuiMenu, _getStatusColor, dispose tidak berubah) ...
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
         context: context,
@@ -190,6 +202,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     }
   }
 
+  // Menu untuk 'Disetujui' dan 'Expired'
   void _showDisetujuiMenu(
       BuildContext context, PeminjamanData peminjaman) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -202,8 +215,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         offset.dx,
         offset.dy + size.height,
         offset.dx + size.width,
-        offset.dy +
-            size.height * 2,
+        offset.dy + size.height * 2,
       ),
       items: [
         PopupMenuItem(
@@ -233,12 +245,118 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     });
   }
 
+  // Menu untuk 'Draft' dan 'PIC' (Ada Edit)
+  void _showDraftMenu(
+      BuildContext context, PeminjamanData peminjaman) async {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final Size size = renderBox.size;
+
+    await showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height,
+        offset.dx + size.width,
+        offset.dy + size.height * 2,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'detail',
+          child: Text('Detail', style: GoogleFonts.poppins()),
+        ),
+        PopupMenuItem(
+          value: 'edit',
+          child: Text('Edit', style: GoogleFonts.poppins()),
+        ),
+        PopupMenuItem(
+          value: 'qr',
+          child: Text('QR Code', style: GoogleFonts.poppins()),
+        ),
+      ],
+      elevation: 8.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ).then((value) {
+      if (value == 'detail') {
+        print("Navigasi ke Detail Screen (Belum dibuat)");
+      } else if (value == 'edit') {
+        print("Aksi untuk Edit (Belum dibuat)");
+      } else if (value == 'qr') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QrScreen(peminjaman: peminjaman),
+          ),
+        );
+      }
+    });
+  }
+
+  // ➕ --- FUNGSI MENU BARU KHUSUS UNTUK 'PJ' ---
+  void _showPJMenu(BuildContext context, PeminjamanData peminjaman) async {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final Size size = renderBox.size;
+
+    await showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height,
+        offset.dx + size.width,
+        offset.dy + size.height * 2,
+      ),
+      items: [
+        // Detail, Edit dan QR Code
+        PopupMenuItem(
+          value: 'detail',
+          child: Text('Detail', style: GoogleFonts.poppins()),
+        ),
+        PopupMenuItem(
+          value: 'edit',
+          child: Text('Edit', style: GoogleFonts.poppins()),
+        ),
+        PopupMenuItem(
+          value: 'qr',
+          child: Text('QR Code', style: GoogleFonts.poppins()),
+        ),
+      ],
+      elevation: 8.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ).then((value) {
+      if (value == 'detail') {
+        // 🚀 NAVIGASI KE SCREEN BARU
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                DetailPeminjamanScreen(peminjaman: peminjaman),
+          ),
+        );
+      } else if (value == 'qr') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QrScreen(peminjaman: peminjaman),
+          ),
+        );
+      }
+    });
+  }
+  // --- AKHIR FUNGSI BARU ---
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Disetujui':
         return Colors.green;
       case 'Ditolak':
         return Colors.red;
+      case 'Peminjaman Expired':
+        return const Color(0xFFE91E63);
       case 'Draft':
         return const Color(0xFFF9A825);
       case 'Menunggu Persetujuan PJ':
@@ -256,19 +374,16 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     if (_isShowingForm) {
-      // ✏️ KIRIM DATA PROFIL KE FORM (REQ 1)
       return FormPeminjamanScreen(
         onBack: (message) => _hideForm(message),
-        userProfile: mockUserProfile, // <-- Kirim data profil
+        userProfile: mockUserProfile,
       );
     }
 
     return Scaffold(
-      // ... (Sisa UI Scaffold, _buildSearchFilterCard, dropdown, datepicker, _inputDecoration, _buildPeminjamanList, _buildPeminjamanCard, _buildCardDetailRow, _buildCardFooterButtons tidak berubah) ...
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
@@ -380,7 +495,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             'Disetujui',
             'Ditolak',
             'Menunggu Persetujuan PJ',
-            'Menunggu Persetujuan PIC'
+            'Menunggu Persetujuan PIC',
+            'Peminjaman Expired'
           ]
               .map((String value) => DropdownMenuItem<String>(
                   value: value,
@@ -530,6 +646,9 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: Chip(
+                avatar: peminjaman.status == 'Peminjaman Expired'
+                    ? const Icon(Icons.close, color: Colors.white, size: 16)
+                    : null,
                 label: Text(
                   peminjaman.status,
                   style: GoogleFonts.poppins(
@@ -599,9 +718,11 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     );
   }
 
+  // --- ✏️ FUNGSI INI TELAH DI-UPDATE ---
   Widget _buildCardFooterButtons(PeminjamanData peminjaman) {
     switch (peminjaman.status) {
       case 'Disetujui':
+      case 'Peminjaman Expired':
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -609,6 +730,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               builder: (BuildContext buttonContext) {
                 return ElevatedButton(
                   onPressed: () {
+                    // Ini menu 'Disetujui' (Detail, QR)
                     _showDisetujuiMenu(buttonContext, peminjaman);
                   },
                   style: ElevatedButton.styleFrom(
@@ -624,8 +746,49 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             ),
           ],
         );
-      case 'Draft':
+
+      // ✏️ CASE INI SEKARANG MEMANGGIL MENU BARU 'PJ'
       case 'Menunggu Persetujuan PJ':
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                // Aksi untuk Batalkan Pengajuan
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text("Batalkan Pengajuan",
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, color: Colors.white)),
+            ),
+            const SizedBox(width: 8),
+            Builder(
+              builder: (BuildContext buttonContext) {
+                return ElevatedButton(
+                  onPressed: () {
+                    // 🚀 MEMANGGIL FUNGSI MENU BARU
+                    _showPJMenu(buttonContext, peminjaman);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[800],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text("Detail",
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, color: Colors.white)),
+                );
+              },
+            ),
+          ],
+        );
+
+      // ✏️ CASE INI TETAP MENGGUNAKAN MENU 'DRAFT' (DENGAN EDIT)
+      case 'Draft':
       case 'Menunggu Persetujuan PIC':
         return Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -644,21 +807,27 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                       fontWeight: FontWeight.w600, color: Colors.white)),
             ),
             const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                // Aksi untuk Edit
+            Builder(
+              builder: (BuildContext buttonContext) {
+                return ElevatedButton(
+                  onPressed: () {
+                    // Memanggil menu 'Draft' (Detail, Edit, QR)
+                    _showDraftMenu(buttonContext, peminjaman);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[800],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text("Detail",
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, color: Colors.white)),
+                );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[800],
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text("Edit",
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ],
         );
+
       case 'Ditolak':
       default:
         return const SizedBox.shrink();
