@@ -100,7 +100,7 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
               decoration: const BoxDecoration(
-                color: Color(0xFF5B7BFF),
+                color: Color(0xFF1c36d2),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
@@ -428,7 +428,7 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5B7BFF),
+                        color: const Color(0xFF0B4AF5),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(

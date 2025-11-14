@@ -6,10 +6,13 @@ import 'package:intl/intl.dart';
 import 'form_peminjaman.dart';
 import 'qr.dart';
 // ➖ HAPUS IMPORT 'profil.dart' YANG LAMA
-// import 'profil.dart'; 
+// import 'profil.dart';
 import 'detail_peminjaman.dart';
 // ➕ 1. IMPORT USER SESSION
 import '../services/user_session.dart';
+// ➕ IMPORT MODEL Pengguna DARI FILE 'tambah_pengguna.dart'
+import 'tambah_pengguna.dart';
+
 
 // ... (Class PeminjamanData tetap sama) ...
 class PeminjamanData {
@@ -74,8 +77,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
 
-  // ... (List _peminjamanList Anda tidak berubah) ...
-  final List<PeminjamanData> _peminjamanList = [
+  // ✏️ JADIKAN LIST INI TIDAK FINAL AGAR BISA DITAMBAH
+  List<PeminjamanData> _peminjamanList = [
     PeminjamanData(
       id: '6601',
       ruangan: 'Lab Basis Data (TA.10.1)',
@@ -233,6 +236,33 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     setState(() {
       _isShowingForm = false;
     });
+  }
+
+  // ➕ 7. BUAT FUNGSI BARU UNTUK MENANGANI SUBMISI
+  void _handleFormSubmission(Map<String, dynamic> formData, List<Pengguna> pengguna) {
+    // Buat PeminjamanData baru dari data yang diterima
+    final newPeminjaman = PeminjamanData(
+      id: 'ID-${DateTime.now().millisecondsSinceEpoch}', // Buat ID unik (contoh)
+      ruangan: formData['ruangan'],
+      status: 'Menunggu Persetujuan PJ', // ⬅️ SESUAI PERMINTAAN
+      penanggungJawab: formData['penanggungJawab'],
+      jenisKegiatan: formData['jenisKegiatan'],
+      namaKegiatan: formData['namaKegiatan'],
+      namaPengaju: formData['namaPengaju'],
+      tanggalPinjam: formData['tanggalPinjam'],
+      totalPeminjam: pengguna.length, // ⬅️ Hitung dari list pengguna
+      jamMulai: formData['jamMulai'],
+      jamSelesai: formData['jamSelesai'],
+      isExpanded: false,
+    );
+
+    // Tambahkan ke list (di paling atas) dan update UI
+    setState(() {
+      _peminjamanList.insert(0, newPeminjaman);
+    });
+
+    // Tutup form dan tampilkan pesan sukses
+    _hideForm('Peminjaman berhasil diajukan! Menunggu persetujuan penanggungjawab.');
   }
 
   // (Fungsi _selectDate tidak berubah)
@@ -406,7 +436,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       case 'Menunggu Persetujuan PJ':
       case 'Menunggu Persetujuan PIC':
       case 'Menunggu Persetujuan':
-        return Colors.orange;
+        return const Color(0xFFFf59b17);
       default:
         return Colors.blue;
     }
@@ -462,6 +492,8 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       return FormPeminjamanScreen(
         onBack: (message) => _hideForm(message),
         userProfile: _userProfile!, // ⬅️ KIRIM DATA ASLI
+        // ➕ 8. PASS CALLBACK BARU KE DALAM FORM
+        onSubmit: _handleFormSubmission,
       );
     }
 
@@ -496,7 +528,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                     style: GoogleFonts.poppins(
                         fontWeight: FontWeight.bold, color: Colors.white)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D47A1),
+                  backgroundColor: const Color(0xFF0B4AF5),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

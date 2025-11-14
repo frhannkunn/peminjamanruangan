@@ -4,15 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'tambah_pengguna.dart';
-// ➖ HAPUS IMPORT 'profil.dart'
-// import 'profil.dart';
-// ➕ 1. GANTI DENGAN IMPORT USER SESSION
 import '../services/user_session.dart';
 
-// ➕ TAMBAHKAN BARIS INI TEPAT DI SINI
+
 enum FormStep { dataEntry, addUser }
 
-// ... (Class Booking tetap sama) ...
+
 class Booking {
   final String status;
   final String roomName;
@@ -32,14 +29,18 @@ class Booking {
 class FormPeminjamanScreen extends StatefulWidget {
   final String? preSelectedRoom;
   final Function(String? message)? onBack;
-  // Tipe data 'UserProfile' sekarang diambil dari user_session.dart
+  
   final UserProfile userProfile;
+
+  // ➕ 1. TAMBAHKAN CALLBACK BARU UNTUK SUBMIT
+  final Function(Map<String, dynamic> formData, List<Pengguna> pengguna)? onSubmit;
 
   const FormPeminjamanScreen({
     super.key,
     this.preSelectedRoom,
     this.onBack,
     required this.userProfile,
+    this.onSubmit, // ⬅️ Tambahkan di constructor
   });
 
   @override
@@ -50,6 +51,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   FormStep _currentStep = FormStep.dataEntry;
   final List<Pengguna> _daftarPengguna = [];
   final _formKey = GlobalKey<FormState>();
+
+  // ➕ 2. TAMBAHKAN VARIABEL UNTUK MENYIMPAN DATA FORM DARI STEP 1
+  Map<String, dynamic>? _savedFormData;
 
   final _nimController = TextEditingController();
   final _namaPengajuController = TextEditingController();
@@ -251,9 +255,24 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
-  // (Fungsi _handleSubmit tidak berubah)
+  // ✏️ 3. MODIFIKASI _handleSubmit UNTUK MENYIMPAN DATA
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
+      // Simpan data form ke variabel state
+      setState(() {
+        _savedFormData = {
+          'ruangan': _ruangan!,
+          'penanggungJawab': _penanggungJawab!,
+          'jenisKegiatan': _jenisKegiatan!,
+          'namaKegiatan': _namaKegiatanController.text,
+          'namaPengaju': _namaPengajuController.text,
+          'tanggalPinjam': _selectedDate!,
+          'jamMulai': _jamMulai!,
+          'jamSelesai': _jamSelesai!,
+        };
+      });
+
+      // Tampilkan dialog sukses, yang akan mengubah step ke addUser
       _showSuccessDialog(context);
     }
   }
@@ -938,6 +957,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
+  // ✏️ 4. MODIFIKASI _buildAddUserStep
   Widget _buildAddUserStep(BuildContext context) {
     return Column(
       children: [
@@ -1046,8 +1066,20 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => widget.onBack
-                      ?.call('Peminjaman berhasil diajukan! Menunggu persetujuan penanggungjawab.'),
+                  // ✏️ 5. GANTI onPressed UNTUK MEMANGGIL CALLBACK 'onSubmit'
+                  onPressed: () {
+                    // Pastikan data form sudah tersimpan
+                    if (_savedFormData != null) {
+                      // Panggil callback onSubmit dengan data form dan daftar pengguna
+                      widget.onSubmit?.call(
+                        _savedFormData!,
+                        _daftarPengguna,
+                      );
+                    } else {
+                      // Fallback jika terjadi error (seharusnya tidak terjadi)
+                      widget.onBack?.call('Error: Data form tidak ditemukan.');
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
