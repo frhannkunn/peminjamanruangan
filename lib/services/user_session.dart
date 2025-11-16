@@ -1,14 +1,14 @@
 // lib/services/user_session.dart
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Class ini sekarang menyimpan SEMUA kemungkinan data
+// 1. CLASS USERPROFILE LENGKAP (YANG SEBELUMNYA HILANG)
 class UserProfile {
-  final String nikOrNim;  
+  final String nikOrNim;
   final String nama;
   final String email;
-  final String unitKerja; 
-  final String kodeDosen; 
-  final String whatsapp;  
+  final String unitKerja;
+  final String kodeDosen;
+  final String whatsapp;
 
   UserProfile({
     required this.nikOrNim,
@@ -21,83 +21,92 @@ class UserProfile {
 
   // Factory constructor untuk membuat UserProfile dari Map
   factory UserProfile.fromMap(Map<String, dynamic> map) {
-    // PENTING: Key di bawah ('nik', 'nim', 'unit_kerja', 'kode_dosen', 'whatsapp')
-    // harus SAMA dengan key JSON yang Anda kirim dari Laravel
     return UserProfile(
-      // Cek apakah API mengirim 'nik' (Dosen) atau 'nim' (Mahasiswa)
-      nikOrNim: map['nik_nim'] ?? '',  // ⬅️ Ganti dari 'nik' ?? 'nim'
-      nama: map['name'] ?? '',      // ⬅️ Ganti dari 'nama'
+      nikOrNim: map['nik_nim'] ?? '',
+      nama: map['name'] ?? '',
       email: map['email'] ?? '',
-      unitKerja: map['unit_kerja'] ?? '', // Akan kosong jika Mahasiswa
-      kodeDosen: map['kode_dosen'] ?? '', // Akan kosong jika Mahasiswa
-      whatsapp: map['whatsapp'] ?? '',   // Akan kosong jika Mahasiswa
+      unitKerja: map['unit_kerja'] ?? '',
+      kodeDosen: map['kode_dosen'] ?? '',
+      whatsapp: map['whatsapp'] ?? '',
     );
   }
 }
 
-// 2. REVISI UserSession Class
+// 2. CLASS USERSESSION LENGKAP (DENGAN FUNGSI TOKEN)
 class UserSession {
-  // Mengganti 'nim' menjadi 'nikOrNim'
-  static const String _nikOrNimKey = 'user_nik_or_nim'; 
+  // Key untuk profil
+  static const String _nikOrNimKey = 'user_nik_or_nim';
   static const String _namaKey = 'user_nama';
   static const String _emailKey = 'user_email';
-  // Tambah key baru
-  static const String _unitKerjaKey = 'user_unit_kerja'; 
-  static const String _kodeDosenKey = 'user_kode_dosen'; 
-  static const String _whatsappKey = 'user_whatsapp';  
+  static const String _unitKerjaKey = 'user_unit_kerja';
+  static const String _kodeDosenKey = 'user_kode_dosen';
+  static const String _whatsappKey = 'user_whatsapp';
 
-  // 1. Fungsi untuk MENYIMPAN data user saat login
+  // Key untuk token
+  static const String _tokenKey = 'auth_token';
+
+  // Fungsi untuk MENYIMPAN data user saat login
   static Future<void> saveUserData(Map<String, dynamic> userData) async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // Gunakan fromMap yang sudah direvisi
+
     final profile = UserProfile.fromMap(userData);
 
-    await prefs.setString(_nikOrNimKey, profile.nikOrNim); 
+    await prefs.setString(_nikOrNimKey, profile.nikOrNim);
     await prefs.setString(_namaKey, profile.nama);
     await prefs.setString(_emailKey, profile.email);
-    // Simpan data baru
-    await prefs.setString(_unitKerjaKey, profile.unitKerja); 
-    await prefs.setString(_kodeDosenKey, profile.kodeDosen); 
-    await prefs.setString(_whatsappKey, profile.whatsapp);  
+    await prefs.setString(_unitKerjaKey, profile.unitKerja);
+    await prefs.setString(_kodeDosenKey, profile.kodeDosen);
+    await prefs.setString(_whatsappKey, profile.whatsapp);
   }
 
-  // 2. Fungsi untuk MENGAMBIL data user
+  // Fungsi untuk MENYIMPAN TOKEN
+  static Future<void> saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+  }
+
+  // Fungsi untuk MENGAMBIL TOKEN
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
+  }
+
+  // Fungsi untuk MENGAMBIL data user
   static Future<UserProfile?> getUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final nikOrNim = prefs.getString(_nikOrNimKey); 
+    final nikOrNim = prefs.getString(_nikOrNimKey);
     final nama = prefs.getString(_namaKey);
     final email = prefs.getString(_emailKey);
-    final unitKerja = prefs.getString(_unitKerjaKey); 
-    final kodeDosen = prefs.getString(_kodeDosenKey); 
-    final whatsapp = prefs.getString(_whatsappKey);  
+    final unitKerja = prefs.getString(_unitKerjaKey);
+    final kodeDosen = prefs.getString(_kodeDosenKey);
+    final whatsapp = prefs.getString(_whatsappKey);
 
     // Jika NIK/NIM tidak ada, berarti user belum login
-    if (nikOrNim == null || nikOrNim.isEmpty) { 
+    if (nikOrNim == null || nikOrNim.isEmpty) {
       return null;
     }
 
     return UserProfile(
-      nikOrNim: nikOrNim, 
+      nikOrNim: nikOrNim,
       nama: nama ?? '',
       email: email ?? '',
-      unitKerja: unitKerja ?? '', 
-      kodeDosen: kodeDosen ?? '', 
-      whatsapp: whatsapp ?? '',  
+      unitKerja: unitKerja ?? '',
+      kodeDosen: kodeDosen ?? '',
+      whatsapp: whatsapp ?? '',
     );
   }
 
-  // 3. Fungsi untuk MENGHAPUS data (saat logout)
+  // Fungsi untuk MENGHAPUS data (saat logout)
   static Future<void> clearUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_nikOrNimKey); 
+    await prefs.remove(_nikOrNimKey);
     await prefs.remove(_namaKey);
     await prefs.remove(_emailKey);
-    await prefs.remove(_unitKerjaKey); 
-    await prefs.remove(_kodeDosenKey); 
-    await prefs.remove(_whatsappKey);  
+    await prefs.remove(_unitKerjaKey);
+    await prefs.remove(_kodeDosenKey);
+    await prefs.remove(_whatsappKey);
     // Juga hapus token
-    await prefs.remove('auth_token');
+    await prefs.remove(_tokenKey);
   }
 }

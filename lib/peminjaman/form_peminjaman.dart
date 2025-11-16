@@ -61,7 +61,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   final _namaKegiatanController = TextEditingController();
   final _tanggalController = TextEditingController();
   String? _jenisKegiatan, _penanggungJawab, _ruangan, _jamMulai, _jamSelesai;
-  final List<String> _jenisKegiatanList = ['Perkuliahan', 'PBL'];
+  final List<String> _jenisKegiatanList = ['Perkuliahan', 'PBL', 'Lainnya'];
   final List<String> _penanggungJawabList = ['Dosen A', 'Dosen B', 'Dosen C'];
   final List<String> _ruanganList = [
     'Workspace (TA.12.3b)',
@@ -476,7 +476,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                   validator: (v) => v == null ? 'Wajib diisi' : null,
                 ),
                 const SizedBox(height: 16),
-                _buildLabel('Nama Kegiatan'),
+                _buildLabel('Nama / Deskripsi Kegiatan'),
                 _buildTextField(
                   controller: _namaKegiatanController,
                   hintText: 'Masukkan Nama Kegiatan. Contoh: PBL TRPL318',
