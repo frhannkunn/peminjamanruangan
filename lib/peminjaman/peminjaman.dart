@@ -796,6 +796,76 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
               const Divider(height: 24),
               _buildCardDetailRow(
                   'Penanggung Jawab:', peminjaman.penanggungJawab),
+                  // --- ➕ KODE TAMBAHAN UNTUK STATUS PJ (VERSI DIPERBAIKI) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 130, // Samakan lebar dengan _buildCardDetailRow
+                    child: Text(
+                      "Status PJ:",
+                      style: GoogleFonts.poppins(
+                          fontSize: 13, color: Colors.grey[700]),
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft, // Agar chip rata kiri
+                      child: Builder(
+                        builder: (context) {
+                          String statusPJText = '-';
+                          Color statusPJColor = Colors.transparent; // Default transparan
+                          Color statusPJTextColor = Colors.black87; // Default teks gelap
+
+                          if (peminjaman.status == 'Menunggu Persetujuan PJ') {
+                            statusPJText = 'Menunggu Persetujuan';
+                            statusPJColor = const Color(0xFFFf59b17); // Kuning
+                            statusPJTextColor = const Color.fromARGB(221, 255, 255, 255); // Teks gelap untuk kuning
+                          } else if (peminjaman.status == 'Menunggu Persetujuan PIC' ||
+                                     peminjaman.status == 'Disetujui') {
+                            statusPJText = 'Disetujui';
+                            statusPJColor = Colors.green; // Hijau
+                            statusPJTextColor = Colors.white; // Teks putih untuk hijau
+                          } else if (peminjaman.status == 'Ditolak') {
+                            statusPJText = 'Ditolak';
+                            statusPJColor = Colors.red; // Merah
+                            statusPJTextColor = Colors.white; // Teks putih untuk merah
+                          }
+
+                          if (statusPJText == '-') {
+                            // Jika status tidak relevan, tampilkan teks biasa '-'
+                            return Text(
+                              statusPJText,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: statusPJTextColor),
+                            );
+                          } else {
+                            // Tampilkan sebagai Chip jika ada status
+                            return Chip(
+                              label: Text(
+                                statusPJText,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusPJTextColor,
+                                ),
+                              ),
+                              backgroundColor: statusPJColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // --- AKHIR KODE TAMBAHAN ---
               _buildCardDetailRow(
                   'Jenis Kegiatan:', peminjaman.jenisKegiatan),
               _buildCardDetailRow(
