@@ -1,4 +1,4 @@
-// File: lib/pic/home_pic.dart (REFAKTOR ALUR NAVIGASI + PERBAIKAN ERROR + SINGLE CARD + FIX LAYOUT KARTU)
+// File: lib/pic/home_pic.dart (FIX BUTTON TEXT: Detail Peminjaman -> Detail)
 
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -49,6 +49,7 @@ class HomePicPage extends StatefulWidget {
 }
 
 class _HomePicPageState extends State<HomePicPage> {
+  // --- DATA DUMMY (SINGLE DATA) ---
   final List<Peminjaman> _peminjamanList = [
     Peminjaman(
       id: 6608,
@@ -58,24 +59,13 @@ class _HomePicPageState extends State<HomePicPage> {
       namaKegiatan: "PBL TRPL 318",
       jenisKegiatan: "Kerja Kelompok",
       status: "Menunggu Persetujuan PIC Ruangan",
-      statusColor: const Color(0xFFFFC037),
-    ),
-    Peminjaman(
-      id: 6609,
-      kodeBooking: "GU.602.WM.01",
-      tanggalPinjam: "19 Oktober 2025",
-      jamKegiatan: "7.50 - 12.00",
-      namaKegiatan: "PBL TRPL 318",
-      jenisKegiatan: "Kerja Kelompok",
-      status: "Disetujui",
-      statusColor: const Color(0xFF00D800),
+      statusColor: const Color(0xFFFFC037), // Kuning
     ),
   ];
 
-  // State filter (diabaikan untuk prototipe)
+  // State filter
   String? _selectedRuangan = '- Hanya Tampilkan Ruangan Saya -';
   String? _selectedStatus = '- Semua Status -';
-  // String _searchQuery = ''; // Dikomentari
 
   final List<Map<String, dynamic>> _ruanganOptions = [
     {'value': '- Hanya Tampilkan Ruangan Saya -', 'isHeader': false},
@@ -99,6 +89,7 @@ class _HomePicPageState extends State<HomePicPage> {
     super.initState();
   }
 
+  // --- NAVIGASI & UPDATE STATUS ---
   void _updatePeminjamanStatus(int id, String newStatusResult) {
     setState(() {
       final index = _peminjamanList.indexWhere((p) => p.id == id);
@@ -107,12 +98,13 @@ class _HomePicPageState extends State<HomePicPage> {
         Color newColor;
         String newStatusText;
 
+        // Logika Update Status & Warna
         if (newStatusResult == "Disetujui") {
           newStatusText = "Disetujui";
-          newColor = const Color(0xFF00D800);
+          newColor = const Color(0xFF00D800); // Hijau
         } else if (newStatusResult == "Ditolak") {
           newStatusText = "Ditolak PIC";
-          newColor = Colors.red;
+          newColor = Colors.red; // Merah
         } else {
           newStatusText = oldPeminjaman.status;
           newColor = oldPeminjaman.statusColor;
@@ -141,17 +133,14 @@ class _HomePicPageState extends State<HomePicPage> {
     }
   }
 
-  List<Peminjaman> get _filteredPeminjamanList {
-    // Untuk prototipe, tampilkan semua saja
-    return _peminjamanList;
-  }
-
+  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // Lapisan 1: Konten Scrollable
           SingleChildScrollView(
             child: Column(
               children: [
@@ -176,39 +165,371 @@ class _HomePicPageState extends State<HomePicPage> {
                     children: [
                       _buildFilters(),
                       const SizedBox(height: 20),
-                      _buildDataList(),
+
+                      if (_peminjamanList.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Text(
+                              'Tidak ada data peminjaman.',
+                              style: GoogleFonts.poppins(color: Colors.grey),
+                            ),
+                          ),
+                        )
+                      else
+                        ...List.generate(_peminjamanList.length, (index) {
+                          return _buildPeminjamanGroup(
+                            _peminjamanList[index],
+                            index + 1,
+                          );
+                        }),
                     ],
                   ),
                 ),
               ],
             ),
           ),
+          // Lapisan 2: Header Biru & Summary Card
           _buildHeaderAndCards(),
         ],
       ),
     );
   }
 
+  // --- HEADER & CARDS ---
+  Widget _buildHeaderAndCards() {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        Container(
+          height: 180,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1c36d2),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 60, left: 20),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                'Hai, Rayan!',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 130,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _summaryCard('Menunggu PIC', '5'),
+                _summaryCard('Disetujui', '8'),
+                _summaryCard('Ditolak', '3'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryCard(String title, String count) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 5),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(20),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              count,
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF0D47A1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeminjamanGroup(Peminjaman peminjaman, int index) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: 12.0, top: index == 1 ? 0 : 20.0),
+          child: Text(
+            'Peminjam Ruangan $index',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        _buildPeminjamanCard(peminjaman),
+      ],
+    );
+  }
+
+  // --- _buildPeminjamanCard ---
+  Widget _buildPeminjamanCard(Peminjaman peminjaman) {
+    // Logic Warna & Text
+    bool isApproved = peminjaman.status == "Disetujui";
+
+    // 1. Status Lengkap (Badge Atas)
+    String fullStatus = peminjaman.status;
+
+    // 2. Status Pendek (Badge Bawah)
+    String shortStatus = fullStatus;
+    if (fullStatus == "Menunggu Persetujuan PIC Ruangan") {
+      shortStatus = "Menunggu Persetujuan";
+    } else if (fullStatus == "Ditolak PIC") {
+      shortStatus = "Ditolak";
+    }
+
+    // Warna
+    Color badgeColor;
+    if (isApproved) {
+      badgeColor = const Color(0xFF00D800);
+    } else if (fullStatus.contains("Ditolak")) {
+      badgeColor = Colors.red;
+    } else {
+      badgeColor = const Color(0xFFFFC037); // Kuning
+    }
+
+    // --- LOGIKA TEXT TOMBOL (FIXED) ---
+    String buttonText;
+    if (fullStatus == "Menunggu Persetujuan PIC Ruangan") {
+      buttonText = "Detail Peminjaman"; // SEBELUM APPROVE
+    } else {
+      buttonText = "Detail"; // SETELAH APPROVE/REJECT
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(40),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Kode Booking (Title)
+          Text(
+            peminjaman.kodeBooking,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // 2. ID + BADGE ATAS (Full Text)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'ID: ${peminjaman.id}',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    fullStatus,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      height: 1.2,
+                    ),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // 3. STATUS PIC + BADGE BAWAH (Short Text & Medium Size)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: Text(
+                  'Status PIC',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Text(
+                ':  ',
+                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  shortStatus,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          _buildDetailRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
+          _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
+          _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
+          _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
+
+          const SizedBox(height: 16),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: () => _navigateToDetail(peminjaman),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4150FF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                buttonText,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- CONTROLS (FILTER & SEARCH) ---
   Widget _buildFilters() {
     final shadowDecoration = BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(10),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withAlpha((255 * 0.08).round()),
-          spreadRadius: 0,
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
+      border: Border.all(color: Colors.grey.shade300), // Added border like PJ
+    );
+
+    // Common dropdown style
+    final buttonStyle = ButtonStyleData(
+      height: 45,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: shadowDecoration,
+    );
+
+    final dropdownStyle = DropdownStyleData(
+      maxHeight: 300,
+      width: MediaQuery.of(context).size.width - 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A000000),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      offset: const Offset(0, 0),
+      scrollbarTheme: ScrollbarThemeData(
+        radius: const Radius.circular(40),
+        thickness: MaterialStateProperty.all(6),
+        thumbVisibility: MaterialStateProperty.all(true),
+      ),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Filter Ruangan
         Text(
           'Filter Ruangan:',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
         ),
         const SizedBox(height: 8),
         DropdownButton2<String>(
@@ -218,66 +539,42 @@ class _HomePicPageState extends State<HomePicPage> {
             if (item['isHeader'] as bool) {
               return DropdownMenuItem<String>(
                 enabled: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 0),
-                  child: Text(
-                    item['value'],
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
+                child: Text(
+                  item['value'],
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
                   ),
                 ),
               );
             }
             return DropdownMenuItem<String>(
               value: item['value'],
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
-                child: Text(item['value'], style: GoogleFonts.poppins()),
+              child: Text(
+                item['value'],
+                style: GoogleFonts.poppins(fontSize: 14),
               ),
             );
           }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedRuangan = value;
-            });
-          },
-          buttonStyleData: ButtonStyleData(
-            height: 50,
+          onChanged: (value) => setState(() => _selectedRuangan = value),
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: dropdownStyle,
+          menuItemStyleData: MenuItemStyleData(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: shadowDecoration,
+            selectedMenuItemBuilder: (context, item) =>
+                Container(color: Colors.blue.withOpacity(0.1), child: item),
           ),
-          dropdownStyleData: DropdownStyleData(
-            maxHeight: 300,
-            width: MediaQuery.of(context).size.width - 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            offset: const Offset(0, -10),
-          ),
-          menuItemStyleData: const MenuItemStyleData(
-            height: 40,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-          ),
-          iconStyleData: IconStyleData(
-            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade700),
-            iconSize: 24,
+          iconStyleData: const IconStyleData(
+            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           ),
         ),
+
         const SizedBox(height: 16),
+
+        // Filter Status
         Text(
           'Filter Status Peminjaman:',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
         ),
         const SizedBox(height: 8),
         DropdownButton2<String>(
@@ -287,82 +584,56 @@ class _HomePicPageState extends State<HomePicPage> {
               .map(
                 (String item) => DropdownMenuItem<String>(
                   value: item,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 0),
-                    child: Text(item, style: GoogleFonts.poppins()),
-                  ),
+                  child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
                 ),
               )
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedStatus = value;
-            });
-          },
-          buttonStyleData: ButtonStyleData(
-            height: 50,
+          onChanged: (value) => setState(() => _selectedStatus = value),
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: dropdownStyle,
+          menuItemStyleData: MenuItemStyleData(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: shadowDecoration,
+            selectedMenuItemBuilder: (context, item) =>
+                Container(color: Colors.blue.withOpacity(0.1), child: item),
           ),
-          dropdownStyleData: DropdownStyleData(
-            maxHeight: 300,
-            width: MediaQuery.of(context).size.width - 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            offset: const Offset(0, -10),
-          ),
-          menuItemStyleData: const MenuItemStyleData(
-            height: 40,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-          ),
-          iconStyleData: IconStyleData(
-            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade700),
-            iconSize: 24,
+          iconStyleData: const IconStyleData(
+            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           ),
         ),
-        const SizedBox(height: 20),
+
+        const SizedBox(height: 16),
+
+        // Search Bar
         Row(
           children: [
             Text(
-              'search :',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              'Search:',
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Container(
+              child: SizedBox(
                 height: 45,
-                decoration: shadowDecoration.copyWith(
-                  borderRadius: BorderRadius.circular(20),
-                ),
                 child: TextField(
                   style: GoogleFonts.poppins(),
-                  // onChanged: (value) { // Dikomentari
-                  // },
                   decoration: InputDecoration(
-                    hintText: "Cari...",
-                    hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-                    suffixIcon: Icon(Icons.search, color: Colors.grey.shade400),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.only(
-                      left: 15,
-                      right: 15,
-                      top: 13,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                    suffixIcon: const Icon(Icons.search, color: Colors.grey),
+                    hintText: "",
                   ),
                 ),
               ),
@@ -373,252 +644,30 @@ class _HomePicPageState extends State<HomePicPage> {
     );
   }
 
-  Widget _buildDataList() {
-    final listToShow = _filteredPeminjamanList;
-    if (listToShow.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text(
-            'Tidak ada data peminjaman.',
-            style: GoogleFonts.poppins(color: Colors.grey),
-          ),
-        ),
-      );
-    } else {
-      final firstPeminjaman = listToShow.first;
-      return _buildPeminjamanCard(firstPeminjaman);
-    }
-  }
-
-  // --- INI ADALAH FUNGSI YANG DIPERBARUI LAYOUTNYA ---
-  Widget _buildPeminjamanCard(Peminjaman peminjaman) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha(38),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Baris 1: Kode Booking (sebagai judul utama)
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 14),
+            ),
+          ),
           Text(
-            peminjaman.kodeBooking,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            ':  ',
+            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
           ),
-          const SizedBox(height: 8), // Jarak antara judul dan baris ID/Status
-          // Baris 2: Row untuk ID dan Status Badge (sejajar)
-          Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.center, // Sejajarkan vertikal di tengah
-            children: [
-              // Teks ID
-              Text(
-                'ID: ${peminjaman.id}',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
-              const SizedBox(width: 12), // Jarak antara ID dan Status
-              // Status Badge (gunakan Flexible agar bisa wrap jika panjang)
-              Flexible(
-                child: _buildStatusBadge(
-                  peminjaman.status,
-                  peminjaman.statusColor,
-                ),
-              ),
-            ],
-          ),
-
-          // --- AKHIR PERUBAHAN LAYOUT BARIS ID & STATUS ---
-          const SizedBox(height: 16), // Jarak ke detail berikutnya
-          _buildDetailInfoRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
-          const SizedBox(height: 8),
-          _buildDetailInfoRow('Jam Kegiatan', peminjaman.jamKegiatan),
-          const SizedBox(height: 8),
-          _buildDetailInfoRow('Nama Kegiatan', peminjaman.namaKegiatan),
-          const SizedBox(height: 8),
-          _buildDetailInfoRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () => _navigateToDetail(peminjaman),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.blue[700],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Detail Peminjaman',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  // --- AKHIR FUNGSI YANG DIPERBARUI LAYOUTNYA ---
-
-  Widget _buildDetailInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 120, // Adjust width as needed
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey, // Grey label color
-            ),
-          ),
-        ),
-        Text(':', style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusBadge(String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 15,
-        vertical: 8,
-      ), // Adjust padding
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(15), // Rounded corners
-      ),
-      child: Text(
-        status,
-        textAlign: TextAlign.center,
-        softWrap: true, // Allow text wrapping
-        style: GoogleFonts.poppins(
-          color: Colors.white, // Always white for now
-          fontSize: 12, // Slightly smaller font size
-          fontWeight: FontWeight.bold,
-          height: 1.2, // Adjust line height if wrapping occurs
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderAndCards() {
-    // Summary Card data is hardcoded for prototype
-    return Stack(
-      clipBehavior: Clip.none, // Allow cards to overflow
-      alignment: Alignment.topCenter,
-      children: [
-        // Blue Header background
-        Container(
-          height: 180, // Adjust height as needed
-          decoration: const BoxDecoration(
-            color: Color(0xFF1c36d2), // Blue color
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(17), // Rounded bottom corners
-              bottomRight: Radius.circular(17),
-            ),
-          ),
-          child: Padding(
-            // Add padding for the greeting text
-            padding: const EdgeInsets.only(
-              top: 50,
-              left: 20,
-            ), // Adjust top padding
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                'Hai, Rayan!', // Example name
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-        // Positioned Summary Cards
-        Positioned(
-          top: 130, // Position cards vertically
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _summaryCard('Menunggu PIC', '3'), // Example data
-                _summaryCard('Ditolak PIC', '3'), // Example data
-                _summaryCard('Disetujui', '8'), // Example data
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _summaryCard(String title, String count) {
-    return Container(
-      width: (MediaQuery.of(context).size.width - 60) / 3, // Calculate width
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000), // Shadow color with opacity
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: Offset(0, 4), // Shadow position
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            count,
-            style: GoogleFonts.poppins(
-              fontSize: 22, // Larger font size for count
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],

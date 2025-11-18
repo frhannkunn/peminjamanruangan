@@ -1,4 +1,4 @@
-// File: lib/pj/home_pj.dart (REFAKTOR ALUR NAVIGASI)
+// File: lib/pj/home_pj.dart (CLEAN SINGLE DATA + LOGIC APPROVAL PIC)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -48,12 +48,7 @@ class HomePjPage extends StatefulWidget {
 }
 
 class _HomePjPageState extends State<HomePjPage> {
-  // --- CATATAN: ---
-  // Sesuai permintaan Anda, data list dan summary card
-  // dibiarkan statis/hardcoded untuk prototipe.
-  // Filter dan Search juga belum diimplementasikan.
-  // --- --- --- ---
-
+  // --- DATA DUMMY (HANYA 1 DATA SEKARANG) ---
   List<PeminjamanPj> _peminjamanList = [
     PeminjamanPj(
       id: "6608",
@@ -81,7 +76,7 @@ class _HomePjPageState extends State<HomePjPage> {
     initializeDateFormatting('id_ID', null);
   }
 
-  // --- PERUBAHAN DI FUNGSI NAVIGASI ---
+  // --- NAVIGASI ---
   Future<void> _navigateToDetail(PeminjamanPj peminjaman) async {
     final newStatus = await Navigator.push(
       context,
@@ -95,7 +90,6 @@ class _HomePjPageState extends State<HomePjPage> {
     }
   }
 
-  // Fungsi update status (Tidak berubah)
   void _updatePeminjamanStatus(String id, String newStatus) {
     setState(() {
       final index = _peminjamanList.indexWhere((p) => p.id == id);
@@ -139,8 +133,7 @@ class _HomePjPageState extends State<HomePjPage> {
                     children: [
                       _buildControls(),
                       const SizedBox(height: 20),
-
-                      // List masih menggunakan _peminjamanList (bukan list terfilter)
+                      // List Data
                       ...List.generate(_peminjamanList.length, (index) {
                         return _buildPeminjamanGroup(
                           _peminjamanList[index],
@@ -153,20 +146,19 @@ class _HomePjPageState extends State<HomePjPage> {
               ],
             ),
           ),
-          // Lapisan 2: Header Biru Melengkung dan Kartu Summary
+          // Lapisan 2: Header Biru
           _buildHeaderAndCardsPJ(),
         ],
       ),
     );
   }
 
-  // --- FUNGSI HEADER ---
+  // --- HEADER & SUMMARY ---
   Widget _buildHeaderAndCardsPJ() {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
-        // Header Biru Melengkung
         Container(
           height: 180,
           decoration: const BoxDecoration(
@@ -191,7 +183,6 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
         ),
-        // Kartu summary (Statis/Hardcoded)
         Positioned(
           top: 130,
           left: 0,
@@ -212,7 +203,6 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // ... (Fungsi _summaryCard dan _buildPeminjamanGroup tidak berubah) ...
   Widget _summaryCard(String title, String count) {
     return Expanded(
       child: Container(
@@ -271,25 +261,60 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // --- _buildPeminjamanCard (Tidak berubah) ---
+  // --- _buildPeminjamanCard (LOGIC APPROVAL BERTINGKAT) ---
   Widget _buildPeminjamanCard(PeminjamanPj peminjaman) {
     final String formattedDate = DateFormat(
       'd MMMM yyyy',
       'id_ID',
     ).format(peminjaman.tanggalPinjam);
+
+    // --- LOGIK BADGE ATAS (Deretan ID) ---
+    // Logic: Jika Status PJ "Disetujui" -> Berubah jadi "Menunggu Persetujuan PIC" (Kuning)
+    String badgeAtasText;
+    Color badgeAtasColor;
+
+    if (peminjaman.status == "Disetujui") {
+      badgeAtasText = "Menunggu Persetujuan PIC"; // BERUBAH JADI MENUNGGU PIC
+      badgeAtasColor = const Color(0xFFFFC037); // KUNING
+    } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
+      badgeAtasText = "Menunggu Persetujuan Penanggung Jawab";
+      badgeAtasColor = const Color(0xFFFFC037); // KUNING
+    } else if (peminjaman.status == "Ditolak") {
+      badgeAtasText = "Ditolak";
+      badgeAtasColor = Colors.red;
+    } else {
+      badgeAtasText = peminjaman.status ?? '-';
+      badgeAtasColor = Colors.grey;
+    }
+
+    // --- LOGIK BADGE BAWAH (Deretan Status PJ) ---
+    // Logic: Jika Status PJ "Disetujui" -> Teks tetap "Disetujui" (Hijau)
+    String badgeBawahText;
+    Color badgeBawahColor;
+
+    if (peminjaman.status == "Disetujui") {
+      badgeBawahText = "Disetujui";
+      badgeBawahColor = const Color(0xFF00D800); // HIJAU
+    } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
+      badgeBawahText = "Menunggu Persetujuan"; // Teks Pendek
+      badgeBawahColor = const Color(0xFFFFC037); // KUNING
+    } else if (peminjaman.status == "Ditolak") {
+      badgeBawahText = "Ditolak";
+      badgeBawahColor = Colors.red;
+    } else {
+      badgeBawahText = peminjaman.status ?? '-';
+      badgeBawahColor = Colors.grey;
+    }
+
+    // --- LOGIK TOMBOL ---
     final bool isApproved = peminjaman.status == "Disetujui";
-    String displayStatus = peminjaman.status ?? 'Status Tidak Diketahui';
-    Color statusColor =
-        (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
-        ? const Color(0xFFFFC037)
-        : (isApproved ? const Color(0xFF00D800) : Colors.red);
     String buttonText =
         (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
         ? 'Detail Approval'
         : (isApproved ? 'Detail' : 'Ditolak');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16), // Tambahkan margin bawah
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -306,6 +331,7 @@ class _HomePjPageState extends State<HomePjPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Nama Ruangan
           Text(
             peminjaman.ruangan,
             style: GoogleFonts.poppins(
@@ -314,6 +340,8 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
           const SizedBox(height: 8),
+
+          // 2. ID + BADGE ATAS (Menunggu PIC jika Approved)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -333,11 +361,11 @@ class _HomePjPageState extends State<HomePjPage> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor,
+                      color: badgeAtasColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      displayStatus,
+                      badgeAtasText,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
@@ -352,12 +380,60 @@ class _HomePjPageState extends State<HomePjPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+
+          // --- END ROW ID + BADGE 1 ---
+          const SizedBox(height: 12),
+
+          // 3. STATUS PJ + BADGE BAWAH (Disetujui jika Approved)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: Text(
+                  'Status PJ',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[700],
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Text(
+                ':  ',
+                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10, // Padding proporsional (Medium)
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: badgeBawahColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  badgeBawahText,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11, // Font size proporsional (Medium)
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // --- END ROW STATUS PJ + BADGE 2 ---
+          const SizedBox(height: 6),
+
           _buildDetailRow('Tanggal Pinjam', formattedDate),
           _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
           _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
+
           const SizedBox(height: 16),
+
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
@@ -387,9 +463,8 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // --- START PERBAIKAN DROPDOWN DAN SEARCH ---
+  // --- CONTROLS (SEARCH & FILTER) ---
   Widget _buildControls() {
-    // Shared decoration for consistent look (using alpha for opacity)
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.white,
@@ -411,19 +486,14 @@ class _HomePjPageState extends State<HomePjPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Dropdown Filter Status
         Text(
           'Filter Status Peminjaman:',
           style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
         ),
         const SizedBox(height: 8),
-
-        // --- UBAH DARI DropdownButtonFormField KE DropdownButton2 ---
         DropdownButton2<String>(
           value: _selectedStatusFilter,
           isExpanded: true,
-
-          // Gunakan ButtonStyleData untuk styling field utama
           buttonStyleData: ButtonStyleData(
             height: 45,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -433,41 +503,33 @@ class _HomePjPageState extends State<HomePjPage> {
               color: Colors.white,
             ),
           ),
-
-          // Gunakan DropdownStyleData untuk styling menu pop-up (ESTETIK)
           dropdownStyleData: DropdownStyleData(
             maxHeight: 200,
-            width:
-                MediaQuery.of(context).size.width - 40, // Lebar layar - padding
+            width: MediaQuery.of(context).size.width - 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10), // Sudut membulat
+              borderRadius: BorderRadius.circular(10),
               color: Colors.white,
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x1A000000), // Shadow
+                  color: Color(0x1A000000),
                   spreadRadius: 2,
                   blurRadius: 8,
                   offset: Offset(0, 4),
                 ),
               ],
             ),
-            offset: const Offset(0, 0), // Posisi dropdown
+            offset: const Offset(0, 0),
             scrollbarTheme: ScrollbarThemeData(
               radius: const Radius.circular(40),
               thickness: MaterialStateProperty.all(6),
               thumbVisibility: MaterialStateProperty.all(true),
             ),
           ),
-
-          // Gunakan MenuItemStyleData untuk styling item di menu
           menuItemStyleData: MenuItemStyleData(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            selectedMenuItemBuilder: (context, item) => Container(
-              color: Colors.blue.withOpacity(0.1), // Warna latar saat dipilih
-              child: item,
-            ),
+            selectedMenuItemBuilder: (context, item) =>
+                Container(color: Colors.blue.withOpacity(0.1), child: item),
           ),
-
           iconStyleData: IconStyleData(
             icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
             iconSize: 24,
@@ -476,7 +538,6 @@ class _HomePjPageState extends State<HomePjPage> {
               color: Colors.grey,
             ),
           ),
-
           items: _statusOptions.map((String status) {
             String shortStatus = status;
             if (status == "Menunggu Persetujuan Penanggung Jawab") {
@@ -491,18 +552,13 @@ class _HomePjPageState extends State<HomePjPage> {
               ),
             );
           }).toList(),
-
           onChanged: (String? newValue) {
             setState(() {
               _selectedStatusFilter = newValue;
             });
           },
         ),
-
-        // --- END UBAH DropdownButtonFormField KE DropdownButton2 ---
         const SizedBox(height: 16),
-
-        // 2. Search Bar
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -517,9 +573,7 @@ class _HomePjPageState extends State<HomePjPage> {
                 child: TextField(
                   style: GoogleFonts.poppins(),
                   decoration: inputDecoration.copyWith(
-                    // Copy styling dari inputDecoration, lalu override
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    // Gunakan border radius yang lebih bulat untuk search
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: Colors.grey.shade300),
@@ -533,8 +587,7 @@ class _HomePjPageState extends State<HomePjPage> {
                       borderSide: BorderSide(color: Colors.grey.shade400),
                     ),
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
-                    hintText: "", // Hint text dihapus
-                    hintStyle: null, // Hapus styling hint
+                    hintText: "",
                   ),
                   onChanged: (value) {},
                 ),
@@ -545,9 +598,7 @@ class _HomePjPageState extends State<HomePjPage> {
       ],
     );
   }
-  // --- END PERBAIKAN DROPDOWN DAN SEARCH ---
 
-  // --- _buildDetailRow (Tidak berubah) ---
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -562,7 +613,7 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
           Text(
-            ':  ',
+            ':  ',
             style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
           ),
           Expanded(
