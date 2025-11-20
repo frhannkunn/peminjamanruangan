@@ -57,7 +57,7 @@ class _HomePicPageState extends State<HomePicPage> {
       tanggalPinjam: "18 Oktober 2025",
       jamKegiatan: "07.50 - 12.00",
       namaKegiatan: "PBL TRPL 318",
-      jenisKegiatan: "Kerja Kelompok",
+      jenisKegiatan: "Perkuliahan",
       status: "Menunggu Persetujuan PIC Ruangan",
       statusColor: const Color(0xFFFFC037), // Kuning
     ),
@@ -381,8 +381,8 @@ class _HomePicPageState extends State<HomePicPage> {
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 14,
+                    vertical: 7,
                   ),
                   decoration: BoxDecoration(
                     color: badgeColor,
@@ -467,15 +467,15 @@ class _HomePicPageState extends State<HomePicPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                  horizontal: 20,
+                  vertical: 10,
                 ),
               ),
               child: Text(
                 buttonText,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 12,
                 ),
               ),
             ),

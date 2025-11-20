@@ -1,15 +1,14 @@
-// File: lib/pic/validasi_pic.dart (FINAL - FIX MODEL ERROR + UPDATE FACTORY + FIX UNDEFINED IDENTIFIERS)
+// File: lib/pic/validasi_pic.dart (FINAL - FIX LIST PENGGUNA MATCHING)
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// Import model Peminjaman yang benar dari home_pic
 import 'home_pic.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
-// Model PeminjamanDetailModel (Tidak Berubah)
+// Model PeminjamanDetailModel
 class PeminjamanDetailModel {
-  String jenisKegiatan;
   String namaKegiatan;
+  String jenisKegiatan;
   String penanggungJawab;
   String nimNip;
   String namaPengaju;
@@ -23,8 +22,8 @@ class PeminjamanDetailModel {
   Color statusColor;
 
   PeminjamanDetailModel({
-    required this.jenisKegiatan,
     required this.namaKegiatan,
+    required this.jenisKegiatan,
     required this.penanggungJawab,
     required this.nimNip,
     required this.namaPengaju,
@@ -38,15 +37,12 @@ class PeminjamanDetailModel {
     required this.statusColor,
   });
 
-  // --- FACTORY METHOD DIPERBARUI ---
+  // --- FACTORY METHOD (DATA HARDCODE) ---
   factory PeminjamanDetailModel.fromPeminjaman(Peminjaman p) {
-    // Menerima model Peminjaman PIC
-    const defaultPenanggungJawab = 'DL | Gilang Bagus Ramadhan, A.Md.Kom';
-
     return PeminjamanDetailModel(
-      jenisKegiatan: p.jenisKegiatan,
       namaKegiatan: "PBL TRPL 3I8",
-      penanggungJawab: defaultPenanggungJawab,
+      jenisKegiatan: "Perkuliahan",
+      penanggungJawab: "DL | Gilang Bagus Ramadhan, A.Md.Kom",
       nimNip: "123456789",
       namaPengaju: "Rayan",
       emailPengaju: "rayan12@gmail.com",
@@ -54,27 +50,27 @@ class PeminjamanDetailModel {
       tanggalPenggunaan: "18 Oktober 2025",
       jamMulai: "07.50",
       jamSelesai: "12.00",
-      // --- PERBAHAN 1: MENGGUNAKAN KUNCI BARU ---
+
+      // KUNCI DATA DI SINI SUDAH BENAR
       listPengguna: [
         {
-          "ID": "1",
-          "Jenis Pengguna": "Mahasiswa",
-          "NIM": "43424111", // <-- Kunci NIM
-          "Nama": "Ahmad Sharoni", // <-- Kunci Nama
-          "Nomor Workspace": "GU.601.WM.01",
+          'ID': '1234',
+          'Pengguna Ruangan': 'Ahmad Sahroni',
+          'Jenis Pengguna': 'Mahasiswa',
+          'ID Pengguna': '434241121',
+          'Nomor Workspace': 'GU.601.WM.01',
+          'Tipe Workspace': 'NON PC',
         },
       ],
-      // --- AKHIR PERBAHAN 1 ---
+
       status: p.status,
       statusColor: p.statusColor,
     );
   }
-  // --- AKHIR FACTORY METHOD ---
 }
 
 // --- HALAMAN UTAMA: VALIDASI PIC PAGE ---
 class ValidasiPicPage extends StatefulWidget {
-  // --- PERBAIKAN 1: Menggunakan model Peminjaman PIC yang benar ---
   final Peminjaman peminjamanData;
 
   const ValidasiPicPage({super.key, required this.peminjamanData});
@@ -97,7 +93,6 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
   @override
   void initState() {
     super.initState();
-    // Gunakan factory method yang sudah diperbarui
     _dataDetail = PeminjamanDetailModel.fromPeminjaman(widget.peminjamanData);
     _searchPenggunaController.addListener(() {
       setState(() {
@@ -138,13 +133,11 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.green, width: 2.5),
                     ),
-                    // --- PERBAIKAN: icons.check -> Icons.check ---
                     child: const Icon(
                       Icons.check,
                       color: Colors.green,
                       size: 40,
                     ),
-                    // --- AKHIR PERBAIKAN ---
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -230,15 +223,13 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          // --- PERBAIKAN: icons.arrow_back -> Icons.arrow_back ---
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          // --- AKHIR PERBAIKAN ---
           onPressed: () {
             Navigator.pop(context, widget.peminjamanData.status);
           },
         ),
         title: Text(
-          'Validasi Detail',
+          'Detail Pengajuan',
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -264,7 +255,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                 const SizedBox(height: 20),
                 _buildSectionPenggunaan(),
                 const SizedBox(height: 20),
-                _buildSectionListPengguna(),
+                _buildSectionListPengguna(), // SUDAH DIPERBAIKI DI BAWAH
                 if (_dataDetail.status.contains("Menunggu Persetujuan")) ...[
                   const SizedBox(height: 20),
                   _buildSectionApproval(),
@@ -316,10 +307,11 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     );
   }
 
+  // --- PERBAIKAN: LOGIKA MAPPING KUNCI SUDAH SAMA DENGAN FILE PJ ---
   Widget _buildSectionListPengguna() {
     final List<Map<String, String>> allUsersInData = _dataDetail.listPengguna;
 
-    // Filter berdasarkan query pencarian (jika ada)
+    // Filter search
     final List<Map<String, String>> filteredList = allUsersInData.where((
       pengguna,
     ) {
@@ -330,11 +322,22 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       );
     }).toList();
 
+    // DAFTAR KUNCI YANG INGIN DITAMPILKAN (SAMA SEPERTI PJ)
+    final List<String> displayKeys = [
+      'ID',
+      'Pengguna Ruangan',
+      'Jenis Pengguna',
+      'ID Pengguna',
+      'Nomor Workspace',
+      'Tipe Workspace',
+    ];
+
     return _buildSectionCard(
       title: 'List Pengguna Ruangan',
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Search Bar
           Padding(
             padding: const EdgeInsets.only(bottom: 15.0),
             child: Row(
@@ -367,13 +370,11 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                           vertical: 8,
                         ),
                         border: InputBorder.none,
-                        // --- PERBAIKAN: icons.search -> Icons.search ---
                         suffixIcon: Icon(
                           Icons.search,
                           color: Colors.grey[600],
                           size: 20,
                         ),
-                        // --- AKHIR PERBAIKAN ---
                         isDense: true,
                       ),
                     ),
@@ -384,6 +385,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
           ),
           const Divider(height: 30),
 
+          // List Data
           if (filteredList.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
@@ -391,31 +393,20 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                 child: Text(
                   _searchPenggunaQuery.isEmpty
                       ? 'Tidak ada data pengguna.'
-                      // --- PERBAIKAN: colors.grey -> Colors.grey ---
                       : 'Tidak ada hasil pencarian.',
                   style: GoogleFonts.poppins(color: Colors.grey),
-                  // --- AKHIR PERBAIKAN ---
                 ),
               ),
             )
           else
-            // Tampilkan detail pengguna dari filteredList
+            // LOOPING DATA MENGGUNAKAN DISPLAY KEYS (AGAR MATCH DENGAN FACTORY)
             ...filteredList.map((pengguna) {
-              // --- Logic untuk memetakan key display ---
-              final displayData = {
-                'ID': pengguna['ID'] ?? '-',
-                'Jenis Pengguna': pengguna['Jenis Pengguna'] ?? '-',
-                'NIM / NIK': pengguna['NIM'] ?? '-', // Menggunakan kunci "NIM"
-                'Nama': pengguna['Nama'] ?? '-', // Menggunakan kunci "Nama"
-                'No. Workspace': pengguna['Nomor Workspace'] ?? '-',
-              };
-
-              // Tampilkan baris data
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: Column(
-                  children: displayData.entries.map((entry) {
-                    return _buildPenggunaInfoRow(entry.key, entry.value);
+                  children: displayKeys.map((key) {
+                    // Panggil helper row dengan key & value yang sesuai
+                    return _buildPenggunaInfoRow(key, pengguna[key] ?? '-');
                   }).toList(),
                 ),
               );
@@ -424,8 +415,8 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       ),
     );
   }
+  // --- AKHIR PERBAIKAN ---
 
-  // --- METHOD HEADER DIPERBARUI ---
   Widget _buildSectionFormUtama() {
     String status = _dataDetail.status;
     Color statusColor = _dataDetail.statusColor;
@@ -455,9 +446,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             child: Text(
               'Form\nPengajuan\nPenggunaan\nRuangan',
               style: GoogleFonts.poppins(
-                // --- PERBAIKAN: colors.white -> Colors.white ---
                 color: Colors.white,
-                // --- AKHIR PERBAIKAN ---
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
@@ -476,9 +465,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
               chipText,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                // --- PERBAIKAN: colors.white -> Colors.white ---
                 color: Colors.white,
-                // --- AKHIR PERBAIKAN ---
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
                 height: 1.3,
@@ -489,16 +476,14 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       ),
     );
   }
-  // --- AKHIR METHOD HEADER ---
 
-  // --- DROPDOWN MENJADI TEXTFIELD ---
   Widget _buildSectionDetailKegiatan() {
     return _buildSectionCard(
       title: 'Detail Kegiatan dan Tanggung Jawab',
       content: Column(
         children: [
-          _buildFormTextField('Jenis Kegiatan', _dataDetail.jenisKegiatan),
           _buildFormTextField('Nama Kegiatan', _dataDetail.namaKegiatan),
+          _buildFormTextField('Jenis Kegiatan', _dataDetail.jenisKegiatan),
           _buildFormTextField('Penanggung Jawab', _dataDetail.penanggungJawab),
         ],
       ),
@@ -546,7 +531,6 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
       ),
     );
   }
-  // --- AKHIR PERUBAHAN DROPDOWN ---
 
   Widget _buildSectionApproval() {
     return _buildSectionCard(
@@ -566,13 +550,9 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             value: _approvalValue,
             hint: Text(
               "Pilih status approval",
-              // --- PERBAIKAN: colors.grey -> Colors.grey ---
               style: GoogleFonts.poppins(color: Colors.grey),
-              // --- AKHIR PERBAIKAN ---
             ),
-            // --- PERBAIKAN: colors.black -> Colors.black ---
             style: GoogleFonts.poppins(color: Colors.black),
-            // --- AKHIR PERBAIKAN ---
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFF3F4F6),
@@ -597,15 +577,9 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
               DropdownMenuItem(value: "Disetujui", child: Text("Disetujui")),
               DropdownMenuItem(value: "Ditolak", child: Text("Ditolak")),
             ],
-            onChanged: (value) {
-              setState(() => _approvalValue = value);
-            },
-            validator: (value) {
-              if (value == null) {
-                return "Harap pilih status approval";
-              }
-              return null;
-            },
+            onChanged: (value) => setState(() => _approvalValue = value),
+            validator: (value) =>
+                value == null ? "Harap pilih status approval" : null,
             dropdownStyleData: DropdownStyleData(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
@@ -621,9 +595,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
               padding: EdgeInsets.symmetric(horizontal: 16),
             ),
             iconStyleData: const IconStyleData(
-              // --- PERBAIKAN: icons.arrow_drop_down -> Icons.arrow_drop_down ---
               icon: Icon(Icons.arrow_drop_down),
-              // --- AKHIR PERBAIKAN ---
               iconSize: 24,
             ),
           ),
@@ -639,14 +611,10 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
           TextFormField(
             controller: _komentarController,
             maxLines: 4,
-            // --- PERBAIKAN: colors.black -> Colors.black ---
             style: GoogleFonts.poppins(color: Colors.black),
-            // --- AKHIR PERBAIKAN ---
             decoration: InputDecoration(
               hintText: "Masukkan komentar...",
-              // --- PERBAIKAN: colors.grey -> Colors.grey ---
               hintStyle: GoogleFonts.poppins(color: Colors.grey),
-              // --- AKHIR PERBAIKAN ---
               filled: true,
               fillColor: const Color(0xFFF3F4F6),
               border: OutlineInputBorder(
@@ -665,7 +633,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             validator: (value) {
               if (_approvalValue == "Ditolak" &&
                   (value == null || value.isEmpty)) {
-                return "Komentar wajib diisi jika menolak";
+                return "Komentar diisi!";
               }
               return null;
             },
@@ -681,7 +649,6 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     );
   }
 
-  // --- FUNGSI TextField (TIDAK PERLU DIUBAH) ---
   Widget _buildFormTextField(String label, String value, {Widget? suffixIcon}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -693,31 +660,23 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
               fontSize: 14,
-              // --- PERBAIKAN: colors.black87 -> Colors.black87 ---
               color: Colors.black87,
-              // --- AKHIR PERBAIKAN ---
             ),
           ),
           const SizedBox(height: 8),
           Theme(
             data: Theme.of(context).copyWith(
-              // --- PERBAIKAN: colors.transparent -> Colors.transparent ---
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
-              // --- AKHIR PERBAIKAN ---
             ),
             child: TextFormField(
               initialValue: value,
               readOnly: true,
               maxLines: null,
-              // --- PERBAIKAN: colors.black -> Colors.black ---
               style: GoogleFonts.poppins(color: Colors.black),
-              // --- AKHIR PERBAIKAN ---
               decoration: InputDecoration(
                 filled: true,
-                // --- PERBAIKAN: colors.grey[100] -> Colors.grey[100] ---
                 fillColor: Colors.grey[100],
-                // --- AKHIR PERBAIKAN ---
                 suffixIcon: suffixIcon,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -751,22 +710,18 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     return _buildFormTextField(
       label,
       value,
-      // --- PERBAIKAN: icons.calendar_today_outlined -> Icons.calendar_today_outlined ---
       suffixIcon: Icon(
         Icons.calendar_today_outlined,
         color: Colors.grey[600],
         size: 20,
       ),
-      // --- AKHIR PERBAIKAN ---
     );
   }
 
   Widget _buildSectionCard({required String title, required Widget content}) {
     return Container(
       decoration: BoxDecoration(
-        // --- PERBAIKAN: colors.white -> Colors.white ---
         color: Colors.white,
-        // --- AKHIR PERBAIKAN ---
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -784,7 +739,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
             decoration: const BoxDecoration(
-              color: Color(0xFF1c36d2), // Warna header card
+              color: Color(0xFF1c36d2),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(15),
                 topRight: Radius.circular(15),
@@ -793,9 +748,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
             child: Text(
               title,
               style: GoogleFonts.poppins(
-                // --- PERBAIKAN: colors.white -> Colors.white ---
                 color: Colors.white,
-                // --- AKHIR PERBAIKAN ---
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
