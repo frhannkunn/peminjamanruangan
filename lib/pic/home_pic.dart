@@ -1,18 +1,16 @@
-// File: lib/pic/home_pic.dart (FIX BUTTON TEXT: Detail Peminjaman -> Detail)
-
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'validasi_pic.dart'; // Pastikan path ini benar
+import 'validasi_pic.dart'; // Pastikan file validasi_pic.dart sudah ada
 
-// Model Peminjaman (Tidak Berubah)
+// --- MODEL DATA ---
 class Peminjaman {
-  final int id;
-  final String kodeBooking;
-  final String tanggalPinjam;
-  final String jamKegiatan;
-  final String namaKegiatan;
-  final String jenisKegiatan;
+  int id;
+  String kodeBooking;
+  String tanggalPinjam;
+  String jamKegiatan;
+  String jenisKegiatan;
+  String namaKegiatan;
   String status;
   Color statusColor;
 
@@ -21,24 +19,11 @@ class Peminjaman {
     required this.kodeBooking,
     required this.tanggalPinjam,
     required this.jamKegiatan,
-    required this.namaKegiatan,
     required this.jenisKegiatan,
+    required this.namaKegiatan,
     required this.status,
     required this.statusColor,
   });
-
-  Peminjaman copyWith({String? status, Color? statusColor}) {
-    return Peminjaman(
-      id: id,
-      kodeBooking: kodeBooking,
-      tanggalPinjam: tanggalPinjam,
-      jamKegiatan: jamKegiatan,
-      namaKegiatan: namaKegiatan,
-      jenisKegiatan: jenisKegiatan,
-      status: status ?? this.status,
-      statusColor: statusColor ?? this.statusColor,
-    );
-  }
 }
 
 class HomePicPage extends StatefulWidget {
@@ -49,77 +34,57 @@ class HomePicPage extends StatefulWidget {
 }
 
 class _HomePicPageState extends State<HomePicPage> {
-  // --- DATA DUMMY (SINGLE DATA) ---
+  // --- DATA DUMMY ---
   final List<Peminjaman> _peminjamanList = [
     Peminjaman(
       id: 6608,
       kodeBooking: "GU.601.WM.01",
       tanggalPinjam: "18 Oktober 2025",
       jamKegiatan: "07.50 - 12.00",
-      namaKegiatan: "PBL TRPL 318",
       jenisKegiatan: "Perkuliahan",
+      namaKegiatan: "PBL TRPL 318",
       status: "Menunggu Persetujuan PIC Ruangan",
       statusColor: const Color(0xFFFFC037), // Kuning
     ),
   ];
 
-  // State filter
+  // Variabel Filter
   String? _selectedRuangan = '- Hanya Tampilkan Ruangan Saya -';
   String? _selectedStatus = '- Semua Status -';
 
-  final List<Map<String, dynamic>> _ruanganOptions = [
-    {'value': '- Hanya Tampilkan Ruangan Saya -', 'isHeader': false},
-    {'value': 'Gedung Utama', 'isHeader': true},
-    {'value': 'GU.601 - Workspace Virtual Reality', 'isHeader': false},
-    {'value': 'GU.602 - Workspace Multimedia', 'isHeader': false},
-    {'value': 'GU.603 - Workspace Rendering', 'isHeader': false},
-    {'value': 'GU.604 - Workspace Rendering', 'isHeader': false},
+  final List<String> _ruanganOptions = [
+    '- Hanya Tampilkan Ruangan Saya -',
+    'GU.601 - Workspace Virtual Reality',
+    'GU.602 - Workspace Multimedia',
+    'GU.603 - Workspace Rendering',
+    'GU.604 - Workspace Software Development',
+    'GU.605 - Workspace Animation Production',
   ];
 
   final List<String> _statusOptions = [
     '- Semua Status -',
     'Menunggu Persetujuan',
     'Disetujui',
-    'Ditolak PIC',
+    'Ditolak',
     'Selesai',
+    "Peminjaman Expired",
   ];
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  // --- NAVIGASI & UPDATE STATUS ---
-  void _updatePeminjamanStatus(int id, String newStatusResult) {
+  // --- LOGIKA UPDATE STATUS ---
+  void _updatePeminjamanStatus(int id, String hasilValidasi) {
     setState(() {
-      final index = _peminjamanList.indexWhere((p) => p.id == id);
-      if (index != -1) {
-        final oldPeminjaman = _peminjamanList[index];
-        Color newColor;
-        String newStatusText;
-
-        // Logika Update Status & Warna
-        if (newStatusResult == "Disetujui") {
-          newStatusText = "Disetujui";
-          newColor = const Color(0xFF00D800); // Hijau
-        } else if (newStatusResult == "Ditolak") {
-          newStatusText = "Ditolak PIC";
-          newColor = Colors.red; // Merah
-        } else {
-          newStatusText = oldPeminjaman.status;
-          newColor = oldPeminjaman.statusColor;
-        }
-
-        if (newStatusText != oldPeminjaman.status) {
-          _peminjamanList[index] = oldPeminjaman.copyWith(
-            status: newStatusText,
-            statusColor: newColor,
-          );
-        }
+      var data = _peminjamanList.firstWhere((p) => p.id == id);
+      if (hasilValidasi == "Disetujui") {
+        data.status = "Disetujui";
+        data.statusColor = const Color(0xFF00D800); // Hijau
+      } else if (hasilValidasi == "Ditolak") {
+        data.status = "Ditolak PIC";
+        data.statusColor = Colors.red; // Merah
       }
     });
   }
 
+  // --- NAVIGASI ---
   Future<void> _navigateToDetail(Peminjaman peminjaman) async {
     final result = await Navigator.push(
       context,
@@ -133,18 +98,17 @@ class _HomePicPageState extends State<HomePicPage> {
     }
   }
 
-  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Lapisan 1: Konten Scrollable
+          // LAYER 1: KONTEN SCROLLABLE
           SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 150),
+                const SizedBox(height: 150), // Ruang untuk header biru
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.only(
@@ -163,24 +127,17 @@ class _HomePicPageState extends State<HomePicPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildFilters(),
+                      _buildFilters(), // Widget Filter (Shadow Halus)
                       const SizedBox(height: 20),
 
+                      // List Data
                       if (_peminjamanList.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Text(
-                              'Tidak ada data peminjaman.',
-                              style: GoogleFonts.poppins(color: Colors.grey),
-                            ),
-                          ),
-                        )
+                        const Center(child: Text("Tidak ada data."))
                       else
-                        ...List.generate(_peminjamanList.length, (index) {
+                        ..._peminjamanList.asMap().entries.map((entry) {
                           return _buildPeminjamanGroup(
-                            _peminjamanList[index],
-                            index + 1,
+                            entry.value,
+                            entry.key + 1,
                           );
                         }),
                     ],
@@ -189,18 +146,18 @@ class _HomePicPageState extends State<HomePicPage> {
               ],
             ),
           ),
-          // Lapisan 2: Header Biru & Summary Card
+
+          // LAYER 2: HEADER BIRU & KARTU SUMMARY
           _buildHeaderAndCards(),
         ],
       ),
     );
   }
 
-  // --- HEADER & CARDS ---
+  // --- WIDGET HEADER ---
   Widget _buildHeaderAndCards() {
     return Stack(
       clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
       children: [
         Container(
           height: 180,
@@ -211,17 +168,15 @@ class _HomePicPageState extends State<HomePicPage> {
               bottomRight: Radius.circular(15),
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 60, left: 20),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                'Hai, Rayan!',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+          padding: const EdgeInsets.only(top: 60, left: 20),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Text(
+              'Hai, Fajri!',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -256,21 +211,18 @@ class _HomePicPageState extends State<HomePicPage> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(20),
+              color: Colors.black12,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               title,
-              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
             ),
-            const SizedBox(height: 4),
             Text(
               count,
               style: GoogleFonts.poppins(
@@ -285,12 +237,13 @@ class _HomePicPageState extends State<HomePicPage> {
     );
   }
 
+  // --- WIDGET ITEM PEMINJAMAN ---
   Widget _buildPeminjamanGroup(Peminjaman peminjaman, int index) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12.0, top: index == 1 ? 0 : 20.0),
+          padding: const EdgeInsets.only(bottom: 12.0, top: 20.0),
           child: Text(
             'Peminjam Ruangan $index',
             style: GoogleFonts.poppins(
@@ -304,59 +257,36 @@ class _HomePicPageState extends State<HomePicPage> {
     );
   }
 
-  // --- _buildPeminjamanCard ---
   Widget _buildPeminjamanCard(Peminjaman peminjaman) {
-    // Logic Warna & Text
-    bool isApproved = peminjaman.status == "Disetujui";
-
-    // 1. Status Lengkap (Badge Atas)
-    String fullStatus = peminjaman.status;
-
-    // 2. Status Pendek (Badge Bawah)
-    String shortStatus = fullStatus;
-    if (fullStatus == "Menunggu Persetujuan PIC Ruangan") {
+    String shortStatus = peminjaman.status;
+    if (shortStatus == "Menunggu Persetujuan PIC Ruangan") {
       shortStatus = "Menunggu Persetujuan";
-    } else if (fullStatus == "Ditolak PIC") {
+    } else if (shortStatus == "Ditolak PIC") {
       shortStatus = "Ditolak";
     }
 
-    // Warna
-    Color badgeColor;
-    if (isApproved) {
-      badgeColor = const Color(0xFF00D800);
-    } else if (fullStatus.contains("Ditolak")) {
-      badgeColor = Colors.red;
-    } else {
-      badgeColor = const Color(0xFFFFC037); // Kuning
-    }
-
-    // --- LOGIKA TEXT TOMBOL (FIXED) ---
-    String buttonText;
-    if (fullStatus == "Menunggu Persetujuan PIC Ruangan") {
-      buttonText = "Detail Peminjaman"; // SEBELUM APPROVE
-    } else {
-      buttonText = "Detail"; // SETELAH APPROVE/REJECT
-    }
+    String buttonText =
+        (peminjaman.status == "Menunggu Persetujuan PIC Ruangan")
+        ? "Detail Peminjaman"
+        : "Detail";
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        // SHADOW HALUS (CARD)
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(40),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(0.50), // Transparan halus
+            blurRadius: 10, // Blur lembut
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Kode Booking (Title)
           Text(
             peminjaman.kodeBooking,
             style: GoogleFonts.poppins(
@@ -365,10 +295,7 @@ class _HomePicPageState extends State<HomePicPage> {
             ),
           ),
           const SizedBox(height: 8),
-
-          // 2. ID + BADGE ATAS (Full Text)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 'ID: ${peminjaman.id}',
@@ -377,39 +304,32 @@ class _HomePicPageState extends State<HomePicPage> {
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 20),
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
+                    horizontal: 13,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: badgeColor,
+                    color: peminjaman.statusColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    fullStatus,
+                    peminjaman.status,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
-                      height: 1.2,
                     ),
-                    softWrap: true,
-                    overflow: TextOverflow.visible,
                   ),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // 3. STATUS PIC + BADGE BAWAH (Short Text & Medium Size)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
                 width: 120,
@@ -431,12 +351,11 @@ class _HomePicPageState extends State<HomePicPage> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: badgeColor,
+                  color: peminjaman.statusColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   shortStatus,
-                  textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -446,16 +365,12 @@ class _HomePicPageState extends State<HomePicPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 6),
-
           _buildDetailRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
           _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
-          _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
-
+          _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           const SizedBox(height: 16),
-
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
@@ -463,184 +378,25 @@ class _HomePicPageState extends State<HomePicPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4150FF),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Text(
                 buttonText,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: 13,
                 ),
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  // --- CONTROLS (FILTER & SEARCH) ---
-  Widget _buildFilters() {
-    final shadowDecoration = BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: Colors.grey.shade300), // Added border like PJ
-    );
-
-    // Common dropdown style
-    final buttonStyle = ButtonStyleData(
-      height: 45,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: shadowDecoration,
-    );
-
-    final dropdownStyle = DropdownStyleData(
-      maxHeight: 300,
-      width: MediaQuery.of(context).size.width - 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.white,
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      offset: const Offset(0, 0),
-      scrollbarTheme: ScrollbarThemeData(
-        radius: const Radius.circular(40),
-        thickness: MaterialStateProperty.all(6),
-        thumbVisibility: MaterialStateProperty.all(true),
-      ),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Filter Ruangan
-        Text(
-          'Filter Ruangan:',
-          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
-        ),
-        const SizedBox(height: 8),
-        DropdownButton2<String>(
-          isExpanded: true,
-          value: _selectedRuangan,
-          items: _ruanganOptions.map((item) {
-            if (item['isHeader'] as bool) {
-              return DropdownMenuItem<String>(
-                enabled: false,
-                child: Text(
-                  item['value'],
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
-                ),
-              );
-            }
-            return DropdownMenuItem<String>(
-              value: item['value'],
-              child: Text(
-                item['value'],
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-            );
-          }).toList(),
-          onChanged: (value) => setState(() => _selectedRuangan = value),
-          buttonStyleData: buttonStyle,
-          dropdownStyleData: dropdownStyle,
-          menuItemStyleData: MenuItemStyleData(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            selectedMenuItemBuilder: (context, item) =>
-                Container(color: Colors.blue.withOpacity(0.1), child: item),
-          ),
-          iconStyleData: const IconStyleData(
-            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Filter Status
-        Text(
-          'Filter Status Peminjaman:',
-          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
-        ),
-        const SizedBox(height: 8),
-        DropdownButton2<String>(
-          isExpanded: true,
-          value: _selectedStatus,
-          items: _statusOptions
-              .map(
-                (String item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
-                ),
-              )
-              .toList(),
-          onChanged: (value) => setState(() => _selectedStatus = value),
-          buttonStyleData: buttonStyle,
-          dropdownStyleData: dropdownStyle,
-          menuItemStyleData: MenuItemStyleData(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            selectedMenuItemBuilder: (context, item) =>
-                Container(color: Colors.blue.withOpacity(0.1), child: item),
-          ),
-          iconStyleData: const IconStyleData(
-            icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Search Bar
-        Row(
-          children: [
-            Text(
-              'Search:',
-              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: SizedBox(
-                height: 45,
-                child: TextField(
-                  style: GoogleFonts.poppins(),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
-                    ),
-                    suffixIcon: const Icon(Icons.search, color: Colors.grey),
-                    hintText: "",
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -672,6 +428,135 @@ class _HomePicPageState extends State<HomePicPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFilters() {
+    // Style Button Dropdown (Ada Border + Shadow Halus)
+    final buttonStyle = ButtonStyleData(
+      height: 45,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+        // SHADOW HALUS (DROPDOWN)
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Filter Ruangan:',
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
+        ),
+        const SizedBox(height: 8),
+        DropdownButton2<String>(
+          isExpanded: true,
+          value: _selectedRuangan,
+          underline: const SizedBox(), // Hapus garis bawah default
+          items: _ruanganOptions.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
+            );
+          }).toList(),
+          onChanged: (val) => setState(() => _selectedRuangan = val),
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          'Filter Status Peminjaman:',
+          style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
+        ),
+        const SizedBox(height: 8),
+        DropdownButton2<String>(
+          isExpanded: true,
+          value: _selectedStatus,
+          underline: const SizedBox(), // Hapus garis bawah default
+          items: _statusOptions
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
+                ),
+              )
+              .toList(),
+          onChanged: (val) => setState(() => _selectedStatus = val),
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Search Bar (Ada Border + Shadow Halus)
+        Row(
+          children: [
+            Text(
+              'Search:',
+              style: GoogleFonts.poppins(fontSize: 15, color: Colors.black54),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  color: Colors.white,
+                  // SHADOW HALUS (SEARCH)
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    // Border Tetap Ada
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: const BorderSide(color: Color(0xFF1c36d2)),
+                    ),
+                    suffixIcon: const Icon(Icons.search, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

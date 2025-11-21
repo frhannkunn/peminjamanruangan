@@ -1,5 +1,4 @@
-// File: lib/pic/validasi_pic.dart (FINAL - FIX LIST PENGGUNA MATCHING)
-
+// File: lib/pic/validasi_pic.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_pic.dart';
@@ -7,8 +6,8 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 
 // Model PeminjamanDetailModel
 class PeminjamanDetailModel {
-  String namaKegiatan;
   String jenisKegiatan;
+  String namaKegiatan;
   String penanggungJawab;
   String nimNip;
   String namaPengaju;
@@ -22,8 +21,8 @@ class PeminjamanDetailModel {
   Color statusColor;
 
   PeminjamanDetailModel({
-    required this.namaKegiatan,
     required this.jenisKegiatan,
+    required this.namaKegiatan,
     required this.penanggungJawab,
     required this.nimNip,
     required this.namaPengaju,
@@ -40,8 +39,8 @@ class PeminjamanDetailModel {
   // --- FACTORY METHOD (DATA HARDCODE) ---
   factory PeminjamanDetailModel.fromPeminjaman(Peminjaman p) {
     return PeminjamanDetailModel(
-      namaKegiatan: "PBL TRPL 3I8",
       jenisKegiatan: "Perkuliahan",
+      namaKegiatan: "PBL TRPL 3I8",
       penanggungJawab: "DL | Gilang Bagus Ramadhan, A.Md.Kom",
       nimNip: "123456789",
       namaPengaju: "Rayan",
@@ -51,13 +50,12 @@ class PeminjamanDetailModel {
       jamMulai: "07.50",
       jamSelesai: "12.00",
 
-      // KUNCI DATA DI SINI SUDAH BENAR
       listPengguna: [
         {
-          'ID': '1234',
-          'Pengguna Ruangan': 'Ahmad Sahroni',
+          'ID': '1',
           'Jenis Pengguna': 'Mahasiswa',
-          'ID Pengguna': '434241121',
+          'ID Pengguna': '123456789',
+          'Pengguna Ruangan': 'Rayan',
           'Nomor Workspace': 'GU.601.WM.01',
           'Tipe Workspace': 'NON PC',
         },
@@ -325,9 +323,9 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
     // DAFTAR KUNCI YANG INGIN DITAMPILKAN (SAMA SEPERTI PJ)
     final List<String> displayKeys = [
       'ID',
-      'Pengguna Ruangan',
       'Jenis Pengguna',
       'ID Pengguna',
+      'Pengguna Ruangan',
       'Nomor Workspace',
       'Tipe Workspace',
     ];
@@ -479,11 +477,11 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
 
   Widget _buildSectionDetailKegiatan() {
     return _buildSectionCard(
-      title: 'Detail Kegiatan dan Tanggung Jawab',
+      title: 'Detail Kegiatan dan Penganggung Jawab',
       content: Column(
         children: [
-          _buildFormTextField('Nama Kegiatan', _dataDetail.namaKegiatan),
           _buildFormTextField('Jenis Kegiatan', _dataDetail.jenisKegiatan),
+          _buildFormTextField('Nama Kegiatan', _dataDetail.namaKegiatan),
           _buildFormTextField('Penanggung Jawab', _dataDetail.penanggungJawab),
         ],
       ),

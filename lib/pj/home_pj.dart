@@ -1,12 +1,9 @@
-// File: lib/pj/home_pj.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// Import intl DIHAPUS karena kita pakai String Hardcode
-import 'detail_pengajuan_pj.dart';
+import 'detail_pengajuan_pj.dart'; // Pastikan file ini ada
 import 'package:dropdown_button2/dropdown_button2.dart';
 
-// --- MODEL DATA (VERSI HARDCORE STRING) ---
+// --- MODEL DATA (KHUSUS PJ) ---
 class PeminjamanPj {
   String id;
   String ruangan;
@@ -35,6 +32,7 @@ class HomePjPage extends StatefulWidget {
 }
 
 class _HomePjPageState extends State<HomePjPage> {
+  // --- DATA DUMMY ---
   final List<PeminjamanPj> _peminjamanList = [
     PeminjamanPj(
       id: "6608",
@@ -57,12 +55,6 @@ class _HomePjPageState extends State<HomePjPage> {
     "Peminjaman Expired",
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    // initializeDateFormatting DIHAPUS
-  }
-
   // --- NAVIGASI ---
   Future<void> _navigateToDetail(PeminjamanPj peminjaman) async {
     final newStatus = await Navigator.push(
@@ -77,7 +69,7 @@ class _HomePjPageState extends State<HomePjPage> {
     }
   }
 
-  // --- LOGIC UPDATE STATUS (SIMPLE) ---
+  // --- LOGIC UPDATE STATUS ---
   void _updatePeminjamanStatus(String id, String newStatus) {
     setState(() {
       final dataYangMauDiedit = _peminjamanList.firstWhere((p) => p.id == id);
@@ -92,10 +84,11 @@ class _HomePjPageState extends State<HomePjPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // LAYER 1: KONTEN SCROLLABLE
           SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 150),
+                const SizedBox(height: 150), // Ruang untuk header biru
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.only(
@@ -114,22 +107,27 @@ class _HomePjPageState extends State<HomePjPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildControls(),
+                      _buildControls(), // Filter & Search
                       const SizedBox(height: 20),
 
                       // List Data
-                      ...List.generate(_peminjamanList.length, (index) {
-                        return _buildPeminjamanGroup(
-                          _peminjamanList[index],
-                          index + 1,
-                        );
-                      }),
+                      if (_peminjamanList.isEmpty)
+                        const Center(child: Text("Tidak ada data."))
+                      else
+                        ...List.generate(_peminjamanList.length, (index) {
+                          return _buildPeminjamanGroup(
+                            _peminjamanList[index],
+                            index + 1,
+                          );
+                        }),
                     ],
                   ),
                 ),
               ],
             ),
           ),
+
+          // LAYER 2: HEADER BIRU & KARTU SUMMARY
           _buildHeaderAndCardsPJ(),
         ],
       ),
@@ -174,6 +172,8 @@ class _HomePjPageState extends State<HomePjPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start, // Pastikan alignment atas sama
               children: [
                 _summaryCard('Menunggu Persetujuan', '5'),
                 _summaryCard('Disetujui', '4'),
@@ -189,14 +189,14 @@ class _HomePjPageState extends State<HomePjPage> {
   Widget _summaryCard(String title, String count) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(20),
+              color: Colors.black12,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -205,16 +205,31 @@ class _HomePjPageState extends State<HomePjPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
+            SizedBox(
+              height: 30, // Tinggi fix untuk muat 2 baris teks
+              child: Align(
+                alignment: Alignment.center, // Teks di tengah kotak
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2, // Maksimal 2 baris
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 12,
+                    height: 1.2, // Jarak antar baris rapat
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
+
+            const SizedBox(height: 2),
+
+            // Angka akan sejajar karena kotak judul di atas tingginya sama
             Text(
               count,
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF0D47A1),
               ),
@@ -244,12 +259,11 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // --- _buildPeminjamanCard ---
+  // --- CARD DATA ---
   Widget _buildPeminjamanCard(PeminjamanPj peminjaman) {
-    // FORMATTING TANGGAL DIHAPUS, LANGSUNG PAKAI STRING
     final String formattedDate = peminjaman.tanggalPinjam;
 
-    // Logic Badge Atas
+    // Logic Warna Badge
     String badgeAtasText;
     Color badgeAtasColor;
 
@@ -308,17 +322,16 @@ class _HomePjPageState extends State<HomePjPage> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        // --- SHADOW SESUAI REQUEST ---
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(40),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(0.50), // Transparan halus 50%
+            blurRadius: 10, // Blur lembut
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -333,6 +346,8 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
           ),
           const SizedBox(height: 8),
+
+          // BADGE ATAS
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -343,7 +358,7 @@ class _HomePjPageState extends State<HomePjPage> {
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 20),
               if (peminjaman.status != null)
                 Flexible(
                   child: Container(
@@ -372,6 +387,8 @@ class _HomePjPageState extends State<HomePjPage> {
             ],
           ),
           const SizedBox(height: 12),
+
+          // BADGE BAWAH (Status PJ)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -416,6 +433,7 @@ class _HomePjPageState extends State<HomePjPage> {
           _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
           _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           const SizedBox(height: 16),
+
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
@@ -427,15 +445,15 @@ class _HomePjPageState extends State<HomePjPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 20,
+                  vertical: 10,
                 ),
               ),
               child: Text(
                 buttonText,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -447,21 +465,20 @@ class _HomePjPageState extends State<HomePjPage> {
 
   // --- CONTROLS ---
   Widget _buildControls() {
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(
+    final buttonStyle = ButtonStyleData(
+      height: 45,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade400),
+        border: Border.all(color: Colors.grey.shade300), // Ada Border
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
     );
 
@@ -476,52 +493,7 @@ class _HomePjPageState extends State<HomePjPage> {
         DropdownButton2<String>(
           value: _selectedStatusFilter,
           isExpanded: true,
-          buttonStyleData: ButtonStyleData(
-            height: 45,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: const Color.fromARGB(255, 248, 244, 244),
-              ),
-              color: Colors.white,
-            ),
-          ),
-          dropdownStyleData: DropdownStyleData(
-            maxHeight: 200,
-            width: MediaQuery.of(context).size.width - 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            offset: const Offset(0, 0),
-            scrollbarTheme: ScrollbarThemeData(
-              radius: const Radius.circular(40),
-              thickness: MaterialStateProperty.all(6),
-              thumbVisibility: MaterialStateProperty.all(true),
-            ),
-          ),
-          menuItemStyleData: MenuItemStyleData(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            selectedMenuItemBuilder: (context, item) =>
-                Container(color: Colors.blue.withOpacity(0.1), child: item),
-          ),
-          iconStyleData: IconStyleData(
-            icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-            iconSize: 24,
-            openMenuIcon: const Icon(
-              Icons.keyboard_arrow_up,
-              color: Colors.grey,
-            ),
-          ),
+          underline: const SizedBox(), // Hapus underline
           items: _statusOptions.map((String status) {
             return DropdownMenuItem<String>(
               value: status,
@@ -537,10 +509,18 @@ class _HomePjPageState extends State<HomePjPage> {
               _selectedStatusFilter = newValue;
             });
           },
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
+
+        // SEARCH BAR
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Search:',
@@ -548,19 +528,36 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: SizedBox(
+              child: Container(
                 height: 45,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
                 child: TextField(
                   style: GoogleFonts.poppins(),
-                  decoration: inputDecoration.copyWith(
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
+                      borderSide: const BorderSide(color: Color(0xFF1c36d2)),
                     ),
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
                     hintText: "",
