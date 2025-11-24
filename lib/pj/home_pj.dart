@@ -1,21 +1,17 @@
-// File: lib/pj/home_pj.dart (CLEAN SINGLE DATA + LOGIC APPROVAL PIC)
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
-import 'detail_pengajuan_pj.dart'; // Pastikan ini di-import
-import 'package:dropdown_button2/dropdown_button2.dart'; // <-- Import package tambahan
+import 'detail_pengajuan_pj.dart'; // Pastikan file ini ada
+import 'package:dropdown_button2/dropdown_button2.dart';
 
-// Model data (Tidak berubah)
+// --- MODEL DATA (KHUSUS PJ) ---
 class PeminjamanPj {
-  final String id;
-  final String ruangan;
+  String id;
+  String ruangan;
   String? status;
-  final DateTime tanggalPinjam;
-  final String jamKegiatan;
-  final String namaKegiatan;
-  final String jenisKegiatan;
+  String tanggalPinjam;
+  String jamKegiatan;
+  String jenisKegiatan;
+  String namaKegiatan;
 
   PeminjamanPj({
     required this.id,
@@ -23,21 +19,9 @@ class PeminjamanPj {
     required this.status,
     required this.tanggalPinjam,
     required this.jamKegiatan,
-    required this.namaKegiatan,
     required this.jenisKegiatan,
+    required this.namaKegiatan,
   });
-
-  PeminjamanPj copyWith({String? status}) {
-    return PeminjamanPj(
-      id: id,
-      ruangan: ruangan,
-      status: status ?? this.status,
-      tanggalPinjam: tanggalPinjam,
-      jamKegiatan: jamKegiatan,
-      namaKegiatan: namaKegiatan,
-      jenisKegiatan: jenisKegiatan,
-    );
-  }
 }
 
 class HomePjPage extends StatefulWidget {
@@ -48,33 +32,28 @@ class HomePjPage extends StatefulWidget {
 }
 
 class _HomePjPageState extends State<HomePjPage> {
-  // --- DATA DUMMY (HANYA 1 DATA SEKARANG) ---
-  List<PeminjamanPj> _peminjamanList = [
+  // --- DATA DUMMY ---
+  final List<PeminjamanPj> _peminjamanList = [
     PeminjamanPj(
       id: "6608",
       ruangan: "GU.601.WM.01",
       status: "Menunggu Persetujuan Penanggung Jawab",
-      tanggalPinjam: DateTime(2025, 10, 18),
+      tanggalPinjam: "18 Oktober 2025",
       jamKegiatan: "07.50 - 12.00",
+      jenisKegiatan: "Perkuliahan",
       namaKegiatan: "PBL TRPL 318",
-      jenisKegiatan: "Kerja Kelompok",
     ),
   ];
 
-  // State untuk dropdown filter
   String? _selectedStatusFilter = "-Semua Status-";
+
   final List<String> _statusOptions = [
     "-Semua Status-",
     "Menunggu Persetujuan Penanggung Jawab",
     "Disetujui",
     "Ditolak",
+    "Peminjaman Expired",
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    initializeDateFormatting('id_ID', null);
-  }
 
   // --- NAVIGASI ---
   Future<void> _navigateToDetail(PeminjamanPj peminjaman) async {
@@ -90,14 +69,11 @@ class _HomePjPageState extends State<HomePjPage> {
     }
   }
 
+  // --- LOGIC UPDATE STATUS ---
   void _updatePeminjamanStatus(String id, String newStatus) {
     setState(() {
-      final index = _peminjamanList.indexWhere((p) => p.id == id);
-      if (index != -1) {
-        final oldPeminjaman = _peminjamanList[index];
-        _peminjamanList[index] = oldPeminjaman.copyWith(status: newStatus);
-        _peminjamanList = List.from(_peminjamanList);
-      }
+      final dataYangMauDiedit = _peminjamanList.firstWhere((p) => p.id == id);
+      dataYangMauDiedit.status = newStatus;
     });
   }
 
@@ -108,11 +84,11 @@ class _HomePjPageState extends State<HomePjPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Lapisan 1: Konten Scrollable
+          // LAYER 1: KONTEN SCROLLABLE
           SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 150),
+                const SizedBox(height: 150), // Ruang untuk header biru
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.only(
@@ -131,22 +107,27 @@ class _HomePjPageState extends State<HomePjPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildControls(),
+                      _buildControls(), // Filter & Search
                       const SizedBox(height: 20),
+
                       // List Data
-                      ...List.generate(_peminjamanList.length, (index) {
-                        return _buildPeminjamanGroup(
-                          _peminjamanList[index],
-                          index + 1,
-                        );
-                      }),
+                      if (_peminjamanList.isEmpty)
+                        const Center(child: Text("Tidak ada data."))
+                      else
+                        ...List.generate(_peminjamanList.length, (index) {
+                          return _buildPeminjamanGroup(
+                            _peminjamanList[index],
+                            index + 1,
+                          );
+                        }),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          // Lapisan 2: Header Biru
+
+          // LAYER 2: HEADER BIRU & KARTU SUMMARY
           _buildHeaderAndCardsPJ(),
         ],
       ),
@@ -173,7 +154,7 @@ class _HomePjPageState extends State<HomePjPage> {
             child: Align(
               alignment: Alignment.topLeft,
               child: Text(
-                'Hai, Kevin!',
+                'Hai, Gilang!',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
@@ -191,6 +172,8 @@ class _HomePjPageState extends State<HomePjPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start, // Pastikan alignment atas sama
               children: [
                 _summaryCard('Menunggu Persetujuan', '5'),
                 _summaryCard('Disetujui', '4'),
@@ -206,14 +189,14 @@ class _HomePjPageState extends State<HomePjPage> {
   Widget _summaryCard(String title, String count) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(20),
+              color: Colors.black12,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -222,16 +205,31 @@ class _HomePjPageState extends State<HomePjPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(color: Colors.black, fontSize: 12),
+            SizedBox(
+              height: 30, // Tinggi fix untuk muat 2 baris teks
+              child: Align(
+                alignment: Alignment.center, // Teks di tengah kotak
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2, // Maksimal 2 baris
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 12,
+                    height: 1.2, // Jarak antar baris rapat
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
+
+            const SizedBox(height: 2),
+
+            // Angka akan sejajar karena kotak judul di atas tingginya sama
             Text(
               count,
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF0D47A1),
               ),
@@ -261,77 +259,85 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // --- _buildPeminjamanCard (LOGIC APPROVAL BERTINGKAT) ---
+  // --- CARD DATA ---
   Widget _buildPeminjamanCard(PeminjamanPj peminjaman) {
-    final String formattedDate = DateFormat(
-      'd MMMM yyyy',
-      'id_ID',
-    ).format(peminjaman.tanggalPinjam);
+    final String formattedDate = peminjaman.tanggalPinjam;
 
-    // --- LOGIK BADGE ATAS (Deretan ID) ---
-    // Logic: Jika Status PJ "Disetujui" -> Berubah jadi "Menunggu Persetujuan PIC" (Kuning)
+    // Logic Warna Badge
     String badgeAtasText;
     Color badgeAtasColor;
 
     if (peminjaman.status == "Disetujui") {
-      badgeAtasText = "Menunggu Persetujuan PIC"; // BERUBAH JADI MENUNGGU PIC
-      badgeAtasColor = const Color(0xFFFFC037); // KUNING
+      badgeAtasText = "Menunggu Persetujuan PIC";
+      badgeAtasColor = const Color(0xFFFFC037);
     } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
       badgeAtasText = "Menunggu Persetujuan Penanggung Jawab";
-      badgeAtasColor = const Color(0xFFFFC037); // KUNING
+      badgeAtasColor = const Color(0xFFFFC037);
     } else if (peminjaman.status == "Ditolak") {
       badgeAtasText = "Ditolak";
       badgeAtasColor = Colors.red;
+    } else if (peminjaman.status == "Peminjaman Expired") {
+      badgeAtasText = "Peminjaman Expired";
+      badgeAtasColor = Colors.grey;
     } else {
       badgeAtasText = peminjaman.status ?? '-';
       badgeAtasColor = Colors.grey;
     }
 
-    // --- LOGIK BADGE BAWAH (Deretan Status PJ) ---
-    // Logic: Jika Status PJ "Disetujui" -> Teks tetap "Disetujui" (Hijau)
+    // Logic Badge Bawah
     String badgeBawahText;
     Color badgeBawahColor;
 
     if (peminjaman.status == "Disetujui") {
       badgeBawahText = "Disetujui";
-      badgeBawahColor = const Color(0xFF00D800); // HIJAU
+      badgeBawahColor = const Color(0xFF00D800);
     } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
-      badgeBawahText = "Menunggu Persetujuan"; // Teks Pendek
-      badgeBawahColor = const Color(0xFFFFC037); // KUNING
+      badgeBawahText = "Menunggu Persetujuan";
+      badgeBawahColor = const Color(0xFFFFC037);
     } else if (peminjaman.status == "Ditolak") {
       badgeBawahText = "Ditolak";
       badgeBawahColor = Colors.red;
+    } else if (peminjaman.status == "Peminjaman Expired") {
+      badgeBawahText = "Expired";
+      badgeBawahColor = Colors.grey;
     } else {
       badgeBawahText = peminjaman.status ?? '-';
       badgeBawahColor = Colors.grey;
     }
 
-    // --- LOGIK TOMBOL ---
+    // Logic Tombol
     final bool isApproved = peminjaman.status == "Disetujui";
-    String buttonText =
-        (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab")
-        ? 'Detail Approval'
-        : (isApproved ? 'Detail' : 'Ditolak');
+    String buttonText;
+
+    if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
+      buttonText = 'Detail Approval';
+    } else if (isApproved) {
+      buttonText = 'Detail';
+    } else if (peminjaman.status == "Ditolak") {
+      buttonText = 'Ditolak';
+    } else if (peminjaman.status == "Peminjaman Expired") {
+      buttonText = 'Detail';
+    } else {
+      buttonText = 'Detail';
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        // --- SHADOW SESUAI REQUEST ---
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(40),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(0.50), // Transparan halus 50%
+            blurRadius: 10, // Blur lembut
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Nama Ruangan
           Text(
             peminjaman.ruangan,
             style: GoogleFonts.poppins(
@@ -341,7 +347,7 @@ class _HomePjPageState extends State<HomePjPage> {
           ),
           const SizedBox(height: 8),
 
-          // 2. ID + BADGE ATAS (Menunggu PIC jika Approved)
+          // BADGE ATAS
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -352,13 +358,13 @@ class _HomePjPageState extends State<HomePjPage> {
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 20),
               if (peminjaman.status != null)
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 14,
+                      vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: badgeAtasColor,
@@ -370,7 +376,7 @@ class _HomePjPageState extends State<HomePjPage> {
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 11,
+                        fontSize: 10,
                         height: 1.2,
                       ),
                       softWrap: true,
@@ -380,11 +386,9 @@ class _HomePjPageState extends State<HomePjPage> {
                 ),
             ],
           ),
-
-          // --- END ROW ID + BADGE 1 ---
           const SizedBox(height: 12),
 
-          // 3. STATUS PJ + BADGE BAWAH (Disetujui jika Approved)
+          // BADGE BAWAH (Status PJ)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -404,7 +408,7 @@ class _HomePjPageState extends State<HomePjPage> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10, // Padding proporsional (Medium)
+                  horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
@@ -417,21 +421,17 @@ class _HomePjPageState extends State<HomePjPage> {
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 11, // Font size proporsional (Medium)
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
-
-          // --- END ROW STATUS PJ + BADGE 2 ---
           const SizedBox(height: 6),
-
           _buildDetailRow('Tanggal Pinjam', formattedDate),
           _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
-          _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
-
+          _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           const SizedBox(height: 16),
 
           Align(
@@ -445,8 +445,8 @@ class _HomePjPageState extends State<HomePjPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                  horizontal: 20,
+                  vertical: 10,
                 ),
               ),
               child: Text(
@@ -463,23 +463,22 @@ class _HomePjPageState extends State<HomePjPage> {
     );
   }
 
-  // --- CONTROLS (SEARCH & FILTER) ---
+  // --- CONTROLS ---
   Widget _buildControls() {
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(
+    final buttonStyle = ButtonStyleData(
+      height: 45,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade400),
+        border: Border.all(color: Colors.grey.shade300), // Ada Border
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
     );
 
@@ -494,59 +493,12 @@ class _HomePjPageState extends State<HomePjPage> {
         DropdownButton2<String>(
           value: _selectedStatusFilter,
           isExpanded: true,
-          buttonStyleData: ButtonStyleData(
-            height: 45,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300),
-              color: Colors.white,
-            ),
-          ),
-          dropdownStyleData: DropdownStyleData(
-            maxHeight: 200,
-            width: MediaQuery.of(context).size.width - 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A000000),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            offset: const Offset(0, 0),
-            scrollbarTheme: ScrollbarThemeData(
-              radius: const Radius.circular(40),
-              thickness: MaterialStateProperty.all(6),
-              thumbVisibility: MaterialStateProperty.all(true),
-            ),
-          ),
-          menuItemStyleData: MenuItemStyleData(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            selectedMenuItemBuilder: (context, item) =>
-                Container(color: Colors.blue.withOpacity(0.1), child: item),
-          ),
-          iconStyleData: IconStyleData(
-            icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-            iconSize: 24,
-            openMenuIcon: const Icon(
-              Icons.keyboard_arrow_up,
-              color: Colors.grey,
-            ),
-          ),
+          underline: const SizedBox(), // Hapus underline
           items: _statusOptions.map((String status) {
-            String shortStatus = status;
-            if (status == "Menunggu Persetujuan Penanggung Jawab") {
-              shortStatus = "Menunggu Persetujuan";
-            }
             return DropdownMenuItem<String>(
               value: status,
               child: Text(
-                shortStatus,
+                status,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
               ),
@@ -557,10 +509,18 @@ class _HomePjPageState extends State<HomePjPage> {
               _selectedStatusFilter = newValue;
             });
           },
+          buttonStyleData: buttonStyle,
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+            ),
+          ),
         ),
         const SizedBox(height: 16),
+
+        // SEARCH BAR
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Search:',
@@ -568,11 +528,24 @@ class _HomePjPageState extends State<HomePjPage> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: SizedBox(
+              child: Container(
                 height: 45,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.15),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
                 child: TextField(
                   style: GoogleFonts.poppins(),
-                  decoration: inputDecoration.copyWith(
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
@@ -584,7 +557,7 @@ class _HomePjPageState extends State<HomePjPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
+                      borderSide: const BorderSide(color: Color(0xFF1c36d2)),
                     ),
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
                     hintText: "",
