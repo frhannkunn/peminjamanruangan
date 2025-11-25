@@ -19,12 +19,16 @@ class LoanUser {
 
   factory LoanUser.fromJson(Map<String, dynamic> json) {
     return LoanUser(
-      id: json['id'],
-      loansId: json['loans_id'],
-      workspacesId: json['workspaces_id'],
-      jenisPengguna: json['jenis_pengguna'],
-      namaPengguna: json['nama_pengguna'],
-      idCardPengguna: json['id_card_pengguna'],
+      // ✅ PERBAIKAN UTAMA: Gunakan int.parse(...)
+      // Ini mencegah error "String is not subtype of int"
+      id: int.parse(json['id'].toString()),
+      loansId: int.parse(json['loans_id'].toString()),
+      workspacesId: int.parse(json['workspaces_id'].toString()),
+      
+      // Handle null safety untuk String
+      jenisPengguna: json['jenis_pengguna'] ?? '',
+      namaPengguna: json['nama_pengguna'] ?? '',
+      idCardPengguna: json['id_card_pengguna'] ?? '',
     );
   }
 }

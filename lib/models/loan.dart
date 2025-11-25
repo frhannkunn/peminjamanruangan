@@ -1,21 +1,26 @@
-// lib/models/loan.dart
-
 import 'loan_user.dart';
 
 class Loan {
   final int id;
   final int roomsId;
+  
+  // Kolom-kolom String
   final String lecturesNik;
-  final int activityType;
   final String activityName;
-  final String loanDate; // Format "Y-m-d"
-  final String startTime; // Format "H:i:s"
-  final String endTime; // Format "H:i:s"
+  final String activityOther; 
+  final String loanDate;
+  final String startTime;
+  final String endTime;
   final String studentId;
   final String studentName;
   final String studentEmail;
+  
+  // Kolom-kolom Integer
+  final int activityType;
   final int status;
-  final List<LoanUser>? loanUsers; // Hanya ada saat memanggil getLoanDetail
+  
+  // Relasi
+  final List<LoanUser>? loanUsers;
 
   Loan({
     required this.id,
@@ -23,6 +28,7 @@ class Loan {
     required this.lecturesNik,
     required this.activityType,
     required this.activityName,
+    required this.activityOther,
     required this.loanDate,
     required this.startTime,
     required this.endTime,
@@ -34,7 +40,7 @@ class Loan {
   });
 
   factory Loan.fromJson(Map<String, dynamic> json) {
-    // Cek jika ada relasi 'loan_users' (dari fungsi 'show')
+    // 1. Handle Relasi Users
     var usersList = json['loan_users'] as List?;
     List<LoanUser>? users;
     if (usersList != null) {
@@ -42,18 +48,27 @@ class Loan {
     }
 
     return Loan(
-      id: json['id'],
-      roomsId: json['rooms_id'],
-      lecturesNik: json['lectures_nik'],
-      activityType: json['activity_type'],
-      activityName: json['activity_name'],
-      loanDate: json['loan_date'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      studentId: json['student_id'],
-      studentName: json['student_name'],
-      studentEmail: json['student_email'],
-      status: json['status'],
+      // ✅ 2. Handle ANGKA (Mencegah error jika API kirim String "1" atau Null)
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      roomsId: int.tryParse(json['rooms_id'].toString()) ?? 0,
+      activityType: int.tryParse(json['activity_type'].toString()) ?? 0,
+      status: int.tryParse(json['status'].toString()) ?? 0,
+
+      // ✅ 3. Handle STRING (KUNCI PERBAIKAN ERROR ANDA)
+      // Logika: json['key']?.toString() ?? ''
+      // Artinya: Jika datanya NULL, ganti dengan string kosong ''
+      
+      lecturesNik: json['lectures_nik']?.toString() ?? '',
+      activityName: json['activity_name']?.toString() ?? '',
+      activityOther: json['activity_other']?.toString() ?? '', 
+      loanDate: json['loan_date']?.toString() ?? '',
+      startTime: json['start_time']?.toString() ?? '',
+      endTime: json['end_time']?.toString() ?? '',
+      
+      studentId: json['student_id']?.toString() ?? '',
+      studentName: json['student_name']?.toString() ?? '',
+      studentEmail: json['student_email']?.toString() ?? '',
+      
       loanUsers: users,
     );
   }

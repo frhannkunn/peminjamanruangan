@@ -48,4 +48,20 @@ class Room {
       pics: picsData, // 5. Masukkan data pics yang sudah aman (picsData)
     );
   }
+  // ==========================================================
+  // ➕ TAMBAHKAN GETTER DI BAWAH INI AGAR UI TIDAK MERAH
+  // ==========================================================
+
+  // 1. Helper untuk mengambil PIC Utama (elemen pertama dari List)
+  // Supaya di form bisa panggil: _selectedRoomData!.pic?.name
+  Pic? get pic {
+    if (pics.isNotEmpty) {
+      return pics.first;
+    }
+    return null;
+  }
+
+  // 2. Helper alias untuk nama gedung
+  // Supaya di form bisa panggil: _selectedRoomData!.buildingName
+  String get buildingName => building;
 }

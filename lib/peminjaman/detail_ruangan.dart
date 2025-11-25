@@ -250,7 +250,7 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 40),
                             child: Text(
-                              'Workspace belum di buat PIC ruangan',
+                              'Tidak ada Workspace',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(color: Colors.grey[600]),
                             ),
@@ -338,7 +338,7 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
           // Tampilkan pesan jika tidak ada PIC
           else ...[
             Text(
-              "PIC belum ditugaskan",
+              "Tidak ada PIC Ruangan, harap menghubungi Tata Usaha untuk melakukan peminjaman.",
               style: GoogleFonts.poppins(
                 color: Colors.grey[600],
                 fontStyle: FontStyle.italic,

@@ -389,16 +389,15 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      // ♻️ DIUBAH: title -> name
                       ruangan.name,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
-                        fontSize: 15,
+                        fontSize: 14, // 💡 Saran: Kecilkan sedikit biar muat 2 baris
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
-                      maxLines: 1, // Tambahan agar rapi
-                      overflow: TextOverflow.ellipsis, // Tambahan agar rapi
+                      maxLines: 2, // ✅ Izinkan maksimal 2 baris
+                      overflow: TextOverflow.visible, // ✅ Teks akan turun ke bawah, bukan jadi titik-titik
                     ),
                     const SizedBox(height: 2),
                     Text(
