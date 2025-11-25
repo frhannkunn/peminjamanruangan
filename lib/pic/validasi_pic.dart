@@ -157,7 +157,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
-                        backgroundColor: Colors.deepPurpleAccent,
+                        backgroundColor: const Color(0xFF00D800),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
