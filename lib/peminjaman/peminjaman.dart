@@ -2,13 +2,677 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-// Import screen dan model terkait
+// Import model dan service
+import '../models/loan.dart';
+import '../models/room.dart';
+import '../models/lecturer.dart';
+import '../services/loan_service.dart';
+import '../services/room_service.dart';
+import '../services/user_session.dart';
+
+// Import screen terkait
 import 'form_peminjaman.dart';
 import 'qr.dart';
 import 'detail_peminjaman.dart';
-import 'tambah_pengguna.dart'; // Penting untuk tipe data Pengguna
-import '../services/user_session.dart';
+// import 'tambah_pengguna.dart'; // Jika diperlukan
 
+class PeminjamanScreen extends StatefulWidget {
+  const PeminjamanScreen({super.key});
+
+  @override
+  State<PeminjamanScreen> createState() => _PeminjamanScreenState();
+}
+
+class _PeminjamanScreenState extends State<PeminjamanScreen> {
+  bool _isShowingForm = false;
+  
+  // Filter State
+  String? _selectedGedung;
+  String? _selectedStatus = "Semua Status";
+  DateTime? _selectedDate;
+  final TextEditingController _searchController = TextEditingController();
+
+  // Services
+  final LoanService _loanService = LoanService();
+  final RoomService _roomService = RoomService();
+
+  // Data State
+  UserProfile? _userProfile;
+  List<Loan> _allLoans = [];
+  Map<String, List<Room>> _groupedRooms = {};
+  List<Lecturer> _lecturers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeData() async {
+    setState(() => _isLoading = true);
+    try {
+      final profile = await UserSession.getUserProfile();
+      final groupedRooms = await _roomService.getGroupedRooms();
+      final lecturers = await _loanService.getLecturers();
+      final loans = await _loanService.getLoans();
+
+      final myLoans = loans.where((loan) => 
+        loan.studentId == profile?.nikOrNim
+      ).toList();
+
+      myLoans.sort((a, b) => b.id.compareTo(a.id));
+
+      if (mounted) {
+        setState(() {
+          _userProfile = profile;
+          _groupedRooms = groupedRooms;
+          _lecturers = lecturers;
+          _allLoans = myLoans;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  String _getRoomName(int roomId) {
+    for (var entry in _groupedRooms.entries) {
+      for (var room in entry.value) {
+        if (room.id == roomId) return room.name;
+      }
+    }
+    return "Unknown Room ($roomId)";
+  }
+
+  String _getRoomCode(int roomId) {
+    for (var entry in _groupedRooms.entries) {
+      for (var room in entry.value) {
+        if (room.id == roomId) return room.code;
+      }
+    }
+    return "-";
+  }
+
+  String _getLecturerName(String nik) {
+    try {
+      final lecturer = _lecturers.firstWhere((l) => l.nik == nik);
+      return lecturer.name;
+    } catch (e) {
+      return nik;
+    }
+  }
+
+  // --- PERBAIKAN 1: LOGIKA STATUS UTAMA (Gambar 1) ---
+  // Asumsi alur status DB:
+  // 0: Draft
+  // 1: Menunggu PJ
+  // 2: Disetujui PJ (Sedang Menunggu PIC) <- Ini yang diperbaiki
+  // 3: Final Disetujui (PIC OK)
+  // 4: Ditolak
+  String _mapStatusToString(int status) {
+    switch (status) {
+      case 0: return 'Draft';
+      case 1: return 'Menunggu Persetujuan PJ';
+      case 2: return 'Ditolak Penanggung Jawab'; // <-- Ditolak PJ
+      case 3: return 'Menunggu Persetujuan PIC'; // <-- Menunggu PIC
+      case 4: return 'Ditolak PIC';              // <-- Ditolak PIC
+      case 5: return 'Disetujui';                // <-- Final
+      case 6: return 'Selesai';
+      case 7: return 'Peminjaman Bermasalah';
+      case 8: return 'Expired';
+      default: return 'Status Tidak Dikenal ($status)';
+    }
+  }
+
+  String _mapActivityType(int type) {
+    switch (type) {
+      case 0: return 'Perkuliahan'; // Sesuai logika Form (0)
+      case 1: return 'PBL';         // Sesuai logika Form (1)
+      case 3: return 'Lainnya';     // Sesuai logika Form (3)
+      default: return 'Lainnya ($type)'; // Debug: Tampilkan angka jika tidak dikenali
+    }
+  }
+
+  List<DropdownMenuItem<String>> _buildGroupedDropdownItems() {
+    List<DropdownMenuItem<String>> items = [];
+    items.add(const DropdownMenuItem(
+      value: null,
+      child: Text("Semua Gedung"),
+    ));
+
+    _groupedRooms.forEach((building, rooms) {
+      items.add(DropdownMenuItem(
+        value: "HEADER_$building",
+        enabled: false,
+        child: Text(building, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+      ));
+
+      for (var room in rooms) {
+        items.add(DropdownMenuItem(
+          value: room.name,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Text(room.name),
+          ),
+        ));
+      }
+    });
+    return items;
+  }
+
+  Color _getStatusColor(int status) {
+    switch (status) {
+      case 5: // Disetujui
+      case 6: // Selesai
+        return Colors.green;
+        
+      case 2: // Ditolak PJ
+      case 4: // Ditolak PIC
+      case 7: // Bermasalah
+      case 8: // Expired
+        return Colors.red;
+        
+      case 0: // Draft (Kuning Tua)
+        return const Color(0xFFF9A825);
+        
+      case 1: // Menunggu PJ (Oranye)
+      case 3: // Menunggu PIC (Oranye)
+        return const Color(0xFFF59B17);
+        
+      default: return Colors.grey;
+    }
+  }
+
+  void _showForm() {
+    if (_userProfile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Data profil belum siap.")),
+      );
+      return;
+    }
+    setState(() => _isShowingForm = true);
+  }
+
+  void _hideForm(String? message) {
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      _initializeData();
+    }
+    setState(() => _isShowingForm = false);
+  }
+
+  void _handleFormSubmission(Map<String, dynamic> formData, List<dynamic> pengguna) async {
+  _hideForm("Peminjaman berhasil diajukan!");
+}
+
+  // --- FUNGSI INI DIHAPUS KARENA DIGANTI POPUP MENU BUTTON ---
+  // void _showMenuAction(BuildContext context, Loan loan) async { ... }
+
+  // Fungsi navigasi baru untuk PopupMenuButton
+  void _handleMenuSelection(String value, Loan loan, String statusStr) {
+    if (value == 'detail') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DetailPeminjamanScreen(loanId: loan.id, statusStr: statusStr)),
+      );
+    } else if (value == 'edit') {
+        // TODO: Navigasi ke layar Edit Peminjaman
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Edit belum diimplementasikan")));
+    } else if (value == 'qr') {
+      // Dummy data untuk QR Screen yang ada
+      final dummyData = PeminjamanData(
+        id: loan.id.toString(),
+        ruangan: _getRoomName(loan.roomsId),
+        status: statusStr,
+        penanggungJawab: _getLecturerName(loan.lecturesNik),
+        jenisKegiatan: _mapActivityType(loan.activityType),
+        namaKegiatan: loan.activityName,
+        namaPengaju: loan.studentName,
+        tanggalPinjam: DateTime.parse(loan.loanDate),
+        totalPeminjam: 0,
+        jamMulai: loan.startTime,
+        jamSelesai: loan.endTime,
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => QrScreen(peminjaman: dummyData)),
+      );
+    }
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isShowingForm) {
+      return FormPeminjamanScreen(
+        onBack: (msg) => _hideForm(msg),
+        userProfile: _userProfile!,
+        onSubmit: _handleFormSubmission,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Text("Peminjaman",
+            style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
+        centerTitle: true,
+      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: _initializeData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  _buildSearchFilterCard(),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showForm,
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: Text("Ajukan Peminjaman",
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B4AF5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildPeminjamanList(),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildSearchFilterCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 2, blurRadius: 10)
+          ]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text("Cari Peminjaman",
+            style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20),
+        
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text("Gedung", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey[700])),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _buildGroupedDropdownItems().any((item) => item.value == _selectedGedung) 
+                ? _selectedGedung 
+                : null,
+            hint: const Text("Semua Gedung"),
+            isExpanded: true,
+            decoration: _inputDecoration(),
+            items: _buildGroupedDropdownItems(),
+            onChanged: (value) {
+               if (value != null && value.startsWith("HEADER_")) return;
+               setState(() => _selectedGedung = value);
+            }),
+        ]),
+
+        const SizedBox(height: 16),
+        
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text("Status", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey[700])),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _selectedStatus,
+            isExpanded: true,
+            decoration: _inputDecoration(),
+            items: ['Semua Status', 'Draft', 'Disetujui', 'Ditolak', 'Menunggu Persetujuan PJ', 'Menunggu Persetujuan PIC', 'Peminjaman Expired']
+                .map((String value) => DropdownMenuItem<String>(value: value, child: Text(value, overflow: TextOverflow.ellipsis)))
+                .toList(),
+            onChanged: (value) => setState(() => _selectedStatus = value)),
+        ]),
+        
+        const SizedBox(height: 16),
+        
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text("Tanggal Pinjam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey[700])),
+          const SizedBox(height: 8),
+          TextField(
+            controller: TextEditingController(text: _selectedDate == null ? "Semua Tanggal" : DateFormat('dd MMMM yyyy').format(_selectedDate!)),
+            readOnly: true,
+            decoration: _inputDecoration(
+              hint: "Semua Tanggal",
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today_outlined, color: Colors.grey),
+                onPressed: () async {
+                   final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030));
+                  if (picked != null && picked != _selectedDate) {
+                    setState(() => _selectedDate = picked);
+                  }
+                })),
+            onTap: () async {
+              final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030));
+                  if (picked != null && picked != _selectedDate) {
+                    setState(() => _selectedDate = picked);
+                  }
+            }),
+        ]),
+      ]),
+    );
+  }
+
+  InputDecoration _inputDecoration({String? hint, Widget? suffixIcon}) {
+    return InputDecoration(
+        hintText: hint,
+        suffixIcon: suffixIcon,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0D47A1))),
+        hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]));
+  }
+
+  Widget _buildPeminjamanList() {
+    final filteredList = _allLoans.where((loan) {
+      final searchLower = _searchController.text.toLowerCase();
+      final roomName = _getRoomName(loan.roomsId);
+      final statusStr = _mapStatusToString(loan.status);
+      
+      final matchesSearch = searchLower.isEmpty ||
+          roomName.toLowerCase().contains(searchLower) ||
+          loan.studentName.toLowerCase().contains(searchLower) ||
+          loan.activityName.toLowerCase().contains(searchLower);
+      
+      final matchesGedung = _selectedGedung == null || roomName == _selectedGedung;
+      final matchesStatus = _selectedStatus == 'Semua Status' || statusStr == _selectedStatus;
+      
+      bool matchesDate = true;
+      if (_selectedDate != null) {
+         matchesDate = loan.loanDate == DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      }
+
+      return matchesSearch && matchesGedung && matchesStatus && matchesDate;
+    }).toList();
+
+    return Column(children: [
+      Row(children: [
+        Text("Search:", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
+        const SizedBox(width: 8),
+        Expanded(
+            child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() {}),
+                decoration: _inputDecoration(hint: "Cari...", suffixIcon: const Icon(Icons.search, color: Colors.grey)))),
+      ]),
+      const SizedBox(height: 16),
+      if (filteredList.isEmpty)
+        Center(child: Text("Tidak ada data peminjaman.", style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600])))
+      else
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: filteredList.length,
+          itemBuilder: (context, index) {
+            return _buildPeminjamanCard(filteredList[index]);
+          },
+        ),
+    ]);
+  }
+
+  Widget _buildPeminjamanCard(Loan loan) {
+    final roomName = _getRoomName(loan.roomsId); 
+    final roomCode = _getRoomCode(loan.roomsId);
+    final statusStr = _mapStatusToString(loan.status);
+    final lecturerName = _getLecturerName(loan.lecturesNik);
+    final activityTypeStr = _mapActivityType(loan.activityType);
+    
+    // Logic Status PJ
+    String pjStatusText = '-';
+    Color pjStatusColor = Colors.transparent;
+    Color pjStatusTextColor = Colors.black;
+
+    // Status 1: Sedang Menunggu PJ
+    if (loan.status == 1) { 
+      pjStatusText = 'Menunggu Persetujuan';
+      pjStatusColor = const Color(0xFFF59B17);
+      pjStatusTextColor = Colors.white;
+    } 
+    // Status 2: Ditolak PJ
+    else if (loan.status == 2) { 
+      pjStatusText = 'Ditolak';
+      pjStatusColor = Colors.red;
+      pjStatusTextColor = Colors.white;
+    } 
+    // Status >= 3: Berarti sudah lolos dari PJ (sedang di PIC, atau Final)
+    // Kecuali jika statusnya 2 (Ditolak PJ) yang sudah dihandle di atas
+    else if (loan.status >= 3) { 
+      pjStatusText = 'Disetujui';
+      pjStatusColor = Colors.green;
+      pjStatusTextColor = Colors.white;
+    }
+
+    // Gunakan ValueNotifier untuk mengontrol state ekspansi di dalam listview
+    final isExpandedNotifier = ValueNotifier<bool>(false);
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: isExpandedNotifier,
+      builder: (context, isExpanded, child) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          
+                          // 2. UBAH TEXT INI: Format "Kode - Nama Panjang"
+                          Text(
+                            "$roomCode $roomName", // <--- KODE DULUAN, BARU NAMA
+                            style: GoogleFonts.poppins(
+                                fontSize: 16, 
+                                fontWeight: FontWeight.bold, 
+                                color: Colors.black87
+                            ),
+                            overflow: TextOverflow.ellipsis, // Agar jika kepanjangan ada titik-titik (...)
+                            maxLines: 1,
+                          ),
+
+                          Text('ID: ${loan.id}',
+                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                      onPressed: () {
+                        isExpandedNotifier.value = !isExpanded;
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  // Chip Status Utama (Akan berwarna kuning dan bertuliskan "Menunggu Persetujuan PIC" jika statusnya 2)
+                  child: Chip(
+                    label: Text(statusStr,
+                        style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                    backgroundColor: _getStatusColor(loan.status),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  ),
+                ),
+                
+                if (isExpanded) ...[
+                  const Divider(height: 24),
+                  _buildCardDetailRow('Penanggung Jawab:', lecturerName),
+                  
+                  // Status PJ Row (Akan berwarna hijau "Disetujui" jika status utamanya "Menunggu PIC")
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 130, child: Text("Status PJ:", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]))),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: pjStatusText == '-' 
+                              ? const Text("-") 
+                              : Chip(
+                                  label: Text(pjStatusText, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: pjStatusTextColor)),
+                                  backgroundColor: pjStatusColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _buildCardDetailRow('Jenis Kegiatan:', activityTypeStr),
+                  _buildCardDetailRow('Tanggal Pinjam:', DateFormat('dd MMMM yyyy').format(DateTime.parse(loan.loanDate))),
+                  _buildCardDetailRow('Waktu:', '${loan.startTime} - ${loan.endTime}'),
+                ],
+                const SizedBox(height: 12),
+                
+                // Action Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Tombol Batalkan (Hanya untuk Draft, Menunggu PJ, Menunggu PIC)
+                    if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan PJ' || statusStr == 'Menunggu Persetujuan PIC')
+                       ElevatedButton(
+                        onPressed: () {
+                          // TODO: Implementasi konfirmasi hapus
+                          _loanService.deleteLoan(loan.id.toString()).then((_) {
+                             _hideForm("Pengajuan dibatalkan/dihapus.");
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text("Batalkan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white)),
+                      ),
+                    const SizedBox(width: 8),
+
+                    // --- PERBAIKAN 2 & 3: POPUP MENU BUTTON UNTUK DETAIL/EDIT/QR ---
+                    // Mengganti ElevatedButton "Detail" biasa dengan PopupMenuButton
+                    // agar posisi menu drop-down pas di bawah tombolnya.
+                    PopupMenuButton<String>(
+                      onSelected: (value) => _handleMenuSelection(value, loan, statusStr),
+                      itemBuilder: (BuildContext context) {
+                        List<PopupMenuEntry<String>> menuItems = [];
+                        
+                        // Menu Detail (Selalu ada)
+                        menuItems.add(PopupMenuItem(
+                          value: 'detail',
+                          child: Text('Detail', style: GoogleFonts.poppins()),
+                        ));
+
+                        // Menu Edit (PERBAIKAN 3: Muncul jika Draft ATAU Menunggu PJ)
+                        if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan PJ') {
+                          menuItems.add(PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit', style: GoogleFonts.poppins()),
+                          ));
+                        }
+                        
+                        // Menu QR Code (Muncul jika bukan Draft dan bukan Ditolak)
+                        if (statusStr != 'Draft' && statusStr != 'Ditolak') {
+                           menuItems.add(PopupMenuItem(
+                            value: 'qr',
+                            child: Text('QR Code', style: GoogleFonts.poppins()),
+                          ));
+                        }
+                        
+                        return menuItems;
+                      },
+                      // Membuat tampilan tombol pemicu seperti ElevatedButton biru
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[800],
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("Detail", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildCardDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 130, child: Text(label, style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]))),
+          Expanded(child: Text(value.isEmpty ? '-' : value, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black87))),
+        ],
+      ),
+    );
+  }
+}
+
+// Class dummy untuk kompatibilitas dengan QrScreen yang sudah ada
 class PeminjamanData {
   final String id;
   final String ruangan;
@@ -37,921 +701,4 @@ class PeminjamanData {
     required this.jamSelesai,
     this.isExpanded = false,
   });
-}
-
-class PeminjamanScreen extends StatefulWidget {
-  const PeminjamanScreen({super.key});
-
-  @override
-  State<PeminjamanScreen> createState() => _PeminjamanScreenState();
-}
-
-class _PeminjamanScreenState extends State<PeminjamanScreen> {
-  bool _isShowingForm = false;
-  String? _selectedGedung;
-  String? _selectedStatus = "Semua Status";
-  DateTime? _selectedDate;
-  final TextEditingController _searchController = TextEditingController();
-
-  // State untuk User Profile
-  UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
-
-  // List Data Peminjaman (Mock Data Awal)
-  List<PeminjamanData> _peminjamanList = [
-    PeminjamanData(
-      id: '6601',
-      ruangan: 'Lab Basis Data (TA.10.1)',
-      status: 'Peminjaman Expired',
-      penanggungJawab: 'Dosen C',
-      jenisKegiatan: 'Praktikum',
-      namaKegiatan: 'Praktikum KBD',
-      namaPengaju: 'Mahasiswa Y',
-      tanggalPinjam: DateTime(2025, 10, 10),
-      totalPeminjam: 20,
-      jamMulai: '09:00',
-      jamSelesai: '11:00',
-      isExpanded: false,
-    ),
-    PeminjamanData(
-      id: '6608',
-      ruangan: 'TA.XII.4',
-      status: 'Disetujui',
-      penanggungJawab: 'Gilang Bagus',
-      jenisKegiatan: 'Perkuliahan',
-      namaKegiatan: 'PBL TRPL318',
-      namaPengaju: 'Gilang Bagus',
-      tanggalPinjam: DateTime(2025, 10, 16),
-      totalPeminjam: 2,
-      jamMulai: '08:00',
-      jamSelesai: '10:00',
-      isExpanded: false,
-    ),
-    PeminjamanData(
-      id: '6607',
-      ruangan: 'TA.XII.3',
-      status: 'Ditolak',
-      penanggungJawab: 'Dosen B',
-      jenisKegiatan: 'Rapat',
-      namaKegiatan: 'Rapat Tim',
-      namaPengaju: 'Dosen B',
-      tanggalPinjam: DateTime(2025, 10, 15),
-      totalPeminjam: 5,
-      jamMulai: '13:00',
-      jamSelesai: '14:00',
-      isExpanded: true,
-    ),
-    PeminjamanData(
-      id: '6608',
-      ruangan: 'TA.XII.4',
-      status: 'Draft',
-      penanggungJawab: '',
-      jenisKegiatan: '',
-      namaKegiatan: 'Belum Diisi',
-      namaPengaju: 'Gilang Bagus',
-      tanggalPinjam: DateTime(2025, 10, 18),
-      totalPeminjam: 0,
-      jamMulai: '10:00',
-      jamSelesai: '11:00',
-      isExpanded: false,
-    ),
-    PeminjamanData(
-      id: '6699',
-      ruangan: 'GU.601 - Workspace Virtual Reality',
-      status: 'Menunggu Persetujuan PJ',
-      penanggungJawab: 'Gilang bagus Ramadhan',
-      jenisKegiatan: 'Perkuliahan',
-      namaKegiatan: 'PBL TRPL 218',
-      namaPengaju: 'Gilang bagus Ramadhan',
-      tanggalPinjam: DateTime(2025, 9, 18),
-      totalPeminjam: 3,
-      jamMulai: '07:50',
-      jamSelesai: '12:00',
-      isExpanded: false,
-    ),
-    PeminjamanData(
-      id: '6700',
-      ruangan: 'Lab IoT (GU.3.1)',
-      status: 'Menunggu Persetujuan PIC',
-      penanggungJawab: 'Dosen C',
-      jenisKegiatan: 'Praktikum',
-      namaKegiatan: 'Praktikum IoT',
-      namaPengaju: 'Mahasiswa X',
-      tanggalPinjam: DateTime(2025, 10, 19),
-      totalPeminjam: 25,
-      jamMulai: '13:00',
-      jamSelesai: '15:00',
-      isExpanded: false,
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserProfile();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  // Load User Profile
-  Future<void> _loadUserProfile() async {
-    final profile = await UserSession.getUserProfile();
-    if (mounted) {
-      setState(() {
-        _userProfile = profile;
-        _isLoadingProfile = false;
-      });
-    }
-  }
-
-  // Menampilkan Form Peminjaman
-  void _showForm() {
-    if (_isLoadingProfile) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tunggu, data profil sedang dimuat...")),
-      );
-      return;
-    }
-
-    if (_userProfile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Gagal memuat data profil. Tidak bisa buka form.")),
-      );
-      return;
-    }
-
-    setState(() {
-      _isShowingForm = true;
-    });
-  }
-
-  // Menyembunyikan Form Peminjaman
-  void _hideForm(String? message) {
-    if (message != null && message.isNotEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              message,
-              style: GoogleFonts.poppins(
-                  color: Colors.black87, fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: const Color(0xFFE6F4EA),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Colors.green)),
-            elevation: 0,
-          ),
-        );
-      }
-    }
-    setState(() {
-      _isShowingForm = false;
-    });
-  }
-
-  // --- LOGIKA UTAMA: MENANGANI TOMBOL 'AJUKAN' ---
-  void _handleFormSubmission(
-      Map<String, dynamic> formData, List<Pengguna> pengguna) {
-    // Membuat objek PeminjamanData baru dari input user
-    final newPeminjaman = PeminjamanData(
-      id: '${DateTime.now().millisecondsSinceEpoch}', // Generate ID unik sederhana
-      ruangan: formData['ruangan'],
-      status: 'Menunggu Persetujuan PJ', // Status default saat diajukan
-      penanggungJawab: formData['penanggungJawab'],
-      jenisKegiatan: formData['jenisKegiatan'],
-      namaKegiatan: formData['namaKegiatan'],
-      namaPengaju: formData['namaPengaju'],
-      tanggalPinjam: formData['tanggalPinjam'],
-      totalPeminjam: pengguna.length, // Hitung jumlah pengguna yang diinput
-      jamMulai: formData['jamMulai'],
-      jamSelesai: formData['jamSelesai'],
-      isExpanded: false,
-    );
-
-    // Menambahkan data baru ke urutan paling atas list
-    setState(() {
-      _peminjamanList.insert(0, newPeminjaman);
-    });
-
-    // Tutup form dan tampilkan pesan sukses
-    _hideForm(
-        'Peminjaman berhasil diajukan! Menunggu persetujuan penanggungjawab.');
-  }
-
-  // Filter Tanggal
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: _selectedDate ?? DateTime.now(),
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2030));
-    if (picked != null && picked != _selectedDate) {
-      setState(() => _selectedDate = picked);
-    }
-  }
-
-  // --- HELPERS UNTUK MENU CARD ---
-  void _showDisetujuiMenu(
-      BuildContext context, PeminjamanData peminjaman) async {
-    // ... (logika menu existing)
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    final Size size = renderBox.size;
-
-    await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + size.height,
-        offset.dx + size.width,
-        offset.dy + size.height * 2,
-      ),
-      items: [
-        PopupMenuItem(
-            value: 'detail',
-            child: Text('Detail', style: GoogleFonts.poppins())),
-        PopupMenuItem(
-            value: 'qr', child: Text('QR Code', style: GoogleFonts.poppins())),
-      ],
-      elevation: 8.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ).then((value) {
-      if (value == 'detail') {
-        // Navigasi Detail (Placeholder/Future impl)
-      } else if (value == 'qr') {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => QrScreen(peminjaman: peminjaman)));
-      }
-    });
-  }
-
-  void _showDraftMenu(BuildContext context, PeminjamanData peminjaman) async {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    final Size size = renderBox.size;
-
-    await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + size.height,
-        offset.dx + size.width,
-        offset.dy + size.height * 2,
-      ),
-      items: [
-        PopupMenuItem(
-            value: 'detail',
-            child: Text('Detail', style: GoogleFonts.poppins())),
-        PopupMenuItem(
-            value: 'edit', child: Text('Edit', style: GoogleFonts.poppins())),
-        PopupMenuItem(
-            value: 'qr', child: Text('QR Code', style: GoogleFonts.poppins())),
-      ],
-      elevation: 8.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ).then((value) {
-      if (value == 'qr') {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => QrScreen(peminjaman: peminjaman)));
-      }
-    });
-  }
-
-  void _showPJMenu(BuildContext context, PeminjamanData peminjaman) async {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    final Size size = renderBox.size;
-
-    await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + size.height,
-        offset.dx + size.width,
-        offset.dy + size.height * 2,
-      ),
-      items: [
-        PopupMenuItem(
-            value: 'detail',
-            child: Text('Detail', style: GoogleFonts.poppins())),
-        PopupMenuItem(
-            value: 'edit', child: Text('Edit', style: GoogleFonts.poppins())),
-        PopupMenuItem(
-            value: 'qr', child: Text('QR Code', style: GoogleFonts.poppins())),
-      ],
-      elevation: 8.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ).then((value) {
-      if (value == 'detail') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailPeminjamanScreen(peminjaman: peminjaman),
-          ),
-        );
-      } else if (value == 'qr') {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => QrScreen(peminjaman: peminjaman)));
-      }
-    });
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Disetujui':
-        return Colors.green;
-      case 'Ditolak':
-        return Colors.red;
-      case 'Peminjaman Expired':
-        return const Color(0xFFE91E63);
-      case 'Draft':
-        return const Color(0xFFF9A825);
-      case 'Menunggu Persetujuan PJ':
-      case 'Menunggu Persetujuan PIC':
-      case 'Menunggu Persetujuan':
-        return const Color(0xFFFf59b17);
-      default:
-        return Colors.blue;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // LOGIKA NAVIGASI KE FORM DENGAN PASSING CALLBACK
-    if (_isShowingForm) {
-      if (_isLoadingProfile) {
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
-      }
-
-      if (_userProfile == null) {
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => _hideForm(null),
-            ),
-          ),
-          body: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text("Gagal memuat data profil."),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _hideForm(null),
-                  child: const Text("Kembali"),
-                )
-              ],
-            ),
-          ),
-        );
-      }
-
-      // PASSING CALLBACK _handleFormSubmission KE FORM
-      return FormPeminjamanScreen(
-        onBack: (message) => _hideForm(message),
-        userProfile: _userProfile!,
-        onSubmit: _handleFormSubmission, // <--- Callback penting
-      );
-    }
-
-    // TAMPILAN UTAMA LIST PEMINJAMAN
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        title: Text("Peminjaman",
-            style: GoogleFonts.poppins(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 20)),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildSearchFilterCard(),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _showForm,
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: Text("Ajukan Peminjaman",
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold, color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B4AF5),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildPeminjamanList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- WIDGET BUILDERS (Filter, Card, dll) ---
-
-  Widget _buildSearchFilterCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 10)
-          ]),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text("Cari Peminjaman",
-            style: GoogleFonts.poppins(
-                fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 20),
-        _buildDropdownGedung(),
-        const SizedBox(height: 16),
-        _buildDropdownStatus(),
-        const SizedBox(height: 16),
-        _buildDatePicker(),
-      ]),
-    );
-  }
-
-  Widget _buildDropdownGedung() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text("Gedung",
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Colors.grey[700])),
-      const SizedBox(height: 8),
-      DropdownButtonFormField<String>(
-          initialValue: _selectedGedung,
-          hint: const Text("Semua Gedung"),
-          isExpanded: true,
-          decoration: _inputDecoration(),
-          items: const [
-            DropdownMenuItem(
-                enabled: false,
-                child: Text("Gedung Utama",
-                    style: TextStyle(fontWeight: FontWeight.bold))),
-            DropdownMenuItem(
-                value: "GU_SEMUA",
-                child: Text("- Semua ruangan gedung utama")),
-          ],
-          onChanged: (value) => setState(() => _selectedGedung = value)),
-    ]);
-  }
-
-  Widget _buildDropdownStatus() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text("Status",
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Colors.grey[700])),
-      const SizedBox(height: 8),
-      DropdownButtonFormField<String>(
-          initialValue: _selectedStatus,
-          isExpanded: true,
-          decoration: _inputDecoration(),
-          items: [
-            'Semua Status',
-            'Draft',
-            'Disetujui',
-            'Ditolak',
-            'Menunggu Persetujuan PJ',
-            'Menunggu Persetujuan PIC',
-            'Peminjaman Expired'
-          ]
-              .map((String value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value, overflow: TextOverflow.ellipsis)))
-              .toList(),
-          onChanged: (value) => setState(() => _selectedStatus = value)),
-    ]);
-  }
-
-  Widget _buildDatePicker() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text("Tanggal Pinjam",
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: Colors.grey[700])),
-      const SizedBox(height: 8),
-      TextField(
-          controller: TextEditingController(
-              text: _selectedDate == null
-                  ? "Semua Tanggal"
-                  : DateFormat('dd MMMM yyyy').format(_selectedDate!)),
-          readOnly: true,
-          decoration: _inputDecoration(
-              hint: "Semua Tanggal",
-              suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today_outlined,
-                      color: Colors.grey),
-                  onPressed: () => _selectDate(context))),
-          onTap: () => _selectDate(context)),
-    ]);
-  }
-
-  InputDecoration _inputDecoration({String? hint, Widget? suffixIcon}) {
-    return InputDecoration(
-        hintText: hint,
-        suffixIcon: suffixIcon,
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF0D47A1))),
-        hintStyle:
-            GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500]));
-  }
-
-  Widget _buildPeminjamanList() {
-    final filteredList = _peminjamanList.where((p) {
-      final searchLower = _searchController.text.toLowerCase();
-      final matchesSearch = searchLower.isEmpty ||
-          p.ruangan.toLowerCase().contains(searchLower) ||
-          p.namaPengaju.toLowerCase().contains(searchLower) ||
-          p.namaKegiatan.toLowerCase().contains(searchLower) ||
-          p.id.contains(searchLower);
-      final matchesStatus =
-          _selectedStatus == 'Semua Status' || p.status == _selectedStatus;
-      final matchesDate = _selectedDate == null ||
-          DateFormat('yyyy-MM-dd').format(p.tanggalPinjam) ==
-              DateFormat('yyyy-MM-dd').format(_selectedDate!);
-      return matchesSearch && matchesStatus && matchesDate;
-    }).toList();
-
-    return Column(children: [
-      Row(children: [
-        Text("Search:",
-            style: GoogleFonts.poppins(
-                fontSize: 14, fontWeight: FontWeight.w500)),
-        const SizedBox(width: 8),
-        Expanded(
-            child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() {}),
-                decoration: _inputDecoration(
-                    hint: "Cari...",
-                    suffixIcon: const Icon(Icons.search, color: Colors.grey)))),
-      ]),
-      const SizedBox(height: 16),
-      if (filteredList.isEmpty)
-        Center(
-            child: Text("Tidak ada data peminjaman.",
-                style: GoogleFonts.poppins(
-                    fontSize: 16, color: Colors.grey[600])))
-      else
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: filteredList.length,
-          itemBuilder: (context, index) {
-            final peminjaman = filteredList[index];
-            return _buildPeminjamanCard(peminjaman);
-          },
-        ),
-    ]);
-  }
-
-  Widget _buildPeminjamanCard(PeminjamanData peminjaman) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        peminjaman.ruangan,
-                        style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'ID: ${peminjaman.id}',
-                        style: GoogleFonts.poppins(
-                            fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    peminjaman.isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Colors.grey[600],
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      peminjaman.isExpanded = !peminjaman.isExpanded;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Chip(
-                avatar: peminjaman.status == 'Peminjaman Expired'
-                    ? const Icon(Icons.close, color: Colors.white, size: 16)
-                    : null,
-                label: Text(
-                  peminjaman.status,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: peminjaman.status == 'Draft'
-                        ? Colors.black87
-                        : Colors.white,
-                  ),
-                ),
-                backgroundColor: _getStatusColor(peminjaman.status),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              ),
-            ),
-            if (peminjaman.isExpanded && peminjaman.status != 'Ditolak') ...[
-              const Divider(height: 24),
-              _buildCardDetailRow(
-                  'Penanggung Jawab:', peminjaman.penanggungJawab),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 130,
-                      child: Text(
-                        "Status PJ:",
-                        style: GoogleFonts.poppins(
-                            fontSize: 13, color: Colors.grey[700]),
-                      ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Builder(
-                          builder: (context) {
-                            String statusPJText = '-';
-                            Color statusPJColor = Colors.transparent;
-                            Color statusPJTextColor = Colors.black87;
-
-                            if (peminjaman.status ==
-                                'Menunggu Persetujuan PJ') {
-                              statusPJText = 'Menunggu Persetujuan';
-                              statusPJColor = const Color(0xFFFf59b17);
-                              statusPJTextColor = const Color.fromARGB(
-                                  221, 255, 255, 255);
-                            } else if (peminjaman.status ==
-                                    'Menunggu Persetujuan PIC' ||
-                                peminjaman.status == 'Disetujui') {
-                              statusPJText = 'Disetujui';
-                              statusPJColor = Colors.green;
-                              statusPJTextColor = Colors.white;
-                            } else if (peminjaman.status == 'Ditolak') {
-                              statusPJText = 'Ditolak';
-                              statusPJColor = Colors.red;
-                              statusPJTextColor = Colors.white;
-                            }
-
-                            if (statusPJText == '-') {
-                              return Text(
-                                statusPJText,
-                                style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: statusPJTextColor),
-                              );
-                            } else {
-                              return Chip(
-                                label: Text(
-                                  statusPJText,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: statusPJTextColor,
-                                  ),
-                                ),
-                                backgroundColor: statusPJColor,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildCardDetailRow(
-                  'Jenis Kegiatan:', peminjaman.jenisKegiatan),
-              _buildCardDetailRow(
-                'Total Peminjam:',
-                peminjaman.totalPeminjam > 0
-                    ? '${peminjaman.totalPeminjam} orang'
-                    : '-',
-              ),
-              _buildCardDetailRow(
-                'Tanggal Pinjam:',
-                DateFormat('dd MMMM yyyy').format(peminjaman.tanggalPinjam),
-              ),
-              _buildCardDetailRow('Waktu:',
-                  '${peminjaman.jamMulai} - ${peminjaman.jamSelesai}'),
-            ],
-            const SizedBox(height: 12),
-            _buildCardFooterButtons(peminjaman),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(
-                  fontSize: 13, color: Colors.grey[700]),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardFooterButtons(PeminjamanData peminjaman) {
-    switch (peminjaman.status) {
-      case 'Disetujui':
-      case 'Peminjaman Expired':
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Builder(
-              builder: (BuildContext buttonContext) {
-                return ElevatedButton(
-                  onPressed: () {
-                    _showDisetujuiMenu(buttonContext, peminjaman);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D47A1),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text("Detail",
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, color: Colors.white)),
-                );
-              },
-            ),
-          ],
-        );
-
-      case 'Menunggu Persetujuan PJ':
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                // Aksi untuk Batalkan Pengajuan
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700],
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text("Batalkan Pengajuan",
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600, color: Colors.white)),
-            ),
-            const SizedBox(width: 8),
-            Builder(
-              builder: (BuildContext buttonContext) {
-                return ElevatedButton(
-                  onPressed: () {
-                    _showPJMenu(buttonContext, peminjaman);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text("Detail",
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, color: Colors.white)),
-                );
-              },
-            ),
-          ],
-        );
-
-      case 'Draft':
-      case 'Menunggu Persetujuan PIC':
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                // Aksi untuk Batalkan Pengajuan
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700],
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text("Batalkan Pengajuan",
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600, color: Colors.white)),
-            ),
-            const SizedBox(width: 8),
-            Builder(
-              builder: (BuildContext buttonContext) {
-                return ElevatedButton(
-                  onPressed: () {
-                    _showDraftMenu(buttonContext, peminjaman);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text("Detail",
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, color: Colors.white)),
-                );
-              },
-            ),
-          ],
-        );
-
-      case 'Ditolak':
-      default:
-        return const SizedBox.shrink();
-    }
-  }
 }

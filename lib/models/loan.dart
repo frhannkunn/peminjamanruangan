@@ -18,6 +18,8 @@ class Loan {
   // Kolom-kolom Integer
   final int activityType;
   final int status;
+  final String? lectureComment;
+  final String? picComment;
   
   // Relasi
   final List<LoanUser>? loanUsers;
@@ -36,6 +38,8 @@ class Loan {
     required this.studentName,
     required this.studentEmail,
     required this.status,
+    this.lectureComment,
+    this.picComment,
     this.loanUsers,
   });
 
@@ -53,6 +57,8 @@ class Loan {
       roomsId: int.tryParse(json['rooms_id'].toString()) ?? 0,
       activityType: int.tryParse(json['activity_type'].toString()) ?? 0,
       status: int.tryParse(json['status'].toString()) ?? 0,
+      lectureComment: json['lecture_comment']?.toString(),
+      picComment: json['pic_comment']?.toString(),
 
       // ✅ 3. Handle STRING (KUNCI PERBAIKAN ERROR ANDA)
       // Logika: json['key']?.toString() ?? ''
