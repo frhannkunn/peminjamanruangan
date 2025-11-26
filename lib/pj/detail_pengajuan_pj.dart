@@ -231,7 +231,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     if (status == "Menunggu Persetujuan Penanggung Jawab") {
       chipText = "Menunggu\nPersetujuan\nPenanggung\nJawab";
     }
-
+    else if (status == "Menunggu Persetujuan PIC") {
+      chipText = "Menunggu\nPersetujuan\nPIC";
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -367,7 +369,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
 
     final List<String> displayKeys = [
       'ID',
-      'NIM',
+      'ID Pengguna',
       'Nama',
       'Nomor Workspace',
       'Tipe Workspace',
@@ -375,7 +377,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     String getValue(LoanUser user, String key) {
       switch (key) {
         case 'ID': return user.id.toString();
-        case 'NIM': return user.idCardPengguna;
+        case 'ID Pengguna': return user.idCardPengguna;
         case 'Nama': return user.namaPengguna;
         case 'Nomor Workspace': return user.workspaceCode ?? '-';
         case 'Tipe Workspace': 

@@ -22,7 +22,7 @@ class _HomePjPageState extends State<HomePjPage> {
   bool _isLoading = true;
   String _userName = 'Dosen';
 
-  String? _selectedStatusFilter = "-Semua Status-";
+  String? _selectedStatusFilter = "Semua Status";
 
   final List<String> _statusOptions = [
     "-Semua Status-",
