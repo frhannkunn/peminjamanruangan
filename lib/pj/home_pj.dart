@@ -25,7 +25,7 @@ class _HomePjPageState extends State<HomePjPage> {
   String? _selectedStatusFilter = "Semua Status";
 
   final List<String> _statusOptions = [
-    "-Semua Status-",
+    "Semua Status",
     "Menunggu Persetujuan Penanggung Jawab",
     "Disetujui",
     "Ditolak",
