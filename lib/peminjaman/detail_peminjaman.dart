@@ -330,9 +330,10 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
 
   String _mapActivityType(int type) {
     switch (type) {
-      case 1: return 'Perkuliahan';
-      case 2: return 'Non-Perkuliahan';
-      default: return 'Lainnya';
+      case 0: return 'Perkuliahan'; 
+      case 1: return 'PBL';         
+      case 3: return 'Lainnya';     
+      default: return 'Lainnya ($type)'; 
     }
   }
 

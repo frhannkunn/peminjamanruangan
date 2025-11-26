@@ -1,85 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'home_pj.dart'; // Pastikan file ini ada sesuai project Anda
-
-// --- MODEL ---
-class PeminjamanPjDetailModel {
-  String jenisKegiatan;
-  String namaKegiatan;
-  String nimNip;
-  String namaPengaju;
-  String emailPengaju;
-  String penanggungJawab;
-  String tanggalPenggunaan;
-  String ruangan;
-  String jamMulai;
-  String jamSelesai;
-  List<Map<String, String>> listPengguna;
-  String status;
-  Color statusColor;
-
-  PeminjamanPjDetailModel({
-    required this.jenisKegiatan,
-    required this.namaKegiatan,
-    required this.nimNip,
-    required this.namaPengaju,
-    required this.emailPengaju,
-    required this.penanggungJawab,
-    required this.tanggalPenggunaan,
-    required this.ruangan,
-    required this.jamMulai,
-    required this.jamSelesai,
-    required this.listPengguna,
-    required this.status,
-    required this.statusColor,
-  });
-
-  // --- FACTORY METHOD ---
-  factory PeminjamanPjDetailModel.fromPeminjaman(PeminjamanPj p) {
-    return PeminjamanPjDetailModel(
-      // --- DATA HARDCODE ---
-      jenisKegiatan: "Perkuliahan",
-      namaKegiatan: "PBL TRPL 318",
-      nimNip: "123456789",
-      namaPengaju: "Rayan",
-      emailPengaju: "rayan12@gmail.com",
-      penanggungJawab: "GL | Gilang Bagus Ramadhan, A.Md.Kom",
-      ruangan: "GU.601 - Workspace Multimedia",
-      tanggalPenggunaan: "18 Oktober 2025",
-      jamMulai: "07.50",
-      jamSelesai: "12.00",
-
-      // List Pengguna Hardcode
-      listPengguna: [
-        {
-          'ID': '1',
-          'NIM': '123456789',
-          'Nama': 'Rayan',
-          'Nomor Workspace': 'GU.601.WM.01',
-          'Tipe Workspace': 'NON PC',
-        },
-      ],
-
-      // --- DATA DINAMIS ---
-      status: p.status ?? "Status Tidak Diketahui",
-      statusColor: _getStatusColor(p.status ?? ""),
-    );
-  }
-
-  static Color _getStatusColor(String status) {
-    if (status == "Menunggu Persetujuan Penanggung Jawab") {
-      return const Color(0xFFFFC037); // Kuning
-    } else if (status == "Disetujui") {
-      return const Color(0xFF00D800); // Hijau
-    } else {
-      return Colors.red; // Merah/Default
-    }
-  }
-}
+import '../models/pj_models.dart';
+import '../services/pj_service.dart';
+import '../../models/loan_user.dart';
 
 class DetailPengajuanPjPage extends StatefulWidget {
-  final PeminjamanPj peminjaman;
+  // Tetap menerima object dari Home (untuk data awal/transisi smooth)
+  // Tapi kita akan fetch detail lengkap (termasuk user list) di initState
+  final PeminjamanPj peminjaman; 
 
   const DetailPengajuanPjPage({super.key, required this.peminjaman});
 
@@ -88,20 +17,22 @@ class DetailPengajuanPjPage extends StatefulWidget {
 }
 
 class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
-  late PeminjamanPjDetailModel _dataDetail;
+  final PjService _pjService = PjService();
+  late Future<PeminjamanPjDetailModel> _detailFuture;
 
   final _formKey = GlobalKey<FormState>();
   String? _selectedApproval;
   final _komentarController = TextEditingController();
 
-  final TextEditingController _searchPenggunaController =
-      TextEditingController();
+  final TextEditingController _searchPenggunaController = TextEditingController();
   String _searchPenggunaQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _dataDetail = PeminjamanPjDetailModel.fromPeminjaman(widget.peminjaman);
+    // Load detail data lengkap dari API berdasarkan ID
+    _detailFuture = _pjService.getDetail(widget.peminjaman.id);
+
     _searchPenggunaController.addListener(() {
       setState(() {
         _searchPenggunaQuery = _searchPenggunaController.text;
@@ -114,6 +45,37 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     _komentarController.dispose();
     _searchPenggunaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitApproval() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        // Tampilkan Loading Indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        // Convert dropdown value to int for API
+        // "Disetujui" -> 1, "Ditolak" -> 0
+        int statusInt = _selectedApproval == 'Disetujui' ? 1 : 0;
+        
+        await _pjService.submitApproval(
+          widget.peminjaman.id,
+          statusInt,
+          _komentarController.text
+        );
+
+        Navigator.pop(context); // Tutup Loading
+        _showSuccessDialog(); // Tampilkan Dialog Sukses
+      } catch (e) {
+        Navigator.pop(context); // Tutup Loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Future<void> _showSuccessDialog() async {
@@ -162,8 +124,9 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(dialogContext).pop();
-                        // Mengembalikan value _selectedApproval ("Disetujui" atau "Ditolak")
-                        Navigator.pop(context, _selectedApproval);
+                        // Mengembalikan status baru ke Home Page agar direfresh
+                        String resultStatus = _selectedApproval == 'Disetujui' ? 'Disetujui' : 'Ditolak';
+                        Navigator.pop(context, resultStatus);
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
@@ -192,63 +155,77 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  void _submitApproval() {
-    if (_formKey.currentState!.validate()) {
-      _showSuccessDialog();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bool needsApproval =
-        _dataDetail.status == "Menunggu Persetujuan Penanggung Jawab";
+    // Kita gunakan FutureBuilder untuk menunggu data detail (users list, dll)
+    return FutureBuilder<PeminjamanPjDetailModel>(
+      future: _detailFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+           return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        
+        if (snapshot.hasError) {
+          return Scaffold(body: Center(child: Text("Error: ${snapshot.error}")));
+        }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FC),
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context, widget.peminjaman.status);
-          },
-        ),
-        title: Text(
-          'Detail Peminjaman',
-          style: GoogleFonts.poppins(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+        if (!snapshot.hasData) {
+          return const Scaffold(body: Center(child: Text("Data tidak ditemukan")));
+        }
+
+        final _dataDetail = snapshot.data!;
+        
+        // Logic Approval Button: Hanya muncul jika status == Menunggu
+        final bool needsApproval = _dataDetail.status == "Menunggu Persetujuan Penanggung Jawab";
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF4F7FC),
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            title: Text(
+              'Detail Peminjaman',
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 0,
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildFormHeaderCard(),
-              const SizedBox(height: 24),
-              _buildFormCard(),
-              const SizedBox(height: 24),
-              _buildUserListCard(),
-              if (needsApproval) ...[
-                const SizedBox(height: 24),
-                _buildApprovalSection(),
-              ],
-              const SizedBox(height: 24),
-            ],
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildFormHeaderCard(_dataDetail),
+                  const SizedBox(height: 24),
+                  _buildFormCard(_dataDetail),
+                  const SizedBox(height: 24),
+                  _buildUserListCard(_dataDetail),
+                  if (needsApproval) ...[
+                    const SizedBox(height: 24),
+                    _buildApprovalSection(),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      }
     );
   }
 
-  Widget _buildFormHeaderCard() {
-    String status = _dataDetail.status;
-    Color statusColor = _dataDetail.statusColor;
+  Widget _buildFormHeaderCard(PeminjamanPjDetailModel data) {
+    String status = data.status;
+    Color statusColor = data.statusColor;
     String chipText = status;
 
     if (status == "Menunggu Persetujuan Penanggung Jawab") {
@@ -308,7 +285,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  Widget _buildFormCard() {
+  Widget _buildFormCard(PeminjamanPjDetailModel data) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -327,47 +304,47 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
         children: [
           _buildReadOnlyField(
             label: "Jenis Kegiatan",
-            value: _dataDetail.jenisKegiatan,
+            value: data.jenisKegiatan,
           ),
           _buildReadOnlyField(
             label: "Nama Kegiatan",
-            value: _dataDetail.namaKegiatan,
+            value: data.namaKegiatan,
           ),
           _buildReadOnlyField(
             label: "NIM / NIK / Unit Pengaju",
-            value: _dataDetail.nimNip,
+            value: data.nimNip,
             helperText: "Jika tidak memiliki NIM, dapat diisi dengan NIK KTP",
           ),
           _buildReadOnlyField(
             label: "Nama Pengaju",
-            value: _dataDetail.namaPengaju,
+            value: data.namaPengaju,
           ),
           _buildReadOnlyField(
             label: "Alamat E-Mail Pengaju",
-            value: _dataDetail.emailPengaju,
+            value: data.emailPengaju,
           ),
           _buildReadOnlyField(
             label: "Penanggung Jawab",
-            value: _dataDetail.penanggungJawab,
+            value: data.penanggungJawab,
           ),
           _buildReadOnlyField(
             label: "Tanggal Penggunaan",
-            value: _dataDetail.tanggalPenggunaan,
+            value: data.tanggalPenggunaan,
           ),
-          _buildReadOnlyField(label: "Ruangan", value: _dataDetail.ruangan),
+          _buildReadOnlyField(label: "Ruangan", value: data.ruangan),
           Row(
             children: [
               Expanded(
                 child: _buildReadOnlyField(
                   label: "Jam Mulai",
-                  value: _dataDetail.jamMulai,
+                  value: data.jamMulai,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildReadOnlyField(
                   label: "Jam Selesai",
-                  value: _dataDetail.jamSelesai,
+                  value: data.jamSelesai,
                 ),
               ),
             ],
@@ -377,12 +354,15 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  Widget _buildUserListCard() {
-    final List<Map<String, String>> allUsers = _dataDetail.listPengguna;
-    final List<Map<String, String>> filteredList = allUsers.where((user) {
+  Widget _buildUserListCard(PeminjamanPjDetailModel data) {
+    final List<LoanUser> allUsers = data.listPengguna;
+    final List<LoanUser> filteredList = allUsers.where((user) {
       final query = _searchPenggunaQuery.toLowerCase();
       if (query.isEmpty) return true;
-      return user.values.any((val) => val.toLowerCase().contains(query));
+      
+      // Cek field nama dan id card
+      return user.namaPengguna.toLowerCase().contains(query) || 
+             user.idCardPengguna.toLowerCase().contains(query);
     }).toList();
 
     final List<String> displayKeys = [
@@ -392,6 +372,21 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
       'Nomor Workspace',
       'Tipe Workspace',
     ];
+    String getValue(LoanUser user, String key) {
+      switch (key) {
+        case 'ID': return user.id.toString();
+        case 'NIM': return user.idCardPengguna;
+        case 'Nama': return user.namaPengguna;
+        case 'Nomor Workspace': return user.workspaceCode ?? '-';
+        case 'Tipe Workspace': 
+          String rawType = user.workspaceType ?? '-';
+          if (rawType == '1') return 'With PC';       // Jika 1, tampilkan PC
+          if (rawType == '2') return 'Non-PC';   // Jika 2, tampilkan Non-PC (Sesuaikan logic DB Anda)
+          return rawType; // Jika bukan 1 atau 2, tampilkan angkanya
+          
+        default: return '-';
+      }
+    }
 
     return Column(
       children: [
@@ -478,12 +473,12 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                   ),
                 )
               else
-                ...filteredList.map((userData) {
+                ...filteredList.map((user) {
                   return Container(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Column(
                       children: displayKeys.map((key) {
-                        return _buildUserDetailRow(key, userData[key] ?? '-');
+                        return _buildUserDetailRow(key, getValue(user, key));
                       }).toList(),
                     ),
                   );
@@ -495,7 +490,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  // --- MODIFIKASI DILAKUKAN DI SINI ---
   Widget _buildApprovalSection() {
     return _buildSectionCard(
       title: 'Form Approval Penanggung Jawab',
@@ -529,22 +523,17 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
               style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
             ),
             value: _selectedApproval,
-
-            // --- DAFTAR ITEM DROPDOWN (MODIFIKASI) ---
             items: [
-              // Opsi 1: Tampilan "Diterima", tapi Value "Disetujui"
               DropdownMenuItem<String>(
-                value:
-                    'Disetujui', // Value tetap "Disetujui" agar logika warna aman
+                value: 'Disetujui',
                 child: Text(
-                  'Diterima', // User melihat teks "Diterima"
+                  'Diterima',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.black87,
                   ),
                 ),
               ),
-              // Opsi 2: Ditolak
               DropdownMenuItem<String>(
                 value: 'Ditolak',
                 child: Text(
@@ -556,8 +545,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                 ),
               ),
             ],
-
-            // ----------------------------------------
             onChanged: (value) => setState(() => _selectedApproval = value),
             validator: (value) =>
                 value == null ? "Harap pilih status approval" : null,

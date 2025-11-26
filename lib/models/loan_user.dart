@@ -5,8 +5,6 @@ class LoanUser {
   final String jenisPengguna;
   final String namaPengguna;
   final String idCardPengguna;
-  
-  // Field tambahan untuk Workspace
   final String? workspaceCode;
   final String? workspaceType;
 

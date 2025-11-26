@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'detail_pengajuan_pj.dart'; // Pastikan file ini ada
 import 'package:dropdown_button2/dropdown_button2.dart';
-
-// --- MODEL DATA (KHUSUS PJ) ---
-class PeminjamanPj {
-  String id;
-  String ruangan;
-  String? status;
-  String tanggalPinjam;
-  String jamKegiatan;
-  String jenisKegiatan;
-  String namaKegiatan;
-
-  PeminjamanPj({
-    required this.id,
-    required this.ruangan,
-    required this.status,
-    required this.tanggalPinjam,
-    required this.jamKegiatan,
-    required this.jenisKegiatan,
-    required this.namaKegiatan,
-  });
-}
+import 'detail_pengajuan_pj.dart';
+// Import Model & Service
+import '../models/pj_models.dart';
+import '../services/pj_service.dart';
+import '../services/user_session.dart'; // Untuk nama user
 
 class HomePjPage extends StatefulWidget {
   const HomePjPage({super.key});
@@ -32,18 +15,12 @@ class HomePjPage extends StatefulWidget {
 }
 
 class _HomePjPageState extends State<HomePjPage> {
-  // --- DATA DUMMY ---
-  final List<PeminjamanPj> _peminjamanList = [
-    PeminjamanPj(
-      id: "6608",
-      ruangan: "GU.601.WM.01",
-      status: "Menunggu Persetujuan Penanggung Jawab",
-      tanggalPinjam: "18 Oktober 2025",
-      jamKegiatan: "07.50 - 12.00",
-      jenisKegiatan: "Perkuliahan",
-      namaKegiatan: "PBL TRPL 318",
-    ),
-  ];
+  final PjService _pjService = PjService();
+  
+  List<PeminjamanPj> _peminjamanList = [];
+  List<PeminjamanPj> _allData = []; // Backup untuk filter/search
+  bool _isLoading = true;
+  String _userName = 'Dosen';
 
   String? _selectedStatusFilter = "-Semua Status-";
 
@@ -55,6 +32,57 @@ class _HomePjPageState extends State<HomePjPage> {
     "Peminjaman Expired",
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+    _fetchData();
+  }
+
+  Future<void> _loadUser() async {
+    final profile = await UserSession.getUserProfile();
+    if(profile != null) {
+      setState(() {
+        _userName = profile.nama;
+      });
+    }
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _pjService.getApprovals();
+      setState(() {
+        _allData = data;
+        _peminjamanList = data;
+        _isLoading = false;
+      });
+      _filterData(); // Apply filter awal jika ada
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  void _filterData({String? searchQuery}) {
+    setState(() {
+      _peminjamanList = _allData.where((item) {
+        bool matchesStatus = _selectedStatusFilter == "-Semua Status-" || 
+                             item.status == _selectedStatusFilter;
+        
+        bool matchesSearch = true;
+        if (searchQuery != null && searchQuery.isNotEmpty) {
+           matchesSearch = item.ruangan.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                           item.namaKegiatan.toLowerCase().contains(searchQuery.toLowerCase());
+        }
+        
+        return matchesStatus && matchesSearch;
+      }).toList();
+    });
+  }
+
   // --- NAVIGASI ---
   Future<void> _navigateToDetail(PeminjamanPj peminjaman) async {
     final newStatus = await Navigator.push(
@@ -64,78 +92,87 @@ class _HomePjPageState extends State<HomePjPage> {
       ),
     );
 
+    // Jika kembali dengan status baru (berhasil approve/reject), refresh data
     if (newStatus != null) {
-      _updatePeminjamanStatus(peminjaman.id, newStatus);
+      _fetchData(); 
     }
-  }
-
-  // --- LOGIC UPDATE STATUS ---
-  void _updatePeminjamanStatus(String id, String newStatus) {
-    setState(() {
-      final dataYangMauDiedit = _peminjamanList.firstWhere((p) => p.id == id);
-      dataYangMauDiedit.status = newStatus;
-    });
   }
 
   // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
+    // Hitung Summary Dashboard
+    int pending = _allData.where((e) => e.status == "Menunggu Persetujuan Penanggung Jawab").length;
+    int approved = _allData.where((e) => e.status == "Disetujui").length; // Di UI ini Approved = Pending PIC
+    int rejected = _allData.where((e) => e.status == "Ditolak").length;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
           // LAYER 1: KONTEN SCROLLABLE
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 150), // Ruang untuk header biru
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(
-                    top: 75,
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
+          RefreshIndicator(
+            onRefresh: _fetchData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  const SizedBox(height: 150), // Ruang untuk header biru
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(
+                      top: 75,
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildControls(), // Filter & Search
+                        const SizedBox(height: 20),
+
+                        // List Data
+                        if (_isLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_peminjamanList.isEmpty)
+                          const Center(child: Padding(
+                            padding: EdgeInsets.only(top: 20.0),
+                            child: Text("Tidak ada data."),
+                          ))
+                        else
+                          ...List.generate(_peminjamanList.length, (index) {
+                            return _buildPeminjamanGroup(
+                              _peminjamanList[index],
+                              index + 1,
+                            );
+                          }),
+                        
+                        const SizedBox(height: 50), // Padding bawah
+                      ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildControls(), // Filter & Search
-                      const SizedBox(height: 20),
-
-                      // List Data
-                      if (_peminjamanList.isEmpty)
-                        const Center(child: Text("Tidak ada data."))
-                      else
-                        ...List.generate(_peminjamanList.length, (index) {
-                          return _buildPeminjamanGroup(
-                            _peminjamanList[index],
-                            index + 1,
-                          );
-                        }),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // LAYER 2: HEADER BIRU & KARTU SUMMARY
-          _buildHeaderAndCardsPJ(),
+          _buildHeaderAndCardsPJ(pending, approved, rejected),
         ],
       ),
     );
   }
 
   // --- HEADER & SUMMARY ---
-  Widget _buildHeaderAndCardsPJ() {
+  Widget _buildHeaderAndCardsPJ(int pending, int approved, int rejected) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -154,7 +191,7 @@ class _HomePjPageState extends State<HomePjPage> {
             child: Align(
               alignment: Alignment.topLeft,
               child: Text(
-                'Hai, Gilang!',
+                'Hai, $_userName!',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
@@ -172,12 +209,11 @@ class _HomePjPageState extends State<HomePjPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment:
-                  CrossAxisAlignment.start, // Pastikan alignment atas sama
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _summaryCard('Menunggu Persetujuan', '5'),
-                _summaryCard('Disetujui', '4'),
-                _summaryCard('Ditolak', '7'),
+                _summaryCard('Menunggu Persetujuan', '$pending'),
+                _summaryCard('Disetujui', '$approved'),
+                _summaryCard('Ditolak', '$rejected'),
               ],
             ),
           ),
@@ -206,26 +242,23 @@ class _HomePjPageState extends State<HomePjPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              height: 30, // Tinggi fix untuk muat 2 baris teks
+              height: 30,
               child: Align(
-                alignment: Alignment.center, // Teks di tengah kotak
+                alignment: Alignment.center,
                 child: Text(
                   title,
                   textAlign: TextAlign.center,
-                  maxLines: 2, // Maksimal 2 baris
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 12,
-                    height: 1.2, // Jarak antar baris rapat
+                    height: 1.2,
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 2),
-
-            // Angka akan sejajar karena kotak judul di atas tingginya sama
             Text(
               count,
               style: GoogleFonts.poppins(
@@ -260,65 +293,68 @@ class _HomePjPageState extends State<HomePjPage> {
   }
 
   // --- CARD DATA ---
+  // --- CARD DATA ---
   Widget _buildPeminjamanCard(PeminjamanPj peminjaman) {
     final String formattedDate = peminjaman.tanggalPinjam;
 
-    // Logic Warna Badge
+    // Ambil data status ID (rawStatus) dan text (status) dari Model
+    String statusCode = peminjaman.rawStatus; 
+    String displayStatus = peminjaman.status;
+
+    // --- LOGIC WARNA & BADGE BARU ---
     String badgeAtasText;
     Color badgeAtasColor;
-
-    if (peminjaman.status == "Disetujui") {
-      badgeAtasText = "Menunggu Persetujuan PIC";
-      badgeAtasColor = const Color(0xFFFFC037);
-    } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
-      badgeAtasText = "Menunggu Persetujuan Penanggung Jawab";
-      badgeAtasColor = const Color(0xFFFFC037);
-    } else if (peminjaman.status == "Ditolak") {
-      badgeAtasText = "Ditolak";
-      badgeAtasColor = Colors.red;
-    } else if (peminjaman.status == "Peminjaman Expired") {
-      badgeAtasText = "Peminjaman Expired";
-      badgeAtasColor = Colors.grey;
-    } else {
-      badgeAtasText = peminjaman.status ?? '-';
-      badgeAtasColor = Colors.grey;
-    }
-
-    // Logic Badge Bawah
     String badgeBawahText;
     Color badgeBawahColor;
+    String buttonText = 'Detail'; // Default tombol
 
-    if (peminjaman.status == "Disetujui") {
-      badgeBawahText = "Disetujui";
-      badgeBawahColor = const Color(0xFF00D800);
-    } else if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
+    // 1. STATUS MENUNGGU PJ (Kuning)
+    if (statusCode == '1') {
+      badgeAtasText = displayStatus;
+      badgeAtasColor = const Color(0xFFFFC037);
+      
       badgeBawahText = "Menunggu Persetujuan";
       badgeBawahColor = const Color(0xFFFFC037);
-    } else if (peminjaman.status == "Ditolak") {
+      
+      buttonText = 'Detail Approval'; // Tombol khusus PJ
+    } 
+    // 2. STATUS DITOLAK (Merah)
+    else if (statusCode == '2') {
+      badgeAtasText = "Ditolak";
+      badgeAtasColor = Colors.red;
+      
       badgeBawahText = "Ditolak";
       badgeBawahColor = Colors.red;
-    } else if (peminjaman.status == "Peminjaman Expired") {
+    } 
+    // 3. STATUS EXPIRED (Abu-abu)
+    else if (statusCode == '8') {
+      badgeAtasText = "Peminjaman Expired";
+      badgeAtasColor = Colors.grey;
+      
       badgeBawahText = "Expired";
       badgeBawahColor = Colors.grey;
-    } else {
-      badgeBawahText = peminjaman.status ?? '-';
+    } 
+    // 4. STATUS SUKSES / PROSES LANJUT (3, 4, 5, 6) -> HIJAU
+    else if (['3', '4', '5', '6'].contains(statusCode)) {
+      // Status 3 = Menunggu PIC (Tapi sudah disetujui PJ)
+      // Status 4 = Disetujui PIC
+      // Status 5 = Disetujui
+      
+      // Badge Atas mengikuti teks status asli
+      badgeAtasText = displayStatus; 
+      // Jika masih 3 (nunggu PIC), warna badge atas kuning/orange, kalau sudah 4/5 hijau
+      badgeAtasColor = (statusCode == '3') ? const Color(0xFFFFC037) : const Color(0xFF00D800);
+
+      // Badge Bawah (Status PJ) -> Pasti Hijau "Disetujui"
+      badgeBawahText = "Disetujui";
+      badgeBawahColor = const Color(0xFF00D800);
+    } 
+    // 5. DEFAULT / LAINNYA
+    else {
+      badgeAtasText = displayStatus;
+      badgeAtasColor = Colors.grey;
+      badgeBawahText = statusCode;
       badgeBawahColor = Colors.grey;
-    }
-
-    // Logic Tombol
-    final bool isApproved = peminjaman.status == "Disetujui";
-    String buttonText;
-
-    if (peminjaman.status == "Menunggu Persetujuan Penanggung Jawab") {
-      buttonText = 'Detail Approval';
-    } else if (isApproved) {
-      buttonText = 'Detail';
-    } else if (peminjaman.status == "Ditolak") {
-      buttonText = 'Ditolak';
-    } else if (peminjaman.status == "Peminjaman Expired") {
-      buttonText = 'Detail';
-    } else {
-      buttonText = 'Detail';
     }
 
     return Container(
@@ -359,31 +395,30 @@ class _HomePjPageState extends State<HomePjPage> {
                 ),
               ),
               const SizedBox(width: 20),
-              if (peminjaman.status != null)
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 7,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeAtasColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    badgeAtasText,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                      height: 1.2,
                     ),
-                    decoration: BoxDecoration(
-                      color: badgeAtasColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      badgeAtasText,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                        height: 1.2,
-                      ),
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
-                    ),
+                    softWrap: true,
+                    overflow: TextOverflow.visible,
                   ),
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -471,7 +506,7 @@ class _HomePjPageState extends State<HomePjPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300), // Ada Border
+        border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -493,7 +528,7 @@ class _HomePjPageState extends State<HomePjPage> {
         DropdownButton2<String>(
           value: _selectedStatusFilter,
           isExpanded: true,
-          underline: const SizedBox(), // Hapus underline
+          underline: const SizedBox(),
           items: _statusOptions.map((String status) {
             return DropdownMenuItem<String>(
               value: status,
@@ -507,6 +542,7 @@ class _HomePjPageState extends State<HomePjPage> {
           onChanged: (String? newValue) {
             setState(() {
               _selectedStatusFilter = newValue;
+              _filterData();
             });
           },
           buttonStyleData: buttonStyle,
@@ -562,7 +598,9 @@ class _HomePjPageState extends State<HomePjPage> {
                     suffixIcon: const Icon(Icons.search, color: Colors.grey),
                     hintText: "",
                   ),
-                  onChanged: (value) {},
+                  onChanged: (value) {
+                     _filterData(searchQuery: value);
+                  },
                 ),
               ),
             ),

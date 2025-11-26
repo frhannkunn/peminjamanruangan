@@ -522,7 +522,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 Text('Detail Kegiatan dan Penanggung Jawab', style: GoogleFonts.poppins(color: const Color(0xFF3949AB), fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 _buildLabel('Jenis Kegiatan'),
-                _buildDropdown(value: _jenisKegiatan, hint: '-- Pilih Kegiatan --', items: _jenisKegiatanList, onChanged: (v) => setState(() => _jenisKegiatan = v), validator: (v) => v == null ? 'Wajib diisi' : null, uniqueId: 'jenis_kegiatan'),
+                _buildDropdown(value: _jenisKegiatan, hint: 'Pilih Kegiatan', items: _jenisKegiatanList, onChanged: (v) => setState(() => _jenisKegiatan = v), validator: (v) => v == null ? 'Wajib diisi' : null, uniqueId: 'jenis_kegiatan'),
                 // 2. LOGIKA FIELD "LAINNYA" (MUNCUL JIKA DIPILIH)
                 if (_jenisKegiatan == 'Lainnya') ...[
                    const SizedBox(height: 16),
