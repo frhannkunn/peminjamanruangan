@@ -69,7 +69,7 @@ class _HomePjPageState extends State<HomePjPage> {
   void _filterData({String? searchQuery}) {
     setState(() {
       _peminjamanList = _allData.where((item) {
-        bool matchesStatus = _selectedStatusFilter == "-Semua Status-" || 
+        bool matchesStatus = _selectedStatusFilter == "Semua Status" || 
                              item.status == _selectedStatusFilter;
         
         bool matchesSearch = true;
