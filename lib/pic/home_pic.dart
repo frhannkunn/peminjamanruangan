@@ -75,11 +75,13 @@ class _HomePicPageState extends State<HomePicPage> {
     setState(() {
       var data = _peminjamanList.firstWhere((p) => p.id == id);
       if (hasilValidasi == "Disetujui") {
+        // Status Utama (Pill Atas) berubah jadi Hijau
         data.status = "Disetujui";
-        data.statusColor = const Color(0xFF00D800); // Hijau
+        data.statusColor = const Color(0xFF00D800);
       } else if (hasilValidasi == "Ditolak") {
+        // Status Utama (Pill Atas) berubah jadi Merah
         data.status = "Ditolak PIC";
-        data.statusColor = Colors.red; // Merah
+        data.statusColor = Colors.red;
       }
     });
   }
@@ -258,13 +260,7 @@ class _HomePicPageState extends State<HomePicPage> {
   }
 
   Widget _buildPeminjamanCard(Peminjaman peminjaman) {
-    String shortStatus = peminjaman.status;
-    if (shortStatus == "Menunggu Persetujuan PIC Ruangan") {
-      shortStatus = "Menunggu Persetujuan";
-    } else if (shortStatus == "Ditolak PIC") {
-      shortStatus = "Ditolak";
-    }
-
+    // Logika text tombol
     String buttonText =
         (peminjaman.status == "Menunggu Persetujuan PIC Ruangan")
         ? "Detail Peminjaman"
@@ -295,6 +291,8 @@ class _HomePicPageState extends State<HomePicPage> {
             ),
           ),
           const SizedBox(height: 8),
+
+          // --- STATUS UTAMA (PILL ATAS - DINAMIS) ---
           Row(
             children: [
               Text(
@@ -312,11 +310,12 @@ class _HomePicPageState extends State<HomePicPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: peminjaman.statusColor,
+                    color:
+                        peminjaman.statusColor, // Warna berubah sesuai logika
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    peminjaman.status,
+                    peminjaman.status, // Text berubah sesuai logika
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       color: Colors.white,
@@ -328,13 +327,16 @@ class _HomePicPageState extends State<HomePicPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
+          // --- STATUS PJ (PILL BAWAH - STATIS HIJAU) ---
           Row(
             children: [
               SizedBox(
                 width: 120,
                 child: Text(
-                  'Status PIC',
+                  'Status PJ', // LABEL DIUBAH
                   style: GoogleFonts.poppins(
                     color: Colors.grey[700],
                     fontSize: 14,
@@ -351,11 +353,12 @@ class _HomePicPageState extends State<HomePicPage> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: peminjaman.statusColor,
+                  // WARNA STATIS HIJAU (DISETUJUI)
+                  color: const Color(0xFF00D800),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  shortStatus,
+                  'Disetujui', // TEXT STATIS DISETUJUI
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -365,6 +368,7 @@ class _HomePicPageState extends State<HomePicPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 6),
           _buildDetailRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
           _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
