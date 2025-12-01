@@ -129,7 +129,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       case 5: return 'Disetujui';                // <-- Final
       case 6: return 'Selesai';
       case 7: return 'Peminjaman Bermasalah';
-      case 8: return 'Expired';
+      case 8: return 'Peminjaman Expired';
       default: return 'Status Tidak Dikenal ($status)';
     }
   }
@@ -226,8 +226,21 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         MaterialPageRoute(builder: (context) => DetailPeminjamanScreen(loanId: loan.id, statusStr: statusStr)),
       );
     } else if (value == 'edit') {
-        // TODO: Navigasi ke layar Edit Peminjaman
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur Edit belum diimplementasikan")));
+       Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FormPeminjamanScreen(
+            userProfile: _userProfile!, // Pastikan _userProfile tidak null
+            loanToEdit: loan, // <-- Parameter baru yang akan kita buat
+            onSubmit: (formData, pengguna) {
+               // Callback setelah edit berhasil (opsional, bisa untuk refresh list)
+               _initializeData(); 
+            },
+            onBack: (msg) => _hideForm(msg),
+          ),
+        ), 
+      );
+
     } else if (value == 'qr') {
       // Dummy data untuk QR Screen yang ada
       final dummyData = PeminjamanData(
@@ -470,8 +483,12 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       pjStatusColor = Colors.red;
       pjStatusTextColor = Colors.white;
     } 
-    // Status >= 3: Berarti sudah lolos dari PJ (sedang di PIC, atau Final)
-    // Kecuali jika statusnya 2 (Ditolak PJ) yang sudah dihandle di atas
+    else if (loan.status == 8) { 
+      // Handle Expired (Status 8)
+      pjStatusText = 'Expired'; 
+      pjStatusColor = Colors.red;
+      pjStatusTextColor = Colors.white;
+    }
     else if (loan.status >= 3) { 
       pjStatusText = 'Disetujui';
       pjStatusColor = Colors.green;

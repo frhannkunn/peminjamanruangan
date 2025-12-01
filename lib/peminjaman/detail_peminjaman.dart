@@ -270,11 +270,17 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
     String text = "Menunggu Persetujuan Penanggung Jawab";
     Color bg = const Color(0xFFF9A825); // Kuning
     
-    if (status >= 2 && status != 4) {
+    if (status == 8) {
+       text = "Peminjaman Expired"; // Atau "Tidak Direspon"
+       bg = Colors.red;
+    } else if (status >= 2 && status != 4) {
        text = "Disetujui Penanggung Jawab";
        bg = Colors.green;
     } else if (status == 4) {
-       text = "Ditolak";
+       text = "Ditolak"; // Ditolak PIC dianggap Ditolak juga secara umum
+       bg = Colors.red;
+    } else if (status == 2) { // Tambahan eksplisit untuk status 2 (Ditolak PJ)
+       text = "Ditolak Penanggung Jawab";
        bg = Colors.red;
     }
 
@@ -289,7 +295,10 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
     String text = "Menunggu Persetujuan PIC";
     Color bg = const Color(0xFFF9A825); // Kuning/Oranye
 
-    if (status == 3) {
+    if (status == 8) {
+       text = "Peminjaman Expired";
+       bg = Colors.red;
+    } else if (status == 3) {
        text = "Menunggu Persetujuan PIC";
        bg = const Color(0xFFF59B17); // Oranye
     } else if (status == 4) {

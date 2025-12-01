@@ -9,6 +9,7 @@ import '../models/calendar_event.dart';
 import '../services/loan_service.dart';
 import 'tambah_pengguna.dart'; // Berisi class Pengguna dan TambahPenggunaDialog
 import '../services/user_session.dart';
+import '../models/loan.dart';
 
 enum FormStep { dataEntry, addUser }
 
@@ -33,6 +34,7 @@ class FormPeminjamanScreen extends StatefulWidget {
   final Function(String? message)? onBack;
   final UserProfile userProfile;
   final Function(Map<String, dynamic> formData, List<Pengguna> pengguna)? onSubmit;
+  final Loan? loanToEdit;
 
   const FormPeminjamanScreen({
     super.key,
@@ -40,6 +42,7 @@ class FormPeminjamanScreen extends StatefulWidget {
     this.onBack,
     required this.userProfile,
     this.onSubmit,
+    this.loanToEdit
   });
 
   @override
@@ -93,6 +96,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   DateTime? _selectedDate;
   DateTime _focusedDay = DateTime.now();
   List<Booking> _selectedDayBookings = [];
+  bool get _isEditMode => widget.loanToEdit != null;
 
   @override
   void initState() {
@@ -128,6 +132,8 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
              return r.code.isNotEmpty ? "${r.code} - ${r.name}" : r.name;
           }).toList();
 
+          //kode edit 
+
           if (widget.preSelectedRoom != null) {
              final found = _ruanganList.firstWhere(
                (str) => str.contains(widget.preSelectedRoom!), 
@@ -141,9 +147,120 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
              }
           }
         });
+        // 2. LOGIKA PRE-FILL DATA JIKA EDIT MODE
+        if (_isEditMode) {
+           _initializeEditData();
+        } else if (widget.preSelectedRoom != null) {
+           // Logika existing untuk pre-selected room dari halaman detail/scan
+           final found = _ruanganList.firstWhere(
+             (str) => str.contains(widget.preSelectedRoom!), 
+             orElse: () => ''
+           );
+           if(found.isNotEmpty) {
+             _ruangan = found;
+             _ruanganSearchController.text = found;
+             _updateSelectedRoomData(found);
+           }
+        }
       }
     } catch (e) {
       debugPrint("Error fetching data: $e");
+    }
+  }
+
+  // 3. FUNGSI BARU UNTUK MENGISI FORM DARI DATA LAMA
+  Future<void> _initializeEditData() async {
+    final loan = widget.loanToEdit!;
+    
+    // Set ID Loan agar nanti update ke ID yang benar
+    _currentLoanId = loan.id.toString();
+
+    // A. Set Ruangan
+    // Kita harus mencari string ruangan yang cocok di dropdown list berdasarkan ID/Nama ruangan lama
+    try {
+      // Cari room object dulu berdasarkan ID
+      final targetRoom = _allRooms.firstWhere((r) => r.id == loan.roomsId);
+      // Cari string representasinya untuk dropdown
+      final roomString = _ruanganList.firstWhere((str) => str.contains(targetRoom.name));
+      
+      setState(() {
+        _ruangan = roomString;
+        _ruanganSearchController.text = roomString;
+        _selectedRoomData = targetRoom;
+      });
+      // Fetch calendar agar validasi jam jalan
+      _fetchCalendarEvents(targetRoom.id.toString());
+    } catch (e) {
+      debugPrint("Gagal mencocokkan ruangan saat edit: $e");
+    }
+
+    // B. Set Tanggal & Jam
+    setState(() {
+      _selectedDate = DateTime.parse(loan.loanDate);
+      _focusedDay = _selectedDate!;
+      _tanggalController.text = DateFormat('d/M/y').format(_selectedDate!);
+      
+      // Pastikan format jam sesuai dropdown (HH:mm)
+      // Asumsi data dari DB formatnya HH:mm:ss atau HH.mm, kita ambil 5 karakter pertama
+      _jamMulai = loan.startTime.substring(0, 5).replaceAll('.', ':');
+      _jamSelesai = loan.endTime.substring(0, 5).replaceAll('.', ':');
+    });
+
+    // C. Set Kegiatan
+    setState(() {
+      _namaKegiatanController.text = loan.activityName;
+      
+      // Mapping int activityType ke String dropdown
+      if (loan.activityType == 0) _jenisKegiatan = 'Perkuliahan';
+      else if (loan.activityType == 1) _jenisKegiatan = 'PBL';
+      else {
+        _jenisKegiatan = 'Lainnya';
+        // Isi field "Lainnya" jika ada
+        _otherActivityController.text = loan.activityOther;
+      }
+    });
+
+    // D. Set Penanggung Jawab
+    try {
+      // Cari lecturer berdasarkan NIK
+      final lecturer = _lecturers.firstWhere((l) => l.nik == loan.lecturesNik);
+      final lecturerString = lecturer.code.isNotEmpty 
+          ? "${lecturer.code} | ${lecturer.name}" 
+          : lecturer.name;
+      
+      setState(() {
+        _penanggungJawab = lecturerString;
+        _pjSearchController.text = lecturerString;
+      });
+    } catch (e) {
+       // Jika dosen tidak ketemu (mungkin manual input atau data lama), set text manual
+       _pjSearchController.text = loan.lecturesNik; 
+    }
+
+    // E. FETCH EXISTING USERS (PENGGUNA)
+    // Kita perlu mengambil daftar pengguna yang sudah ada di loan ini
+    _fetchExistingUsers();
+  }
+
+  Future<void> _fetchExistingUsers() async {
+    try {
+       // Asumsi di LoanService ada method getLoanUsers(loanId)
+       // Jika belum ada, Anda harus menambahkannya di service.
+       // Return type harus List<LoanUser> (model dari API)
+       final usersFromApi = await _loanService.getLoanUsers(_currentLoanId!);
+       
+       setState(() {
+         _daftarPengguna.clear();
+         _daftarPengguna.addAll(usersFromApi.map((u) => Pengguna(
+           id: u.id.toString(),
+           workspace: u.workspaceName,
+           role: u.jenisPengguna,
+           nama: u.namaPengguna,
+           nim: u.idCardPengguna,
+         )));
+       });
+    } catch (e) {
+      debugPrint("Gagal load users: $e");
     }
   }
 
@@ -318,7 +435,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   Future<void> _handleSubmit() async {
     // 1. Validasi Dropdown
     if (_ruangan == null || _penanggungJawab == null || _jenisKegiatan == null) {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Mohon lengkapi semua pilihan dropdown")),
       );
       return;
@@ -340,45 +457,34 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           });
           lectureNik = selectedLecturer.nik;
         } catch (e) {
-           lectureNik = _penanggungJawab ?? '';
+          lectureNik = _penanggungJawab ?? '';
         }
 
         // --- Logic Activity Type ---
-        int activityType = 0; // Default 0
+        int activityType = 0;
         if (_jenisKegiatan == 'Perkuliahan') {
-           activityType = 0;
+          activityType = 0;
         } else if (_jenisKegiatan == 'PBL') {
-           activityType = 1; 
+          activityType = 1;
         } else if (_jenisKegiatan == 'Lainnya') {
-           activityType = 3;
+          activityType = 3;
         }
 
-      
-        // --- 🔥 PERBAIKAN UTAMA: LOGIKA ANTI-NULL ACTIVITY OTHER 🔥 ---
-        String? finalActivityOther; 
-        
+        // --- Logic Activity Other ---
+        String? finalActivityOther;
         if (activityType == 3) {
-           // Ambil teks dari inputan dan HAPUS SPASI depan/belakang (trim)
-           String inputLainnya = _otherActivityController.text.trim();
-           
-           // Cek apakah user benar-benar mengisi
-           if (inputLainnya.isNotEmpty) {
-             finalActivityOther = inputLainnya;
-           } else {
-             // JIKA KOSONG, KITA PAKSA ISI STRIP "-" AGAR TIDAK NULL DI DATABASE
-             finalActivityOther = "-"; 
-           }
+          String inputLainnya = _otherActivityController.text.trim();
+          finalActivityOther = inputLainnya.isNotEmpty ? inputLainnya : "-";
         } else {
-           // Kalau bukan 'Lainnya', biarkan NULL (Sesuai standar database)
-           finalActivityOther = null; 
+          finalActivityOther = null;
         }
 
         // 3. Susun Data
         Map<String, dynamic> loanData = {
           'rooms_id': _selectedRoomData!.id,
           'loan_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
-          'start_time': _jamMulai!.replaceAll(':', '.'), // Format Titik
-          'end_time': _jamSelesai!.replaceAll(':', '.'), // Format Titik
+          'start_time': _jamMulai!.replaceAll(':', '.'),
+          'end_time': _jamSelesai!.replaceAll(':', '.'),
           'activity_type': activityType,
           'activity_name': _namaKegiatanController.text,
           'activity_other': finalActivityOther,
@@ -387,23 +493,31 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           'student_name': widget.userProfile.nama,
           'student_email': widget.userProfile.email,
         };
-  
-        // 4. Kirim ke Database (Draft)
-        final createdLoan = await _loanService.createLoan(loanData);
-        
-        _currentLoanId = createdLoan.id.toString();
-        debugPrint("Draft created successfully with ID: $_currentLoanId");
 
-        setState(() {
-          _isSubmitting = false;
-        });
+        if (_isEditMode) {
+          // --- KONDISI 1: EDIT / UPDATE ---
+          await _loanService.updateLoan(_currentLoanId!, loanData);
+          debugPrint("Loan updated successfully ID: $_currentLoanId");
 
-        // 5. Tampilkan Dialog Sukses
-        if (mounted) {
-          _showSuccessDialog(context);
+          setState(() {
+            _isSubmitting = false;
+            _currentStep = FormStep.addUser; // Langsung lanjut step berikutnya
+          });
+        } else {
+          // --- KONDISI 2: BUAT BARU / CREATE ---
+          final createdLoan = await _loanService.createLoan(loanData);
+          _currentLoanId = createdLoan.id.toString();
+          debugPrint("Draft created successfully with ID: $_currentLoanId");
+
+          setState(() => _isSubmitting = false);
+          
+          if (mounted) {
+            _showSuccessDialog(context); // Tampilkan dialog sukses
+          }
         }
 
       } catch (e) {
+        // --- ERROR HANDLING ---
         setState(() {
           _isSubmitting = false;
         });

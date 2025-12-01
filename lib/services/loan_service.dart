@@ -130,6 +130,18 @@ class LoanService {
     } catch (e) { rethrow; }
   }
 
+  Future<Loan> updateLoan(String loanId, Map<String, dynamic> loanData) async {
+    try {
+      final response = await http.put( // Gunakan PUT
+        Uri.parse('$_baseUrl/loans/$loanId'), 
+        headers: await _getHeaders(),
+        body: json.encode(loanData),
+      );
+      final data = _handleResponse(response);
+      return Loan.fromJson(data);
+    } catch (e) { rethrow; }
+  }
+
   // ===========================================
   // 4. MANAJEMEN USER (TAMBAH & HAPUS)
   // ===========================================
@@ -142,6 +154,25 @@ class LoanService {
       );
       final data = _handleResponse(response);
       return LoanUser.fromJson(data);
+    } catch (e) { rethrow; }
+  }
+
+  Future<List<LoanUser>> getLoanUsers(String loanId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/loans/$loanId/users'), 
+        headers: await _getHeaders(),
+      );
+      
+      // Menggunakan _handleResponse yang sudah ada
+      final data = _handleResponse(response);
+      
+      // Pastikan data berupa List sebelum di-map
+      if (data is List) {
+        return data.map((json) => LoanUser.fromJson(json)).toList();
+      } else {
+        return [];
+      }
     } catch (e) { rethrow; }
   }
 

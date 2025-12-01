@@ -47,4 +47,8 @@ class LoanUser {
       workspaceType: type,
     );
   }
+
+  // 🔥 TAMBAHKAN GETTER INI AGAR form_peminjaman.dart TIDAK ERROR 🔥
+  // Ini membuat seolah-olah ada variabel 'workspaceName', padahal isinya 'workspaceCode'
+  String get workspaceName => workspaceCode ?? 'Workspace $workspacesId';
 }

@@ -26,7 +26,7 @@ class UserProfile {
       nama: map['name'] ?? '',
       email: map['email'] ?? '',
       unitKerja: map['unit_kerja'] ?? '',
-      kodeDosen: map['kode_dosen'] ?? '',
+      kodeDosen: map['code'] ?? '',
       whatsapp: map['whatsapp'] ?? '',
     );
   }
