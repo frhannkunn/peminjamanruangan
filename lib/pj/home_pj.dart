@@ -329,10 +329,10 @@ class _HomePjPageState extends State<HomePjPage> {
     // 3. STATUS EXPIRED (Abu-abu)
     else if (statusCode == '8') {
       badgeAtasText = "Peminjaman Expired";
-      badgeAtasColor = Colors.grey;
+      badgeAtasColor = Colors.red;
       
       badgeBawahText = "Expired";
-      badgeBawahColor = Colors.grey;
+      badgeBawahColor = Colors.red;
     } 
     // 4. STATUS SUKSES / PROSES LANJUT (3, 4, 5, 6) -> HIJAU
     else if (['3', '4', '5', '6'].contains(statusCode)) {

@@ -155,8 +155,8 @@ class PeminjamanPjDetailModel {
 
   Color get statusColor {
     if (['1', '3'].contains(rawStatus)) return const Color(0xFFFFC037); 
-    if (['2', '4', '7'].contains(rawStatus)) return Colors.red; 
-    if (rawStatus == '8') return Colors.grey; 
+    if (['2', '4', '7', '8'].contains(rawStatus)) return Colors.red; 
+    if (rawStatus == '') return Colors.grey; 
     if (['5', '6'].contains(rawStatus)) return const Color(0xFF00D800); 
     return Colors.blue; 
   }
