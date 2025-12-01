@@ -1,30 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../models/pic.dart'; // Import Model PIC
+import '../../services/pic_service.dart'; // Import Service PIC
+import '../../services/user_session.dart'; // Import User Session
 import 'validasi_pic.dart'; 
-
-// --- MODEL DATA ---
-class Peminjaman {
-  int id;
-  String kodeBooking;
-  String tanggalPinjam;
-  String jamKegiatan;
-  String jenisKegiatan;
-  String namaKegiatan;
-  String status;
-  Color statusColor;
-
-  Peminjaman({
-    required this.id,
-    required this.kodeBooking,
-    required this.tanggalPinjam,
-    required this.jamKegiatan,
-    required this.jenisKegiatan,
-    required this.namaKegiatan,
-    required this.status,
-    required this.statusColor,
-  });
-}
 
 class HomePicPage extends StatefulWidget {
   const HomePicPage({super.key});
@@ -34,130 +14,244 @@ class HomePicPage extends StatefulWidget {
 }
 
 class _HomePicPageState extends State<HomePicPage> {
-  // --- DATA DUMMY ---
-  final List<Peminjaman> _peminjamanList = [
-    Peminjaman(
-      id: 6608,
-      kodeBooking: "GU.601.WM.01",
-      tanggalPinjam: "18 Oktober 2025",
-      jamKegiatan: "07.50 - 12.00",
-      jenisKegiatan: "Perkuliahan",
-      namaKegiatan: "PBL TRPL 318",
-      status: "Menunggu Persetujuan PIC Ruangan",
-      statusColor: const Color(0xFFFFC037), // Kuning
-    ),
-  ];
+  final PicService _picService = PicService();
+  
+  // State Data
+  List<PeminjamanPic> _allPeminjaman = []; // Data asli dari API
+  List<PeminjamanPic> _filteredPeminjaman = []; // Data hasil filter/search
+  bool _isLoading = true;
+  String _userName = "PIC"; // Default name
 
-  // Variabel Filter
+  // Variabel Filter UI
   String? _selectedRuangan = '- Hanya Tampilkan Ruangan Saya -';
   String? _selectedStatus = '- Semua Status -';
+  final TextEditingController _searchController = TextEditingController();
 
   final List<String> _ruanganOptions = [
-    '- Hanya Tampilkan Ruangan Saya -',
-    'GU.601 - Workspace Virtual Reality',
-    'GU.602 - Workspace Multimedia',
-    'GU.603 - Workspace Rendering',
-    'GU.604 - Workspace Software Development',
-    'GU.605 - Workspace Animation Production',
+    '- Hanya Tampilkan Ruangan Saya -', // Value API: 'PIC'
+    'Semua Ruangan', // Value API: 'All'
   ];
 
   final List<String> _statusOptions = [
     '- Semua Status -',
-    'Menunggu Persetujuan',
+    'Menunggu Persetujuan PIC',
     'Disetujui',
     'Ditolak',
     'Selesai',
     "Peminjaman Expired",
   ];
 
-  // --- LOGIKA UPDATE STATUS ---
-  void _updatePeminjamanStatus(int id, String hasilValidasi) {
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _fetchData();
+    
+    // Listener untuk search bar
+    _searchController.addListener(_runFilter);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // 1. Load Nama User
+  Future<void> _loadUserProfile() async {
+    final profile = await UserSession.getUserProfile();
+    if (profile != null && mounted) {
+      setState(() {
+        // Ambil nama depan saja agar tidak kepanjangan
+        _userName = profile.nama.split(' ')[0]; 
+      });
+    }
+  }
+
+  // 2. Fetch Data dari API
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    try {
+      // Mapping Filter UI ke API Params
+      String roomsIdParam = 'PIC'; // Default Ruangan Saya
+      if (_selectedRuangan == 'Semua Ruangan') {
+        roomsIdParam = 'All';
+      }
+
+      String statusParam = 'All';
+      // Mapping Status UI ke ID API
+      switch (_selectedStatus) {
+        case 'Menunggu Persetujuan PIC': statusParam = '3'; break;
+        case 'Disetujui': statusParam = '5'; break;
+        case 'Ditolak': statusParam = '4'; break;
+        case 'Selesai': statusParam = '6'; break;
+        case 'Peminjaman Expired': statusParam = '8'; break;
+        default: statusParam = 'All';
+      }
+
+      // Panggil Service
+      final data = await _picService.getApprovalList(
+        roomsId: roomsIdParam,
+        statusFilter: statusParam,
+      );
+
+      if (mounted) {
+        setState(() {
+          _allPeminjaman = data;
+          _isLoading = false;
+        });
+        _runFilter(); // Jalankan filter search lokal
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data: $e")),
+        );
+      }
+    }
+  }
+
+  // 3. Logic Filter Lokal (Search Bar)
+  void _runFilter() {
+    String query = _searchController.text.toLowerCase();
+    
     setState(() {
-      var data = _peminjamanList.firstWhere((p) => p.id == id);
-      if (hasilValidasi == "Disetujui") {
-        // Status Utama (Pill Atas) berubah jadi Hijau
-        data.status = "Disetujui";
-        data.statusColor = const Color(0xFF00D800);
-      } else if (hasilValidasi == "Ditolak") {
-        // Status Utama (Pill Atas) berubah jadi Merah
-        data.status = "Ditolak PIC";
-        data.statusColor = Colors.red;
+      if (query.isEmpty) {
+        _filteredPeminjaman = List.from(_allPeminjaman);
+      } else {
+        _filteredPeminjaman = _allPeminjaman.where((item) {
+          return item.namaKegiatan.toLowerCase().contains(query) ||
+                 item.ruangan.toLowerCase().contains(query) ||
+                 item.namaPeminjam.toLowerCase().contains(query);
+        }).toList();
       }
     });
   }
 
-  // --- NAVIGASI ---
-  Future<void> _navigateToDetail(Peminjaman peminjaman) async {
+  // 4. Update Status setelah kembali dari halaman detail
+  void _updateListAfterApproval() {
+    _fetchData(); // Refresh data dari server agar sinkron
+  }
+
+  // --- NAVIGASI KE DETAIL ---
+  Future<void> _navigateToDetail(PeminjamanPic peminjaman) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ValidasiPicPage(peminjamanData: peminjaman),
+        builder: (context) => ValidasiPicPage(loanId: peminjaman.id),
       ),
     );
 
-    if (result != null && result is String) {
-      _updatePeminjamanStatus(peminjaman.id, result);
+    // Jika ada hasil (berarti sudah di-approve/reject), refresh list
+    if (result != null) {
+      _updateListAfterApproval();
     }
+  }
+
+  // --- HITUNG SUMMARY CARD SECARA LOKAL ---
+  Map<String, String> _calculateSummary() {
+    int waiting = 0;
+    int approved = 0;
+    int rejected = 0;
+
+    for (var item in _allPeminjaman) {
+      if (['1', '3'].contains(item.rawStatus)) waiting++;
+      if (['5', '6'].contains(item.rawStatus)) approved++;
+      if (['2', '4', '7'].contains(item.rawStatus)) rejected++;
+    }
+
+    return {
+      'waiting': waiting.toString(),
+      'approved': approved.toString(),
+      'rejected': rejected.toString(),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final summary = _calculateSummary();
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // LAYER 1: KONTEN SCROLLABLE
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 150), // Ruang untuk header biru
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(
-                    top: 75,
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: Stack(
+          children: [
+            // LAYER 1: KONTEN SCROLLABLE
+            SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  const SizedBox(height: 150), // Ruang untuk header biru
+                  Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height - 150
+                    ),
+                    padding: const EdgeInsets.only(
+                      top: 75,
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFilters(), // Widget Filter
+                        const SizedBox(height: 20),
+
+                        // Loading State
+                        if (_isLoading)
+                           const Center(child: CircularProgressIndicator())
+                        
+                        // Empty State
+                        else if (_filteredPeminjaman.isEmpty)
+                           Padding(
+                             padding: const EdgeInsets.only(top: 50.0),
+                             child: Center(
+                               child: Column(
+                                 children: [
+                                   Icon(Icons.inbox, size: 50, color: Colors.grey[300]),
+                                   const SizedBox(height: 10),
+                                   Text("Tidak ada data peminjaman.", style: GoogleFonts.poppins(color: Colors.grey)),
+                                 ],
+                               ),
+                             ),
+                           )
+
+                        // List Data
+                        else
+                          ..._filteredPeminjaman.asMap().entries.map((entry) {
+                            return _buildPeminjamanGroup(
+                              entry.value,
+                              entry.key + 1,
+                            );
+                          }),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildFilters(), // Widget Filter (Shadow Halus)
-                      const SizedBox(height: 20),
-
-                      // List Data
-                      if (_peminjamanList.isEmpty)
-                        const Center(child: Text("Tidak ada data."))
-                      else
-                        ..._peminjamanList.asMap().entries.map((entry) {
-                          return _buildPeminjamanGroup(
-                            entry.value,
-                            entry.key + 1,
-                          );
-                        }),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // LAYER 2: HEADER BIRU & KARTU SUMMARY
-          _buildHeaderAndCards(),
-        ],
+            // LAYER 2: HEADER BIRU & KARTU SUMMARY
+            _buildHeaderAndCards(summary),
+          ],
+        ),
       ),
     );
   }
 
   // --- WIDGET HEADER ---
-  Widget _buildHeaderAndCards() {
+  Widget _buildHeaderAndCards(Map<String, String> summary) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -174,7 +268,7 @@ class _HomePicPageState extends State<HomePicPage> {
           child: Align(
             alignment: Alignment.topLeft,
             child: Text(
-              'Hai, Fajri!',
+              'Hai, $_userName!',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 24,
@@ -192,9 +286,9 @@ class _HomePicPageState extends State<HomePicPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _summaryCard('Menunggu PIC', '5'),
-                _summaryCard('Disetujui', '8'),
-                _summaryCard('Ditolak', '3'),
+                _summaryCard('Menunggu PIC', summary['waiting']!),
+                _summaryCard('Disetujui', summary['approved']!),
+                _summaryCard('Ditolak', summary['rejected']!),
               ],
             ),
           ),
@@ -240,7 +334,7 @@ class _HomePicPageState extends State<HomePicPage> {
   }
 
   // --- WIDGET ITEM PEMINJAMAN ---
-  Widget _buildPeminjamanGroup(Peminjaman peminjaman, int index) {
+  Widget _buildPeminjamanGroup(PeminjamanPic peminjaman, int index) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -259,11 +353,10 @@ class _HomePicPageState extends State<HomePicPage> {
     );
   }
 
-  Widget _buildPeminjamanCard(Peminjaman peminjaman) {
+  Widget _buildPeminjamanCard(PeminjamanPic peminjaman) {
     // Logika text tombol
-    String buttonText =
-        (peminjaman.status == "Menunggu Persetujuan PIC Ruangan")
-        ? "Detail Peminjaman"
+    String buttonText = (peminjaman.rawStatus == "3") 
+        ? "Detail Peminjaman" 
         : "Detail";
 
     return Container(
@@ -271,11 +364,10 @@ class _HomePicPageState extends State<HomePicPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        // SHADOW HALUS (CARD)
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.50), // Transparan halus
-            blurRadius: 10, // Blur lembut
+            color: Colors.grey.withOpacity(0.50),
+            blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
@@ -284,15 +376,15 @@ class _HomePicPageState extends State<HomePicPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            peminjaman.kodeBooking,
+            peminjaman.ruangan, 
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
 
-          // --- STATUS UTAMA (PILL ATAS - DINAMIS) ---
+          // --- 1. STATUS UTAMA (PILL ATAS - DINAMIS) ---
           Row(
             children: [
               Text(
@@ -310,12 +402,11 @@ class _HomePicPageState extends State<HomePicPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        peminjaman.statusColor, // Warna berubah sesuai logika
+                    color: peminjaman.statusColor, 
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    peminjaman.status, // Text berubah sesuai logika
+                    peminjaman.status, 
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       color: Colors.white,
@@ -330,13 +421,14 @@ class _HomePicPageState extends State<HomePicPage> {
 
           const SizedBox(height: 12),
 
-          // --- STATUS PJ (PILL BAWAH - STATIS HIJAU) ---
+          // --- 2. BAGIAN YANG DITAMBAHKAN (STATUS PJ) ---
+          // Ini kode yang membuat tampilan seperti Gambar 2 Anda
           Row(
             children: [
               SizedBox(
-                width: 120,
+                width: 120, // Lebar label agar sejajar dengan bawahnya
                 child: Text(
-                  'Status PJ', // LABEL DIUBAH
+                  'Status PJ', 
                   style: GoogleFonts.poppins(
                     color: Colors.grey[700],
                     fontSize: 14,
@@ -353,12 +445,12 @@ class _HomePicPageState extends State<HomePicPage> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  // WARNA STATIS HIJAU (DISETUJUI)
+                  // Warna Hijau Statis (Disetujui)
                   color: const Color(0xFF00D800),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Disetujui', // TEXT STATIS DISETUJUI
+                  'Disetujui', 
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -368,13 +460,18 @@ class _HomePicPageState extends State<HomePicPage> {
               ),
             ],
           ),
+          // --------------------------------------------------
 
           const SizedBox(height: 6),
+          
+          // Row Detail Lainnya
+           _buildDetailRow('Peminjam', peminjaman.namaPeminjam),
           _buildDetailRow('Tanggal Pinjam', peminjaman.tanggalPinjam),
           _buildDetailRow('Jam Kegiatan', peminjaman.jamKegiatan),
           _buildDetailRow('Jenis Kegiatan', peminjaman.jenisKegiatan),
           _buildDetailRow('Nama Kegiatan', peminjaman.namaKegiatan),
           const SizedBox(height: 16),
+          
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
@@ -436,7 +533,6 @@ class _HomePicPageState extends State<HomePicPage> {
   }
 
   Widget _buildFilters() {
-    // Style Button Dropdown (Ada Border + Shadow Halus)
     final buttonStyle = ButtonStyleData(
       height: 45,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -444,7 +540,6 @@ class _HomePicPageState extends State<HomePicPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade300),
-        // SHADOW HALUS (DROPDOWN)
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -466,14 +561,17 @@ class _HomePicPageState extends State<HomePicPage> {
         DropdownButton2<String>(
           isExpanded: true,
           value: _selectedRuangan,
-          underline: const SizedBox(), // Hapus garis bawah default
+          underline: const SizedBox(),
           items: _ruanganOptions.map((item) {
             return DropdownMenuItem<String>(
               value: item,
               child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
             );
           }).toList(),
-          onChanged: (val) => setState(() => _selectedRuangan = val),
+          onChanged: (val) {
+             setState(() => _selectedRuangan = val);
+             _fetchData(); // Trigger fetch saat filter berubah
+          },
           buttonStyleData: buttonStyle,
           dropdownStyleData: DropdownStyleData(
             decoration: BoxDecoration(
@@ -492,7 +590,7 @@ class _HomePicPageState extends State<HomePicPage> {
         DropdownButton2<String>(
           isExpanded: true,
           value: _selectedStatus,
-          underline: const SizedBox(), // Hapus garis bawah default
+          underline: const SizedBox(),
           items: _statusOptions
               .map(
                 (item) => DropdownMenuItem<String>(
@@ -501,7 +599,10 @@ class _HomePicPageState extends State<HomePicPage> {
                 ),
               )
               .toList(),
-          onChanged: (val) => setState(() => _selectedStatus = val),
+          onChanged: (val) {
+             setState(() => _selectedStatus = val);
+             _fetchData(); // Trigger fetch saat filter berubah
+          },
           buttonStyleData: buttonStyle,
           dropdownStyleData: DropdownStyleData(
             decoration: BoxDecoration(
@@ -512,7 +613,7 @@ class _HomePicPageState extends State<HomePicPage> {
         ),
         const SizedBox(height: 16),
 
-        // Search Bar (Ada Border + Shadow Halus)
+        // Search Bar (Filter Lokal)
         Row(
           children: [
             Text(
@@ -526,7 +627,6 @@ class _HomePicPageState extends State<HomePicPage> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(25),
                   color: Colors.white,
-                  // SHADOW HALUS (SEARCH)
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.15),
@@ -536,11 +636,11 @@ class _HomePicPageState extends State<HomePicPage> {
                   ],
                 ),
                 child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    // Border Tetap Ada
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: Colors.grey.shade300),

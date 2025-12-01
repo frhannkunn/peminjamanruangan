@@ -370,16 +370,23 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     final List<String> displayKeys = [
       'ID',
       'ID Pengguna',
+      'Jenis Pengguna',
       'Nama',
       'Nomor Workspace',
       'Tipe Workspace',
     ];
     String getValue(LoanUser user, String key) {
       switch (key) {
-        case 'ID': return user.id.toString();
-        case 'ID Pengguna': return user.idCardPengguna;
-        case 'Nama': return user.namaPengguna;
-        case 'Nomor Workspace': return user.workspaceCode ?? '-';
+        case 'ID': 
+        return user.id.toString();
+        case 'ID Pengguna': 
+        return user.idCardPengguna;
+        case 'Jenis Pengguna': 
+        return user.jenisPengguna;
+        case 'Nama': 
+        return user.namaPengguna;
+        case 'Nomor Workspace': 
+        return user.workspaceCode ?? '-';
         case 'Tipe Workspace': 
           String rawType = user.workspaceType ?? '-';
           if (rawType == '1') return 'With PC';       // Jika 1, tampilkan PC
