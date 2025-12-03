@@ -377,82 +377,159 @@ class _DetailRuanganScreenState extends State<DetailRuanganScreen> {
     );
   }
 
+  static const int _flexID = 1;
+  static const int _flexNomor = 3;
+  static const int _flexAvail = 3; // Diperlebar agar tidak turun baris
+  static const int _flexTipe = 3;  // Diperlebar agar tidak turun baris
+  static const int _flexAksi = 2;
+
+
   Widget _buildWorkspaceHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.black12, width: 1), // Garis pemisah header
+        ),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _headerText("ID"),
-          _headerText("Nomor WS"),
-          _headerText("Availability"),
-          _headerText("Tipe WS"),
-          _headerText("Aksi"),
+          _headerItem("ID", _flexID, TextAlign.center),
+          const SizedBox(width: 8),
+          _headerItem("Nomor WS", _flexNomor, TextAlign.start), // Rata Kiri
+          _headerItem("Availability", _flexAvail, TextAlign.center), // Rata Tengah
+          _headerItem("Tipe WS", _flexTipe, TextAlign.center), // Rata Tengah
+          _headerItem("Aksi", _flexAksi, TextAlign.center),
         ],
       ),
     );
   }
-  
-  Widget _headerText(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.poppins(
-        fontWeight: FontWeight.bold,
-        fontSize: 12,
-        color: Colors.black54,
+
+  Widget _headerItem(String text, int flex, TextAlign align) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        text,
+        textAlign: align,
+        maxLines: 1, // 🔒 Kunci agar tetap 1 baris
+        overflow: TextOverflow.visible, 
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          fontSize: 12, // Ukuran pas agar muat
+          color: Colors.black,
+        ),
       ),
     );
   }
-  
-  Widget _buildWorkspaceRow(Workspace ws, BuildContext context) {
-    final bool isTersedia = ws.availability.toLowerCase() == 'tersedia';
-    final Color availColor = isTersedia ? Colors.green.shade800 : Colors.red.shade800;
-    final Color availBgColor = isTersedia ? Colors.green.shade100 : Colors.red.shade100;
-    
-    final bool isNonPc = ws.tipeWs.toLowerCase() == 'non pc';
-    final Color tipeColor = isNonPc ? Colors.purple.shade800 : Colors.orange.shade800;
-    final Color tipeBgColor = isNonPc ? Colors.purple.shade100 : Colors.orange.shade100;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+  // ===============================================================
+  // 2. BAGIAN ISI DATA (ROW)
+  // ===============================================================
+  Widget _buildWorkspaceRow(Workspace ws, BuildContext context) {
+    // Logic Warna sesuai Gambar 2 (Hijau terang & Ungu/Pink terang)
+    final bool isTersedia = ws.availability.toLowerCase() == 'tersedia';
+    
+    // Warna Chip Availability (Hijau Solid Teks Putih)
+    final Color availBg = isTersedia ? const Color(0xFF12D41E) : Colors.red; 
+    final Color availText = Colors.white;
+
+    // Warna Chip Tipe (Pink/Ungu Solid Teks Putih)
+    final bool isNonPc = ws.tipeWs.toLowerCase().contains('non');
+    final Color tipeBg = isNonPc ? const Color(0xFFF096F8) : const Color(0xFF0B2A97);
+    final Color tipeText = Colors.white;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(ws.id.toString(), style: GoogleFonts.poppins(fontSize: 12)),
-          Text(ws.nomorWs, style: GoogleFonts.poppins(fontSize: 12)),
-          _buildStatusChip(ws.availability, availBgColor, availColor),
-          _buildStatusChip(ws.tipeWs, tipeBgColor, tipeColor),
-          SizedBox(
-            height: 30,
-            child: ElevatedButton(
-              onPressed: () {
-                // 💡 NANTI KITA AKAN ATUR NAVIGASI DI SINI
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade100,
-                foregroundColor: Colors.blue.shade800,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+          // 1. ID
+          Expanded(
+            flex: _flexID,
+            child: Text(
+              ws.id.toString(),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 2. Nomor WS (Rata Kiri)
+          Expanded(
+            flex: _flexNomor,
+            child: Text(
+              ws.nomorWs,
+              textAlign: TextAlign.start,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+          ),
+
+          // 3. Availability (Chip Hijau - Memanjang)
+          Expanded(
+            flex: _flexAvail,
+            child: Center(
+              child: _buildBadge(ws.availability, availBg, availText),
+            ),
+          ),
+
+          // 4. Tipe WS (Chip Pink - Memanjang)
+          Expanded(
+            flex: _flexTipe,
+            child: Center(
+              child: _buildBadge(ws.tipeWs, tipeBg, tipeText),
+            ),
+          ),
+
+          // 5. Aksi (Tombol Biru)
+          Expanded(
+            flex: _flexAksi,
+            child: Center(
+              child: SizedBox(
+                height: 30,
+                width: 70, // Lebar fixed agar tombol seragam
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5AA2FF), // Biru terang sesuai gambar
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    "Detail",
+                    style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ),
-              child: Text("Detail", style: GoogleFonts.poppins(fontSize: 11)),
             ),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildStatusChip(String text, Color bgColor, Color textColor) {
+
+  // Widget Helper untuk Chip (Badge) agar teks tidak turun
+  Widget _buildBadge(String text, Color bg, Color textColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      // Lebar min/max diatur agar bentuknya lonjong memanjang
+      constraints: const BoxConstraints(minWidth: 70), 
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        color: bg,
+        borderRadius: BorderRadius.circular(20), // Bulat penuh
       ),
       child: Text(
         text,
+        textAlign: TextAlign.center,
+        maxLines: 1, // ❗PENTING: Memaksa satu baris
         style: GoogleFonts.poppins(
           color: textColor,
           fontSize: 11,

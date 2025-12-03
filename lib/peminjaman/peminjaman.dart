@@ -122,7 +122,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
   String _mapStatusToString(int status) {
     switch (status) {
       case 0: return 'Draft';
-      case 1: return 'Menunggu Persetujuan PJ';
+      case 1: return 'Menunggu Persetujuan Penanggung Jawab';
       case 2: return 'Ditolak Penanggung Jawab'; // <-- Ditolak PJ
       case 3: return 'Menunggu Persetujuan PIC'; // <-- Menunggu PIC
       case 4: return 'Ditolak PIC';              // <-- Ditolak PIC
@@ -358,7 +358,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
             value: _selectedStatus,
             isExpanded: true,
             decoration: _inputDecoration(),
-            items: ['Semua Status', 'Draft', 'Disetujui', 'Ditolak', 'Menunggu Persetujuan PJ', 'Menunggu Persetujuan PIC', 'Peminjaman Expired']
+            items: ['Semua Status', 'Draft', 'Disetujui', 'Ditolak', 'Menunggu Persetujuan Penanggung Jawab', 'Menunggu Persetujuan PIC', 'Peminjaman Expired']
                 .map((String value) => DropdownMenuItem<String>(value: value, child: Text(value, overflow: TextOverflow.ellipsis)))
                 .toList(),
             onChanged: (value) => setState(() => _selectedStatus = value)),
@@ -593,7 +593,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     // Tombol Batalkan (Hanya untuk Draft, Menunggu PJ, Menunggu PIC)
-                    if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan PJ' || statusStr == 'Menunggu Persetujuan PIC')
+                    if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan Penanggung Jawab' || statusStr == 'Menunggu Persetujuan PIC')
                        ElevatedButton(
                         onPressed: () {
                           // TODO: Implementasi konfirmasi hapus
@@ -624,7 +624,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                         ));
 
                         // Menu Edit (PERBAIKAN 3: Muncul jika Draft ATAU Menunggu PJ)
-                        if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan PJ') {
+                        if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan Penanggung Jawab') {
                           menuItems.add(PopupMenuItem(
                             value: 'edit',
                             child: Text('Edit', style: GoogleFonts.poppins()),

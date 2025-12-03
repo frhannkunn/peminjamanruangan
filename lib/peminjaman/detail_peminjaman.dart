@@ -45,9 +45,18 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
       final groupedRooms = await _roomService.getGroupedRooms();
       String roomName = "Unknown";
       String roomCode = "";
+      bool found = false; 
+      
       for (var list in groupedRooms.values) {
+        if (found) break; 
+
         for (var r in list) {
-          if (r.id == loan.roomsId) roomName = r.name; roomCode = r.code;
+          if (r.id == loan.roomsId) {
+            roomName = r.name;
+            roomCode = r.code; 
+            found = true;      
+            break;             
+          }
         }
       }
 
