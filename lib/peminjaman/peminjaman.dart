@@ -242,23 +242,58 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
       );
 
     } else if (value == 'qr') {
-      // Dummy data untuk QR Screen yang ada
-      final dummyData = PeminjamanData(
+      
+      String picName = "Admin Ruangan";
+      for (var entry in _groupedRooms.entries) {
+        for (var room in entry.value) {
+          if (room.id == loan.roomsId) {
+            picName = room.pic?.name ?? "Admin Ruangan"; 
+            break;
+          }
+        }
+      }
+
+      String statusPj;
+      String statusPic;
+
+      if (loan.status == 8) {
+        // Jika Status Utama 8 (Expired)
+        statusPj = "Expired";
+        statusPic = "Expired";
+      } else {
+        // Logika Normal
+        statusPj = (loan.status >= 2) ? (loan.status == 2 ? "Ditolak" : "Disetujui") : "Menunggu";
+        
+        // Logika PIC
+        statusPic = (loan.status >= 4) ? (loan.status == 4 ? "Ditolak" : "Disetujui") : "Menunggu";
+        // Jika masih di tahap awal (Draft/Menunggu PJ/Ditolak PJ), PIC pasti Menunggu
+        if (loan.status < 3) statusPic = "Menunggu";
+      }
+
+      String roomName = _getRoomName(loan.roomsId);
+      String roomCode = _getRoomCode(loan.roomsId);
+
+      // 2. Kirim Data ke QR Screen
+      final dataQr = PeminjamanData(
         id: loan.id.toString(),
-        ruangan: _getRoomName(loan.roomsId),
+        ruangan: "$roomCode - $roomName",
         status: statusStr,
         penanggungJawab: _getLecturerName(loan.lecturesNik),
         jenisKegiatan: _mapActivityType(loan.activityType),
         namaKegiatan: loan.activityName,
-        namaPengaju: loan.studentName,
+        namaPengaju: loan.studentName, 
         tanggalPinjam: DateTime.parse(loan.loanDate),
         totalPeminjam: 0,
         jamMulai: loan.startTime,
         jamSelesai: loan.endTime,
+        namaPic: picName,
+        statusPjText: statusPj,
+        statusPicText: statusPic,
       );
+
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => QrScreen(peminjaman: dummyData)),
+        MaterialPageRoute(builder: (context) => QrScreen(peminjaman: dataQr)),
       );
     }
   }
@@ -702,6 +737,9 @@ class PeminjamanData {
   final int totalPeminjam;
   final String jamMulai;
   final String jamSelesai;
+  final String namaPic;
+  final String statusPjText;
+  final String statusPicText;
   bool isExpanded;
 
   PeminjamanData({
@@ -716,6 +754,9 @@ class PeminjamanData {
     required this.totalPeminjam,
     required this.jamMulai,
     required this.jamSelesai,
+    required this.namaPic,
+    required this.statusPjText,
+    required this.statusPicText,
     this.isExpanded = false,
   });
 }

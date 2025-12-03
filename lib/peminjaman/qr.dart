@@ -1,27 +1,84 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart'; // Import package QR
-import 'package:dotted_border/dotted_border.dart'; // Import package border
-import 'peminjaman.dart'; // Import class PeminjamanData
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:dotted_border/dotted_border.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:gal/gal.dart'; 
+import 'peminjaman.dart';
 
-class QrScreen extends StatelessWidget {
+class QrScreen extends StatefulWidget {
   final PeminjamanData peminjaman;
 
   const QrScreen({super.key, required this.peminjaman});
 
   @override
-  Widget build(BuildContext context) {
-    // Menggabungkan tanggal dan waktu dari data
-    final String waktuPinjam =
-        "${DateFormat('dd MMMM yyyy').format(peminjaman.tanggalPinjam)} | ${peminjaman.jamMulai} - ${peminjaman.jamSelesai}";
+  State<QrScreen> createState() => _QrScreenState();
+}
 
-    // --- Data Hardcoded ---
-    // Data ini tidak ada di class PeminjamanData Anda.
-    // Ganti string hardcoded ini dengan data asli jika sudah Anda miliki.
-    const String peminjamHardcoded = "18646 - Jtsoo";
-    const String picRuanganHardcoded = "Gilang Bagus Ramadhan, A.Md.Kom";
-    // ----------------------------
+class _QrScreenState extends State<QrScreen> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+
+  Color _getStatusColor(String statusText) {
+    if (statusText == 'Disetujui') return Colors.green;
+    if (statusText == 'Ditolak' || statusText == 'Expired') return Colors.red;
+    return const Color(0xFFF59B17);
+  }
+
+  // --- FUNGSI SIMPAN GAMBAR BARU (MENGGUNAKAN GAL) ---
+  Future<void> _saveQrToGallery() async {
+    if (!await Gal.hasAccess()) {
+      await Gal.requestAccess();
+    }
+
+    // 2. Capture Gambar
+    final Uint8List? image = await _screenshotController.capture();
+
+    if (image != null) {
+      try {
+        await Gal.putImageBytes(image, name: "QR_Peminjaman_${widget.peminjaman.id}");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("QR Code berhasil disimpan ke Galeri! ✅"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } on GalException catch (e) {
+        // Error handling khusus Gal
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Gagal menyimpan: ${e.type.message}"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(
+              content: Text("Terjadi kesalahan: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal mengambil gambar.")),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String waktuPinjam =
+        "${DateFormat('dd MMMM yyyy').format(widget.peminjaman.tanggalPinjam)} | ${widget.peminjaman.jamMulai} - ${widget.peminjaman.jamSelesai}";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -34,56 +91,57 @@ class QrScreen extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black), // Tombol back
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Kontainer dengan border putus-putus
-            DottedBorder(
-              borderType: BorderType.RRect,
-              radius: const Radius.circular(12),
-              padding: const EdgeInsets.all(20),
-              color: Colors.grey.shade400,
-              strokeWidth: 2,
-              dashPattern: const [8, 4], // Pola putus-putus
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // QR Code
-                  Center(
-                    child: QrImageView(
-                      data: peminjaman.id, // Data QR code (contoh: ID)
-                      version: QrVersions.auto,
-                      size: 200.0,
-                    ),
+            Screenshot(
+              controller: _screenshotController,
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(4.0),
+                child: DottedBorder(
+                  borderType: BorderType.RRect,
+                  radius: const Radius.circular(12),
+                  padding: const EdgeInsets.all(20),
+                  color: Colors.grey.shade400,
+                  strokeWidth: 2,
+                  dashPattern: const [8, 4],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: QrImageView(
+                          // Ganti IP sesuai laptop Anda
+                          data: "http://127.0.0.1:8000/loan-check/${widget.peminjaman.id}",
+                          version: QrVersions.auto,
+                          size: 200.0,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildQrInfoRow("ID Peminjam:", widget.peminjaman.id),
+                      _buildQrInfoRow("Peminjam:", widget.peminjaman.namaPengaju),
+                      _buildQrInfoRow("Waktu Pinjam:", waktuPinjam),
+                      _buildQrInfoRow("Ruangan:", widget.peminjaman.ruangan),
+                      _buildQrInfoRow("Nama Kegiatan:", widget.peminjaman.namaKegiatan),
+                      const Divider(height: 32),
+                      Text(
+                        "Persetujuan PIC dan Penanggung Jawab",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildQrInfoRow("Penanggung Jawab:", widget.peminjaman.penanggungJawab),
+                      _buildQrInfoRow("Persetujuan Penanggung Jawab:", widget.peminjaman.statusPjText, isStatus: true),
+                      _buildQrInfoRow("PIC Ruangan:", widget.peminjaman.namaPic),
+                      _buildQrInfoRow("Persetujuan PIC Ruangan:", widget.peminjaman.statusPicText, isStatus: true),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Detail Peminjaman
-                  _buildQrInfoRow("ID Peminjam:", peminjaman.id),
-                  _buildQrInfoRow("Peminjam:", peminjamHardcoded), // Data hardcoded
-                  _buildQrInfoRow("Waktu Pinjam:", waktuPinjam),
-                  _buildQrInfoRow("Ruangan:", peminjaman.ruangan),
-                  _buildQrInfoRow("Nama Kegiatan:", peminjaman.namaKegiatan),
-                  
-                  const Divider(height: 32),
-
-                  // Detail Persetujuan
-                  Text(
-                    "Persetujuan PIC dan Penanggung Jawab",
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildQrInfoRow("Penanggung Jawab:", peminjaman.penanggungJawab),
-                  _buildQrInfoRow("Persetujuan Penanggung Jawab:", "Disetujui", isStatus: true), // Hardcoded
-                  _buildQrInfoRow("PIC Ruangan:", picRuanganHardcoded), // Data hardcoded
-                  _buildQrInfoRow("Persetujuan PIC Ruangan:", "Disetujui", isStatus: true), // Hardcoded
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -100,11 +158,9 @@ class QrScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Implementasi fungsi Unduh QR Code
-                    },
+                    onPressed: _saveQrToGallery,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D47A1),
+                      backgroundColor: const Color(0xFF0B4AF5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -121,7 +177,7 @@ class QrScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context); // Kembali ke halaman sebelumnya
+                      Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[300],
@@ -145,7 +201,6 @@ class QrScreen extends StatelessWidget {
     );
   }
 
-  // Helper widget untuk baris info di halaman QR
   Widget _buildQrInfoRow(String label, String value, {bool isStatus = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -153,7 +208,7 @@ class QrScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120, // Lebar label
+            width: 120,
             child: Text(
               label,
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
@@ -161,22 +216,22 @@ class QrScreen extends StatelessWidget {
           ),
           Expanded(
             child: isStatus
-                ? // Tampilkan sebagai chip hijau jika ini status
-                Chip(
-                    label: Text(
-                      value,
-                      style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white),
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Chip(
+                      label: Text(
+                        value,
+                        style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
+                      ),
+                      backgroundColor: _getStatusColor(value),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    backgroundColor: Colors.green,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   )
-                : // Tampilkan sebagai teks biasa
-                Text(
+                : Text(
                     value,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
