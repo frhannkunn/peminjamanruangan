@@ -2,12 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// --- PERUBAHAN IMPORT ---
-// Import halaman-halaman yang akan ditampilkan di IndexedStack
-import '../pic/home_pic.dart'; // Pastikan nama file ini benar
-import '../pic/notification_pic.dart'; // Pastikan nama file ini benar
-import '../pic/profile_pic.dart'; // Pastikan nama file ini benar
-// --- AKHIR PERUBAHAN IMPORT ---
+import '../pic/home_pic.dart'; 
+import '../pic/notification_pic.dart'; 
+import '../pic/profile_pic.dart';
+
 
 class FootbarPic extends StatefulWidget {
   const FootbarPic({super.key});
@@ -19,30 +17,19 @@ class FootbarPic extends StatefulWidget {
 class _FootbarPicState extends State<FootbarPic> {
   int _selectedIndex = 0;
 
-  // --- PERUBAHAN: HAPUS STATE NAVIGASI DETAIL ---
-  // Peminjaman? _selectedPeminjaman; // <-- Dihapus
-  // Function(String id, String newStatus)? _updateHomeDataCallback; // <-- Dihapus
-  // --- AKHIR PERUBAHAN ---
-
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _pages = <Widget>[
-      // --- PERUBAHAN: Daftar halaman untuk IndexedStack ---
+      
       const HomePicPage(), // Halaman Home/Validasi List
       const NotifikasiPicPage(), // Halaman Notifikasi
       const ProfilePicPage(), // Halaman Profil
-      // --- AKHIR PERUBAHAN ---
+      
     ];
   }
-
-  // --- PERUBAHAN: HAPUS FUNGSI NAVIGASI DETAIL ---
-  // void _showDetailPage(Peminjaman peminjaman) { ... } // <-- Dihapus
-  // void _navigateToHome({String? updatedId, String? newStatus}) { ... } // <-- Dihapus
-  // void _setUpdateCallback(Function(String id, String newStatus) callback) { ... } // <-- Dihapus
-  // --- AKHIR PERUBAHAN ---
 
   void _onItemTapped(int index) {
     setState(() {
@@ -90,7 +77,7 @@ class _FootbarPicState extends State<FootbarPic> {
   // Widget _buildNavItem tidak berubah
   Widget _buildNavItem(IconData iconData, String label, int index) {
     final bool isSelected = _selectedIndex == index;
-    final Color activeColor = const Color(0xFF4D79FF);
+    final Color activeColor = const Color(0xFF1C36D2);
     final Color inactiveColor = Colors.grey.shade600;
 
     return Expanded(

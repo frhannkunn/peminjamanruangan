@@ -9,7 +9,6 @@ import '../peminjaman/profil.dart';
 import '../peminjaman/detail_ruangan.dart';
 import '../peminjaman/form_peminjaman.dart';
 import '../models/room.dart';
-// ➕ 1. IMPORT USER SESSION
 import '../services/user_session.dart';
 
 class FootbarPeminjaman extends StatefulWidget {
@@ -223,7 +222,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     required int index,
   }) {
     final bool isSelected = _selectedIndex == index;
-    final Color activeColor = const Color(0xFF1565C0);
+    final Color activeColor = const Color(0xFF1C36D2);
     final Color inactiveColor = Colors.grey.shade600;
 
     return InkWell(

@@ -39,10 +39,8 @@ class _FootbarPjState extends State<FootbarPj> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      // --- LOGIKA BODY YANG JAUH LEBIH SEDERHANA ---
-      // Selalu tampilkan IndexedStack. Jangan pernah ganti dengan detail page.
       body: IndexedStack(index: _selectedIndex, children: _pages),
-      // --- AKHIR PERUBAHAN BODY ---
+      
 
       bottomNavigationBar: SafeArea(
         child: Container(
@@ -75,7 +73,7 @@ class _FootbarPjState extends State<FootbarPj> {
 
   Widget _buildNavItem(IconData iconData, String label, int index) {
     final bool isSelected = _selectedIndex == index;
-    final Color activeColor = const Color(0xFF4D79FF);
+    final Color activeColor = const Color(0xFF1C36D2);
     final Color inactiveColor = Colors.grey.shade600;
 
     return Expanded(
