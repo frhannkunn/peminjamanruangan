@@ -201,6 +201,8 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
                         child: Column(
                           children: [
                             _buildReadOnlyField("Jenis Kegiatan", _mapActivityType(loan.activityType)),
+                            if (loan.activityType == 3)
+                            _buildReadOnlyField("Kegiatan (Lainnya)", loan.activityOther),
                             _buildReadOnlyField("Nama Kegiatan", loan.activityName),
                             _buildReadOnlyField("Nim / Nik / Unit Pengaju", loan.studentId),
                             _buildReadOnlyField("Nama Pengaju", loan.studentName),

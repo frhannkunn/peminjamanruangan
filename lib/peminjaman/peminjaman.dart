@@ -281,6 +281,7 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
         penanggungJawab: _getLecturerName(loan.lecturesNik),
         jenisKegiatan: _mapActivityType(loan.activityType),
         namaKegiatan: loan.activityName,
+        activityOther: loan.activityOther,
         namaPengaju: loan.studentName, 
         tanggalPinjam: DateTime.parse(loan.loanDate),
         totalPeminjam: 0,
@@ -731,6 +732,7 @@ class PeminjamanData {
   final String status;
   final String penanggungJawab;
   final String jenisKegiatan;
+  final String? activityOther;
   final String namaKegiatan;
   final String namaPengaju;
   final DateTime tanggalPinjam;
@@ -757,6 +759,7 @@ class PeminjamanData {
     required this.namaPic,
     required this.statusPjText,
     required this.statusPicText,
+    this.activityOther,
     this.isExpanded = false,
   });
 }

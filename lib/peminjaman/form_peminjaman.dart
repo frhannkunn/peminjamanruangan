@@ -881,8 +881,13 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
 
         // 5. PINDAH HALAMAN
         if (widget.onSubmit != null) {
+           // Case: Edit Mode
            widget.onSubmit!(safeData, _daftarPengguna);
+           
+           // 🔥 FIX: Paksa tutup layar form peminjaman
+           Navigator.of(context).pop(); 
         } else {
+           // Case: Create Mode (Sudah Benar)
            widget.onBack?.call("Menunggu Persetujuan Penanggung Jawab!");
         }
       }
