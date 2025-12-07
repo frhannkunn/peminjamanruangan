@@ -168,11 +168,7 @@ class _FootbarPeminjamanState extends State<FootbarPeminjaman> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: pages),
-      
-      // 
-      // 👇 TIDAK ADA PERUBAHAN DESAIN APAPUN DI BAWAH INI 👇
-      //
+      body: pages[_selectedIndex],
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
