@@ -600,26 +600,47 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
+  void _handleBackButton() {
+    if (_currentStep == FormStep.addUser) {
+      // REVISI 2: Jika sedang di step Tambah Pengguna, kembali ke step Data Entry
+      setState(() {
+        _currentStep = FormStep.dataEntry;
+      });
+    } else {
+      // REVISI 1: Jika di halaman awal, tampilkan dialog konfirmasi
+      // Ini mencegah layar hitam karena kita tidak langsung memanggil Navigator.pop()
+      _showExitConfirmDialog();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _currentStep == FormStep.dataEntry ? Colors.white : const Color(0xFFf0f2f5),
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _handleBackButton();
+      },
+      child: Scaffold(
         backgroundColor: _currentStep == FormStep.dataEntry ? Colors.white : const Color(0xFFf0f2f5),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black), 
-          onPressed: () => Navigator.of(context).pop(), 
+        appBar: AppBar(
+          backgroundColor: _currentStep == FormStep.dataEntry ? Colors.white : const Color(0xFFf0f2f5),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black), 
+            // Panggil fungsi handle back yang baru dibuat
+            onPressed: _handleBackButton, 
+          ),
+          centerTitle: true,
+          title: Text(
+            'Form Pengajuan Penggunaan Ruangan',
+            style: GoogleFonts.poppins(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
+          ),
         ),
-        centerTitle: true,
-        title: Text(
-          'Form Pengajuan Penggunaan Ruangan',
-          style: GoogleFonts.poppins(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
-        ),
+        body: _currentStep == FormStep.dataEntry
+            ? _buildDataEntryStep(context)
+            : _buildAddUserStep(context),
       ),
-      body: _currentStep == FormStep.dataEntry
-          ? _buildDataEntryStep(context)
-          : _buildAddUserStep(context),
     );
   }
 
@@ -870,7 +891,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
               const SizedBox(width: 16),
               ElevatedButton(
                 onPressed: () => widget.onBack?.call('Draft Peminjaman berhasil disimpan!'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber[600], foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber[600], foregroundColor: const Color.fromARGB(255, 255, 255, 255), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24)),
                 child: const Text('Draft'),
               ),
             ],
