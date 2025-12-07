@@ -967,19 +967,26 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           'jamSelesai': _jamSelesai ?? '-',
         };
 
-        // 5. PINDAH HALAMAN
-        if (widget.onSubmit != null) {
-           // Case: Edit Mode
-           widget.onSubmit!(safeData, _daftarPengguna);
-           
-           // 🔥 FIX: Paksa tutup layar form peminjaman
-           Navigator.of(context).pop(); 
-        } else {
-           // Case: Create Mode (Sudah Benar)
-           widget.onBack?.call("Menunggu Persetujuan Penanggung Jawab!");
-        }
-      }
-    },
+       // Jalankan logika onSubmit (Simpan data/Refresh list)
+                                  if (widget.onSubmit != null) {
+                                      widget.onSubmit!(safeData, _daftarPengguna);
+                                  }
+
+                                  // 6. 🔥 LOGIKA NAVIGASI (SOLUSI LAYAR HITAM) 🔥
+                                  if (widget.loanToEdit != null) {
+                                     // --- KASUS EDIT (Data Lama) ---
+                                     // Karena halaman ini dibuka dengan Navigator.push (ditumpuk),
+                                     // kita harus pakai pop() untuk menutupnya.
+                                     Navigator.of(context).pop(); 
+                                  } else {
+                                     // --- KASUS BUAT BARU (Data Baru) ---
+                                     // Halaman ini TIDAK ditumpuk (hanya ganti tampilan).
+                                     // JANGAN pakai pop(). Cukup panggil onBack agar halaman induk
+                                     // menyembunyikan form ini.
+                                     widget.onBack?.call("Peminjaman berhasil diajukan! Menunggu Persetujuan.");
+                                  }
+                                }
+                              },
     style: ElevatedButton.styleFrom(
       backgroundColor: Colors.green, 
       foregroundColor: Colors.white, 
@@ -1224,12 +1231,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     ) ?? false; // Kalau di dismiss, return false
   }
 
-  // --- 2. Dialog Sukses Akhir (Gambar 2) ---
+  
   Future<void> _showFinalSuccessDialog() async {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
@@ -1265,7 +1272,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                     ),
                     onPressed: () {
                       // HANYA TUTUP KOTAK DIALOG INI
-                      Navigator.of(context).pop(); 
+                      Navigator.of(dialogContext).pop(); 
                     },
                     child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                   ),
