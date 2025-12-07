@@ -272,21 +272,21 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         setState(() {
           _fetchedEvents = events;
           
-          try {
-            final firstBooking = events.firstWhere((e) => e.type == 'booking');
-            if (firstBooking.start.year != 1900) {
-                _selectedDate = firstBooking.start;
-                _focusedDay = firstBooking.start;
-                if (_ruangan != null) {
-                   _selectedDayBookings = _getBookingsForDay(_selectedDate!, _ruangan!);
-                }
-            }
-          } catch (e) {
-             if (_selectedDate == null) {
-               _selectedDate = DateTime.now();
-               _focusedDay = DateTime.now();
-            }
-          }
+          // try {
+          //   final firstBooking = events.firstWhere((e) => e.type == 'booking');
+          //   if (firstBooking.start.year != 1900) {
+          //       _selectedDate = firstBooking.start;
+          //       _focusedDay = firstBooking.start;
+          //       if (_ruangan != null) {
+          //          _selectedDayBookings = _getBookingsForDay(_selectedDate!, _ruangan!);
+          //       }
+          //   }
+          // } catch (e) {
+          //    if (_selectedDate == null) {
+          //      _selectedDate = DateTime.now();
+          //      _focusedDay = DateTime.now();
+          //   }
+          // }
         });
       }
     } catch (e) {
@@ -295,10 +295,20 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   void _updateSelectedRoomData(String formattedName) {
-    try {
+   try {
       final room = _allRooms.firstWhere((r) => formattedName.contains(r.name));
       setState(() {
         _selectedRoomData = room;
+        
+        // --- TAMBAHKAN LOGIKA INI ---
+        // Jika bukan mode edit, reset tanggal saat ganti ruangan
+        if (!_isEditMode) {
+          _selectedDate = null; 
+          _tanggalController.clear();
+          _jamMulai = null; // Reset jam juga biar bersih
+          _jamSelesai = null;
+        }
+        // -----------------------------
       });
       _fetchCalendarEvents(room.id.toString()); 
     } catch (e) {
@@ -366,8 +376,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     if (date != null) {
       setState(() {
         _selectedDate = date;
-        _focusedDay = date;
+        _focusedDay = date; // AGAR KALENDER LOMPAT KE TANGGAL PILIHAN
         _tanggalController.text = DateFormat('d/M/y').format(date);
+        
         if (_ruangan != null) {
           _selectedDayBookings = _getBookingsForDay(date, _ruangan!);
         }
@@ -588,8 +599,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       },
     );
   }
-  
-  void _handleBackPress() { _showExitConfirmDialog(); }
 
   @override
   Widget build(BuildContext context) {
@@ -598,7 +607,10 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       appBar: AppBar(
         backgroundColor: _currentStep == FormStep.dataEntry ? Colors.white : const Color(0xFFf0f2f5),
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: _handleBackPress),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black), 
+          onPressed: () => Navigator.of(context).pop(), 
+        ),
         centerTitle: true,
         title: Text(
           'Form Pengajuan Penggunaan Ruangan',
@@ -668,8 +680,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 Text('Detail Penggunaan Ruangan', style: GoogleFonts.poppins(color: const Color(0xFF3949AB), fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 _buildLabel('Ruangan'),
-                
-                // 🔥 Menggunakan DropdownMenu (Native Flutter)
                 _buildSearchableDropdown(
                   controller: _ruanganSearchController,
                   hint: 'Pilih atau Cari Ruangan',
@@ -704,19 +714,76 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 _buildLabel('Tanggal Penggunaan'),
-                _buildTextField(controller: _tanggalController, readOnly: true, onTap: _ruangan == null ? null : () => _pickDate(context), enabled: _ruangan != null, hintText: _ruangan == null ? 'Pilih Ruangan terlebih dahulu' : null, validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null),
-                const SizedBox(height: 16),
-                _buildLabel('Kalender Jadwal Penggunaan Ruangan'),
-                if (_ruangan != null) ...[ _buildCalendarSection(), const SizedBox(height: 16) ] else ...[ Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFFFF4F4), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFFE0E0))), child: Text('Silakan pilih ruangan terlebih dahulu untuk melihat kalender.', style: GoogleFonts.poppins(color: const Color(0xFFD32F2F), fontSize: 13))), const SizedBox(height: 16) ],
-                _buildLabel('Jam Mulai'),
-                _buildDropdown(value: _jamMulai, hint: 'Pilih Jam', items: _jamMulaiList, uniqueId: 'jam_mulai', enabled: _ruangan != null && _selectedDate != null, onChanged: (v) => setState(() => _jamMulai = v), validator: (v) => v == null ? 'Wajib diisi' : null),
-                const SizedBox(height: 16),
-                _buildLabel('Jam Selesai'),
-                _buildDropdown(value: _jamSelesai, hint: 'Pilih Jam', items: _jamSelesaiList, uniqueId: 'jam_selesai', enabled: _ruangan != null && _selectedDate != null, onChanged: (v) => setState(() => _jamSelesai = v), validator: (v) => v == null ? 'Wajib diisi' : null),
+                _buildTextField(
+                    controller: _tanggalController,
+                    readOnly: true,
+                    enabled: _ruangan != null, 
+                    onTap: _ruangan != null ? () => _pickDate(context) : null, 
+                    hintText: _ruangan != null 
+                    ? 'Pilih Tanggal Peminjaman' 
+                    : 'Pilih Ruangan Terlebih Dahulu',
+                    validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                
+               
+                if (_ruangan != null && _selectedDate != null) ...[
+                   const SizedBox(height: 16),
+                   _buildLabel('Kalender Jadwal Penggunaan Ruangan'),
+                   _buildCalendarSection(), 
+                ],
+
+                // --- LOGIKA: JAM MUNCUL SETELAH TANGGAL DIPILIH ---
+                if (_selectedDate != null) ...[
+                   const SizedBox(height: 16),
+                  _buildLabel('Jam Mulai'),
+                  _buildDropdown(
+                      value: _jamMulai,
+                      hint: 'Pilih Jam',
+                      items: _jamMulaiList,
+                      uniqueId: 'jam_mulai',
+                      enabled: true,
+                      onChanged: (v) => setState(() => _jamMulai = v),
+                      validator: (v) => v == null ? 'Wajib diisi' : null),
+                  const SizedBox(height: 16),
+                  
+                  _buildLabel('Jam Selesai'),
+                  _buildDropdown(
+                      value: _jamSelesai,
+                      hint: 'Pilih Jam',
+                      items: _jamSelesaiList,
+                      uniqueId: 'jam_selesai',
+                      enabled: true,
+                      onChanged: (v) => setState(() => _jamSelesai = v),
+                      validator: (v) => v == null ? 'Wajib diisi' : null),
+                ] else ...[
+                   // Jika belum pilih tanggal, beri info text
+                   Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      "* Silakan pilih Ruangan danTanggal Penggunaan untuk menampilkan Kalender & Jam.",
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.orange[800], fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 20),
-                Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFFAFAFA), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))), child: RichText(text: TextSpan(style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.5), children: const [TextSpan(text: 'Catatan : ', style: TextStyle(fontWeight: FontWeight.bold)), TextSpan(text: 'Anda harus memilih '), TextSpan(text: 'Ruangan ', style: TextStyle(fontWeight: FontWeight.bold)), TextSpan(text: 'dan '), TextSpan(text: 'Tanggal Penggunaan ', style: TextStyle(fontWeight: FontWeight.bold)), TextSpan(text: 'terlebih dahulu agar dapat memilih '), TextSpan(text: 'Jam Mulai ', style: TextStyle(fontWeight: FontWeight.bold)), TextSpan(text: 'dan '), TextSpan(text: 'Jam Selesai', style: TextStyle(fontWeight: FontWeight.bold)), TextSpan(text: '.')]))),
+                 Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE0E0E0))),
+                    child: RichText(
+                        text: TextSpan(
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.black87,
+                                height: 1.5),
+                            children: const [
+                          TextSpan(text: 'Catatan : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: 'Pastikan Ruangan dan Tanggal sudah sesuai sebelum menyimpan.'),
+                        ]))),
               ],
             ),
           ),
@@ -826,7 +893,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                // Tombol Kembali
                Expanded(
                 child: ElevatedButton(
-                  onPressed: () => widget.onBack?.call(null),
+                  onPressed: () => _showExitConfirmDialog(),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: Text('Kembali', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 ),
