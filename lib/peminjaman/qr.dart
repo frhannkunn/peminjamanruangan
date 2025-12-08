@@ -127,10 +127,9 @@ class _QrScreenState extends State<QrScreen> {
                       _buildQrInfoRow("Ruangan:", widget.peminjaman.ruangan),
                       _buildQrInfoRow("Jenis Kegiatan:", widget.peminjaman.jenisKegiatan),
                       if (widget.peminjaman.jenisKegiatan == 'Lainnya' && 
-                              widget.peminjaman.activityOther != null &&
-                              widget.peminjaman.activityOther != '-' &&
-                              widget.peminjaman.activityOther!.isNotEmpty) ...[
-                              ],
+                      widget.peminjaman.activityOther != null &&
+                      widget.peminjaman.activityOther != '-' &&
+                      widget.peminjaman.activityOther!.isNotEmpty) 
                       _buildQrInfoRow("Kegiatan (Lainnya)", widget.peminjaman.activityOther!),
                       _buildQrInfoRow("Nama Kegiatan:", widget.peminjaman.namaKegiatan),
                       const Divider(height: 32),
