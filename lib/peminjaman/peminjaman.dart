@@ -632,7 +632,6 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                     if (statusStr == 'Draft' || statusStr == 'Menunggu Persetujuan Penanggung Jawab' || statusStr == 'Menunggu Persetujuan PIC')
                        ElevatedButton(
                         onPressed: () {
-                          // TODO: Implementasi konfirmasi hapus
                           _loanService.deleteLoan(loan.id.toString()).then((_) {
                              _hideForm("Pengajuan dibatalkan/dihapus.");
                           });

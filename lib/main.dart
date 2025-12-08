@@ -1,14 +1,92 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:penru_mobile/peminjaman/notifikasi.dart';
 import 'splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 3. Panggil inisialisasi format tanggal di sini
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+);
+  await _requestPermission();
+  _setupFCMListeners();
+  _checkInitialMessage();
+  print("CEK TOKEN ${await FirebaseMessaging.instance.getToken()}");
   await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }
+
+Future<void> _requestPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission();
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print("User mengizinkan permission");
+    } else {
+      print("User tidak mengizinkan permission");
+    }
+  }
+
+  void _setupFCMListeners() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        _showForegroundDialog(
+        message.notification!.title, 
+        message.notification!.body,
+        );
+      }
+  });
+
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _handleMessage(message);
+  });
+}
+
+void _handleMessage(RemoteMessage message) {
+  navigatorKey.currentState?.push(
+    MaterialPageRoute( 
+      builder: (context) { 
+        return NotifikasiScreen(
+          message: message.notification?.body ?? "No Message",
+        );
+      },
+    ),
+  ); 
+}
+
+void _checkInitialMessage() async {
+  RemoteMessage? initialMessage = 
+  await FirebaseMessaging.instance.getInitialMessage();
+
+  if (initialMessage != null) {
+    _handleMessage(initialMessage);
+  }
+}
+
+void _showForegroundDialog(String? title, String? body) {
+  if (navigatorKey.currentState?.overlay?.context == null) return;
+  showDialog(
+    context: navigatorKey.currentState!.overlay!.context,
+    builder: (context) {
+      return AlertDialog( 
+        title: Text(title ?? "No Title"),
+        content: Text(body ?? "No Body"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); 
+            },
+            child: const Text("OK"), 
+          ),
+        ],
+      );
+    },
+  );
+}
+    
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -16,6 +94,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false, // biar banner debug hilang
       title: 'Flutter Demo',
       theme: ThemeData(

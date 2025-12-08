@@ -83,7 +83,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                           radius: 60,
                           backgroundColor: Color.fromARGB(255, 97, 221, 93),
                           child: Text(
-                            "VT", // TODO: Bisa diganti inisial
+                            "VT", 
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,

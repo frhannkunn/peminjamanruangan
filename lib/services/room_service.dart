@@ -12,9 +12,7 @@ class RoomService {
   // URL base untuk API (10.0.2.2 adalah untuk emulator Android)
   final String baseUrl = 'http://10.0.2.2:8000/api'; 
 
-  /**
-   * Mengambil semua ruangan, dikelompokkan berdasarkan gedung.
-   */
+  
   Future<Map<String, List<Room>>> getGroupedRooms() async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('auth_token'); 
@@ -56,11 +54,7 @@ class RoomService {
     }
   }
 
-  /**
-   * Mengambil semua workspace untuk satu ruangan (roomId).
-   * (FIXED v2) - Bisa menangani balasan API berupa List [...]
-   * ATAU balasan berupa Map {"data": [...]}.
-   */
+ 
   Future<List<Workspace>> getWorkspacesForRoom(int roomId) async {
     final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('auth_token');

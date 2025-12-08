@@ -14,24 +14,48 @@ class NotificationItem {
   });
 }
 
-// Data dummy untuk daftar notifikasi
-final List<NotificationItem> notifications = [
-  const NotificationItem(
-    isApproved: true,
-    title: "Peminjaman Disetujui!",
-    description: "Yeay! Peminjamanmu disetujui Ruangan Tower A 12.38 sudah siap kamu gunakan pada 5 Okt, 13:00–15:00.",
-  ),
-  const NotificationItem(
-    isApproved: false,
-    title: "Peminjaman Ditolak",
-    description: "Maaf, pengajuan peminjaman ruanganmu tidak dapat disetujui karena alasan lain dari pihak penanggung jawab.",
-  ),
-];
+class NotifikasiScreen extends StatefulWidget {
+  // 1. Tambahkan parameter ini agar sinkron dengan main.dart
+  final String? message; 
 
-class NotifikasiScreen extends StatelessWidget {
-  const NotifikasiScreen({super.key});
+  const NotifikasiScreen({
+    super.key, 
+    this.message, // Bisa null jika dibuka manual lewat menu
+  });
 
-  @override // Anotasi @override ini penting untuk setiap build method
+  @override
+  State<NotifikasiScreen> createState() => _NotifikasiScreenState();
+}
+
+class _NotifikasiScreenState extends State<NotifikasiScreen> {
+  // Data dummy (bisa diganti data dari API/Database nantinya)
+  List<NotificationItem> notifications = [
+    const NotificationItem(
+      isApproved: true,
+      title: "Peminjaman Disetujui!",
+      description: "Yeay! Peminjamanmu disetujui Ruangan Tower A 12.38 sudah siap kamu gunakan pada 5 Okt, 13:00–15:00.",
+    ),
+    const NotificationItem(
+      isApproved: false,
+      title: "Peminjaman Ditolak",
+      description: "Maaf, pengajuan peminjaman ruanganmu tidak dapat disetujui karena alasan lain dari pihak penanggung jawab.",
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Logika: Jika ada pesan dari Push Notification, masukkan ke paling atas list
+    if (widget.message != null && widget.message != "No Message") {
+      notifications.insert(0, NotificationItem(
+        isApproved: true, // Default true (atau sesuaikan logika Anda)
+        title: "Pesan Baru Masuk",
+        description: widget.message!, // Isi pesan dari FCM
+      ));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -39,6 +63,11 @@ class NotifikasiScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: true,
+        // Tombol back manual (opsional, agar bisa balik ke home)
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           "Notifikasi",
           style: GoogleFonts.poppins(
@@ -47,7 +76,6 @@ class NotifikasiScreen extends StatelessWidget {
             fontSize: 18,
           ),
         ),
-        // Bagian ini untuk membuat garis di bawah judul AppBar
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -56,7 +84,6 @@ class NotifikasiScreen extends StatelessWidget {
           ),
         ),
       ),
-      // Body sekarang berisi daftar notifikasi
       body: ListView.builder(
         itemCount: notifications.length,
         itemBuilder: (context, index) {
@@ -67,7 +94,6 @@ class NotifikasiScreen extends StatelessWidget {
     );
   }
 
-  // Widget untuk membuat satu kartu notifikasi
   Widget _buildNotificationCard(NotificationItem item) {
     final IconData iconData = item.isApproved ? Icons.check : Icons.close;
     final Color iconColor = item.isApproved ? const Color(0xFF1E8E3E) : const Color(0xFFD93025);
