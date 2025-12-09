@@ -7,7 +7,7 @@ import '../models/lecturer.dart';
 import '../models/room.dart';
 import '../models/calendar_event.dart';
 import '../services/loan_service.dart';
-import 'tambah_pengguna.dart'; // Berisi class Pengguna dan TambahPenggunaDialog
+import 'tambah_pengguna.dart'; 
 import '../services/user_session.dart';
 import '../models/loan.dart';
 
@@ -147,11 +147,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
              }
           }
         });
-        // 2. LOGIKA PRE-FILL DATA JIKA EDIT MODE
         if (_isEditMode) {
            _initializeEditData();
         } else if (widget.preSelectedRoom != null) {
-           // Logika existing untuk pre-selected room dari halaman detail/scan
            final found = _ruanganList.firstWhere(
              (str) => str.contains(widget.preSelectedRoom!), 
              orElse: () => ''
@@ -168,61 +166,40 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     }
   }
 
-  // 3. FUNGSI BARU UNTUK MENGISI FORM DARI DATA LAMA
   Future<void> _initializeEditData() async {
     final loan = widget.loanToEdit!;
-    
-    // Set ID Loan agar nanti update ke ID yang benar
     _currentLoanId = loan.id.toString();
-
-    // A. Set Ruangan
-    // Kita harus mencari string ruangan yang cocok di dropdown list berdasarkan ID/Nama ruangan lama
     try {
-      // Cari room object dulu berdasarkan ID
       final targetRoom = _allRooms.firstWhere((r) => r.id == loan.roomsId);
-      // Cari string representasinya untuk dropdown
       final roomString = _ruanganList.firstWhere((str) => str.contains(targetRoom.name));
-      
       setState(() {
         _ruangan = roomString;
         _ruanganSearchController.text = roomString;
         _selectedRoomData = targetRoom;
       });
-      // Fetch calendar agar validasi jam jalan
       _fetchCalendarEvents(targetRoom.id.toString());
     } catch (e) {
       debugPrint("Gagal mencocokkan ruangan saat edit: $e");
     }
 
-    // B. Set Tanggal & Jam
     setState(() {
       _selectedDate = DateTime.parse(loan.loanDate);
       _focusedDay = _selectedDate!;
       _tanggalController.text = DateFormat('d/M/y').format(_selectedDate!);
-      
-      // Pastikan format jam sesuai dropdown (HH:mm)
-      // Asumsi data dari DB formatnya HH:mm:ss atau HH.mm, kita ambil 5 karakter pertama
       _jamMulai = loan.startTime.substring(0, 5).replaceAll('.', ':');
       _jamSelesai = loan.endTime.substring(0, 5).replaceAll('.', ':');
     });
-
-    // C. Set Kegiatan
     setState(() {
       _namaKegiatanController.text = loan.activityName;
-      
-      // Mapping int activityType ke String dropdown
       if (loan.activityType == 0) _jenisKegiatan = 'Perkuliahan';
       else if (loan.activityType == 1) _jenisKegiatan = 'PBL';
       else {
         _jenisKegiatan = 'Lainnya';
-        // Isi field "Lainnya" jika ada
         _otherActivityController.text = loan.activityOther;
       }
     });
 
-    // D. Set Penanggung Jawab
     try {
-      // Cari lecturer berdasarkan NIK
       final lecturer = _lecturers.firstWhere((l) => l.nik == loan.lecturesNik);
       final lecturerString = lecturer.code.isNotEmpty 
           ? "${lecturer.code} | ${lecturer.name}" 
@@ -233,22 +210,14 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         _pjSearchController.text = lecturerString;
       });
     } catch (e) {
-       // Jika dosen tidak ketemu (mungkin manual input atau data lama), set text manual
        _pjSearchController.text = loan.lecturesNik; 
     }
-
-    // E. FETCH EXISTING USERS (PENGGUNA)
-    // Kita perlu mengambil daftar pengguna yang sudah ada di loan ini
     _fetchExistingUsers();
   }
 
   Future<void> _fetchExistingUsers() async {
     try {
-       // Asumsi di LoanService ada method getLoanUsers(loanId)
-       // Jika belum ada, Anda harus menambahkannya di service.
-       // Return type harus List<LoanUser> (model dari API)
        final usersFromApi = await _loanService.getLoanUsers(_currentLoanId!);
-       
        setState(() {
          _daftarPengguna.clear();
          _daftarPengguna.addAll(usersFromApi.map((u) => Pengguna(
@@ -271,22 +240,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       if (mounted) {
         setState(() {
           _fetchedEvents = events;
-          
-          // try {
-          //   final firstBooking = events.firstWhere((e) => e.type == 'booking');
-          //   if (firstBooking.start.year != 1900) {
-          //       _selectedDate = firstBooking.start;
-          //       _focusedDay = firstBooking.start;
-          //       if (_ruangan != null) {
-          //          _selectedDayBookings = _getBookingsForDay(_selectedDate!, _ruangan!);
-          //       }
-          //   }
-          // } catch (e) {
-          //    if (_selectedDate == null) {
-          //      _selectedDate = DateTime.now();
-          //      _focusedDay = DateTime.now();
-          //   }
-          // }
         });
       }
     } catch (e) {
@@ -299,16 +252,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       final room = _allRooms.firstWhere((r) => formattedName.contains(r.name));
       setState(() {
         _selectedRoomData = room;
-        
-        // --- TAMBAHKAN LOGIKA INI ---
-        // Jika bukan mode edit, reset tanggal saat ganti ruangan
         if (!_isEditMode) {
           _selectedDate = null; 
           _tanggalController.clear();
-          _jamMulai = null; // Reset jam juga biar bersih
+          _jamMulai = null; 
           _jamSelesai = null;
         }
-        // -----------------------------
       });
       _fetchCalendarEvents(room.id.toString()); 
     } catch (e) {
@@ -376,7 +325,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     if (date != null) {
       setState(() {
         _selectedDate = date;
-        _focusedDay = date; // AGAR KALENDER LOMPAT KE TANGGAL PILIHAN
+        _focusedDay = date; 
         _tanggalController.text = DateFormat('d/M/y').format(date);
         
         if (_ruangan != null) {
@@ -444,7 +393,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    // 1. Validasi Dropdown
     if (_ruangan == null || _penanggungJawab == null || _jenisKegiatan == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Mohon lengkapi semua pilihan dropdown")),
@@ -452,14 +400,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       return;
     }
 
-    // 2. Validasi Form
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isSubmitting = true;
       });
 
       try {
-        // --- Logic NIK ---
         String lectureNik = '';
         try {
           final selectedLecturer = _lecturers.firstWhere((l) {
@@ -471,7 +417,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           lectureNik = _penanggungJawab ?? '';
         }
 
-        // --- Logic Activity Type ---
         int activityType = 0;
         if (_jenisKegiatan == 'Perkuliahan') {
           activityType = 0;
@@ -481,7 +426,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           activityType = 3;
         }
 
-        // --- Logic Activity Other ---
         String? finalActivityOther;
         if (activityType == 3) {
           String inputLainnya = _otherActivityController.text.trim();
@@ -490,7 +434,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           finalActivityOther = null;
         }
 
-        // 3. Susun Data
         Map<String, dynamic> loanData = {
           'rooms_id': _selectedRoomData!.id,
           'loan_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
@@ -506,16 +449,13 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
         };
 
         if (_isEditMode) {
-          // --- KONDISI 1: EDIT / UPDATE ---
           await _loanService.updateLoan(_currentLoanId!, loanData);
           debugPrint("Loan updated successfully ID: $_currentLoanId");
-
           setState(() {
             _isSubmitting = false;
-            _currentStep = FormStep.addUser; // Langsung lanjut step berikutnya
+            _currentStep = FormStep.addUser; 
           });
         } else {
-          // --- KONDISI 2: BUAT BARU / CREATE ---
           final createdLoan = await _loanService.createLoan(loanData);
           _currentLoanId = createdLoan.id.toString();
           debugPrint("Draft created successfully with ID: $_currentLoanId");
@@ -523,12 +463,11 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           setState(() => _isSubmitting = false);
           
           if (mounted) {
-            _showSuccessDialog(context); // Tampilkan dialog sukses
+            _showSuccessDialog(context); 
           }
         }
 
       } catch (e) {
-        // --- ERROR HANDLING ---
         setState(() {
           _isSubmitting = false;
         });
@@ -602,13 +541,10 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
 
   void _handleBackButton() {
     if (_currentStep == FormStep.addUser) {
-      // REVISI 2: Jika sedang di step Tambah Pengguna, kembali ke step Data Entry
       setState(() {
         _currentStep = FormStep.dataEntry;
       });
     } else {
-      // REVISI 1: Jika di halaman awal, tampilkan dialog konfirmasi
-      // Ini mencegah layar hitam karena kita tidak langsung memanggil Navigator.pop()
       _showExitConfirmDialog();
     }
   }
@@ -628,7 +564,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black), 
-            // Panggil fungsi handle back yang baru dibuat
             onPressed: _handleBackButton, 
           ),
           centerTitle: true,
@@ -670,7 +605,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 const SizedBox(height: 16),
                 _buildLabel('Jenis Kegiatan'),
                 _buildDropdown(value: _jenisKegiatan, hint: 'Pilih Kegiatan', items: _jenisKegiatanList, onChanged: (v) => setState(() => _jenisKegiatan = v), validator: (v) => v == null ? 'Wajib diisi' : null, uniqueId: 'jenis_kegiatan'),
-                // 2. LOGIKA FIELD "LAINNYA" (MUNCUL JIKA DIPILIH)
+                
                 if (_jenisKegiatan == 'Lainnya') ...[
                    const SizedBox(height: 16),
                    _buildLabel('Kegiatan (Lainnya)'),
@@ -686,14 +621,18 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 const SizedBox(height: 16),
                 _buildLabel('Penanggung Jawab'),
                 
-                // 🔥 Menggunakan DropdownMenu (Native Flutter)
                 _buildSearchableDropdown(
                   controller: _pjSearchController,
                   hint: 'Pilih atau Cari Penanggung Jawab',
                   items: _penanggungJawabList,
                   onSelected: (val) {
-                    setState(() { _penanggungJawab = val; });
-                    FocusScope.of(context).unfocus(); 
+                  setState(() { 
+                  _penanggungJawab = val; 
+                  if (val != null) {
+                  _pjSearchController.text = val;
+                    }
+                  });
+                  FocusScope.of(context).unfocus(); 
                   },
                 ),
 
@@ -747,14 +686,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                     validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                     ),
                 
-               
                 if (_ruangan != null && _selectedDate != null) ...[
                    const SizedBox(height: 16),
                    _buildLabel('Kalender Jadwal Penggunaan Ruangan'),
                    _buildCalendarSection(), 
                 ],
 
-                // --- LOGIKA: JAM MUNCUL SETELAH TANGGAL DIPILIH ---
                 if (_selectedDate != null) ...[
                    const SizedBox(height: 16),
                   _buildLabel('Jam Mulai'),
@@ -778,7 +715,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       onChanged: (v) => setState(() => _jamSelesai = v),
                       validator: (v) => v == null ? 'Wajib diisi' : null),
                 ] else ...[
-                   // Jika belum pilih tanggal, beri info text
                    Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
@@ -809,7 +745,60 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
             ),
           ),
         ),
-        Positioned(left: 0, right: 0, bottom: 0, child: Container(padding: const EdgeInsets.fromLTRB(24, 16, 24, 24), decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, -2))]), child: SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isSubmitting ? null : _handleSubmit, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2962FF), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: _isSubmitting ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text('Simpan', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)))))),
+        Positioned(
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0), 
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, -2)
+              )
+              ],
+              ), 
+             child: SafeArea(
+      top: false, 
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24), 
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isSubmitting ? null : _handleSubmit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2962FF),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isSubmitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Simpan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    ),
+  ),
+),
       ],
     );
   }
@@ -858,7 +847,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   Widget _buildAddUserStep(BuildContext context) {
     return Column(
       children: [
-        // --- BAGIAN ATAS: TOMBOL TAMBAH PENGGUNA & DRAFT ---
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -870,7 +858,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data belum tersimpan ke database")));
                       return;
                     }
-                    // Panggil Dialog Tambah Pengguna
+                    
                     final result = await showDialog(
                       context: context,
                       builder: (BuildContext context) => TambahPenggunaDialog(
@@ -898,17 +886,18 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           ),
         ),
 
-        // --- BAGIAN TENGAH: LIST PENGGUNA ---
         Expanded(
           child: _daftarPengguna.isEmpty
               ? Center(child: Text("Belum ada pengguna ditambahkan.", style: GoogleFonts.poppins(color: Colors.grey)))
               : ListView.builder(padding: const EdgeInsets.all(16), itemCount: _daftarPengguna.length, itemBuilder: (context, index) => _buildPenggunaCard(_daftarPengguna[index], index)),
         ),
         
-        // --- BAGIAN BAWAH: TOMBOL KEMBALI & AJUKAN (YANG SUDAH DIPERBAIKI) ---
         Container(
+          color: const Color(0xFFf0f2f5), 
+          child: SafeArea( 
+          top: false, 
+          child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          color: const Color(0xFFf0f2f5),
           child: Row(
             children: [
                // Tombol Kembali
@@ -921,31 +910,22 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
               ),
               const SizedBox(width: 16),
               
-              // 🔥 TOMBOL AJUKAN DENGAN POPUP BARU ADA DI SINI 🔥
+              // 🔥 TOMBOL AJUKAN DENGAN POPUP BARU ADA DI SINI
               Expanded(
   child: ElevatedButton(
     onPressed: () async {
-      // 1. Validasi ID Draft
       if (_currentLoanId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Data draft belum tersimpan."))
         );
         return;
       }
-
-      // ==============================================================
-      // 👇 TAMBAHKAN KODE INI AGAR WARNING HILANG & ADA KONFIRMASI 👇
-      // ==============================================================
       bool confirm = await _showConfirmationDialog();
-      if (!confirm) return; // Kalau pilih Cancel, berhenti.
-      // ==============================================================
-
-      // 2. Simpan ke Database (API)
+      if (!confirm) return; 
       try {
         setState(() => _isSubmitting = true);
         await _loanService.submitLoan(_currentLoanId!);
       } catch (e) {
-        // Error API diabaikan supaya user tidak stuck
         debugPrint("API Error (Ignored): $e");
       }
 
@@ -971,18 +951,9 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                                   if (widget.onSubmit != null) {
                                       widget.onSubmit!(safeData, _daftarPengguna);
                                   }
-
-                                  // 6. 🔥 LOGIKA NAVIGASI (SOLUSI LAYAR HITAM) 🔥
                                   if (widget.loanToEdit != null) {
-                                     // --- KASUS EDIT (Data Lama) ---
-                                     // Karena halaman ini dibuka dengan Navigator.push (ditumpuk),
-                                     // kita harus pakai pop() untuk menutupnya.
                                      Navigator.of(context).pop(); 
                                   } else {
-                                     // --- KASUS BUAT BARU (Data Baru) ---
-                                     // Halaman ini TIDAK ditumpuk (hanya ganti tampilan).
-                                     // JANGAN pakai pop(). Cukup panggil onBack agar halaman induk
-                                     // menyembunyikan form ini.
                                      widget.onBack?.call("Peminjaman berhasil diajukan! Menunggu Persetujuan.");
                                   }
                                 }
@@ -999,6 +970,8 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   ),
 ),
             ],
+          ),
+        ),
           ),
         ),
       ],
@@ -1064,6 +1037,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
           width: constraints.maxWidth, 
           menuHeight: 250, 
           controller: controller,
+          initialSelection: controller.text.isNotEmpty ? controller.text : null,
           enableFilter: true, 
           requestFocusOnTap: true,
           hintText: hint,
@@ -1077,11 +1051,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)),
           ),
           onSelected: (value) {
-            FocusScope.of(context).unfocus(); // Tutup keyboard
             if (value != null) {
                onSelected(value);
             }
           },
+
+          
           dropdownMenuEntries: items.map<DropdownMenuEntry<String>>((String item) {
             return DropdownMenuEntry<String>(
               value: item,
@@ -1105,17 +1080,12 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     required ValueChanged<String?> onChanged,
     FormFieldValidator<String>? validator,
     bool enabled = true,
-    String? uniqueId, // Pastikan parameter ini ada
+    String? uniqueId, 
   }) {
-    // ✅ LOGIKA KEY BARU:
-    // Jika uniqueId ada, pakai itu. Jika tidak, pakai hint.
-    // Kita tambahkan Random string atau index jika perlu, tapi ini sudah cukup.
+   
     final String keyString = uniqueId ?? hint;
-    
     return DropdownButtonFormField<String>(
-      // KUNCI PERBAIKAN: Menggunakan uniqueId agar "Jam Mulai" != "Jam Selesai"
       key: ValueKey("${keyString}_${value ?? 'empty'}"), 
-      
       initialValue: value,
       validator: validator,
       isExpanded: true,
@@ -1150,8 +1120,6 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
       onChanged: enabled ? onChanged : null,
     );
   }
-  // Widget _buildDropdown({ required String? value, required String hint, required List<String> items, required ValueChanged<String?> onChanged, FormFieldValidator<String>? validator, bool enabled = true, String? uniqueId }) => DropdownButtonFormField<String>(key: ValueKey("${uniqueId ?? hint}_${value ?? ''}"), initialValue: value, validator: validator, isExpanded: true, menuMaxHeight: 300, decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[400]), filled: true, fillColor: enabled ? Colors.white : Colors.grey[100], contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5))), items: items.map((String item) => DropdownMenuItem<String>(value: item, child: Text(item, style: GoogleFonts.poppins(fontSize: 14), overflow: TextOverflow.ellipsis, maxLines: 1))).toList(), onChanged: enabled ? onChanged : null);
-
   Widget _buildTextField({required TextEditingController controller, String? hintText, TextInputType? keyboardType, bool readOnly = false, VoidCallback? onTap, FormFieldValidator<String>? validator, bool enabled = true}) => TextFormField(controller: controller, keyboardType: keyboardType, readOnly: readOnly, onTap: onTap, enabled: enabled, validator: validator, style: GoogleFonts.poppins(fontSize: 14), decoration: InputDecoration(hintText: hintText, hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[400]), filled: true, fillColor: enabled ? Colors.white : Colors.grey[100], contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)), suffixIcon: onTap != null ? Icon(Icons.calendar_today_outlined, color: enabled ? Colors.grey : Colors.grey[300]) : null));
   Widget _buildInfoRow(String label, String value) { return Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 90, child: Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600))), Text(': ', style: GoogleFonts.poppins(fontSize: 13)), Expanded(child: Text(value, style: GoogleFonts.poppins(fontSize: 13)))])); }
   Widget _buildDetailRowCard(String label, String value) { return Padding(padding: const EdgeInsets.symmetric(vertical: 4.0), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 140, child: Text(label, style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 14))), Text(": ", style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 14)), Expanded(child: Text(value, style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14)))])); }
@@ -1271,13 +1239,11 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () {
-                      // HANYA TUTUP KOTAK DIALOG INI
                       Navigator.of(dialogContext).pop(); 
                     },
                     child: Text('OK', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                   ),
                 ),
-                // --------------------------------
               ],
             ),
           ),
