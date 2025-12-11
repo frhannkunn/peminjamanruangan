@@ -62,8 +62,8 @@ class _HomePicPageState extends State<HomePicPage> {
     final profile = await UserSession.getUserProfile();
     if (profile != null && mounted) {
       setState(() {
-        // Ambil nama depan saja agar tidak kepanjangan
-        _userName = profile.nama.split(' ')[0]; 
+        // GUNAKAN NAMA LENGKAP
+        _userName = profile.nama; 
       });
     }
   }
@@ -267,12 +267,22 @@ class _HomePicPageState extends State<HomePicPage> {
           padding: const EdgeInsets.only(top: 60, left: 20),
           child: Align(
             alignment: Alignment.topLeft,
-            child: Text(
-              'Hai, $_userName!',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 20.0), // Beri jarak kanan agar tidak mentok
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8, // Batasi lebar maks 80% layar
+                child: FittedBox(
+                  fit: BoxFit.scaleDown, // Kunci: Teks akan mengecil jika melebihi lebar
+                  alignment: Alignment.centerLeft, // Tetap rata kiri
+                  child: Text(
+                    'Hai, $_userName!',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 24, // Ukuran default (maksimal)
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
