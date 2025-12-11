@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // 🛑 GANTI DENGAN IP LAPTOP 🛑
-  // const String _ipLaptop = "192.168.1.6";
+  // static const String _ipLaptop = "10.65.235.18"; //Alamat hp fisik
   static const String _ipLaptop = "10.0.2.2"; // <-- Alamat khusus Emulator Android
   static const String _baseUrl = "http://$_ipLaptop:8000/api";
 

@@ -61,6 +61,7 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
 
       List<String> buildingList = ['Semua Gedung'];
       buildingList.addAll(data.keys); // Ambil nama-nama gedung
+      if (!mounted) return;
 
       // 3. Update state untuk re-render UI
       setState(() {
@@ -70,6 +71,7 @@ class _HomePeminjamanState extends State<HomePeminjaman> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       // 4. Tangani error jika terjadi
       setState(() {
         _errorMessage = e.toString().replaceFirst("Exception: ", "");

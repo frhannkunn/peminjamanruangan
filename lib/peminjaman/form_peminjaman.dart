@@ -580,226 +580,288 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
   }
 
   Widget _buildDataEntryStep(BuildContext context) {
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Detail Peminjaman Ruangan', style: GoogleFonts.poppins(color: const Color(0xFF3949AB), fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 16),
-                _buildLabel('NIM / NIK / Unit Pengaju'),
-                _buildTextField(controller: _nimController, hintText: 'Jika tidak memiliki NIK, dapat di isi dengan kode KTP', validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null),
-                const SizedBox(height: 16),
-                _buildLabel('Nama Pengaju'),
-                _buildTextField(controller: _namaPengajuController, validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null),
-                const SizedBox(height: 16),
-                _buildLabel('Alamat Email Pengaju'),
-                _buildTextField(controller: _emailController, keyboardType: TextInputType.emailAddress, validator: (v) { if (v == null || v.isEmpty) return 'Wajib diisi'; if (!v.contains('@')) return 'Format email tidak valid'; return null; }),
+    return SafeArea(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- BAGIAN INPUT DATA (TETAP SAMA) ---
+            Text('Detail Peminjaman Ruangan',
+                style: GoogleFonts.poppins(
+                    color: const Color(0xFF3949AB),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            _buildLabel('NIM / NIK / Unit Pengaju'),
+            _buildTextField(
+                controller: _nimController,
+                hintText: 'Jika tidak memiliki NIK, dapat di isi dengan kode KTP',
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null),
+            const SizedBox(height: 16),
+            _buildLabel('Nama Pengaju'),
+            _buildTextField(
+                controller: _namaPengajuController,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null),
+            const SizedBox(height: 16),
+            _buildLabel('Alamat Email Pengaju'),
+            _buildTextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Wajib diisi';
+                  if (!v.contains('@')) return 'Format email tidak valid';
+                  return null;
+                }),
 
-                const SizedBox(height: 24),
-                Text('Detail Kegiatan dan Penanggung Jawab', style: GoogleFonts.poppins(color: const Color(0xFF3949AB), fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 16),
-                _buildLabel('Jenis Kegiatan'),
-                _buildDropdown(value: _jenisKegiatan, hint: 'Pilih Kegiatan', items: _jenisKegiatanList, onChanged: (v) => setState(() => _jenisKegiatan = v), validator: (v) => v == null ? 'Wajib diisi' : null, uniqueId: 'jenis_kegiatan'),
-                
-                if (_jenisKegiatan == 'Lainnya') ...[
-                   const SizedBox(height: 16),
-                   _buildLabel('Kegiatan (Lainnya)'),
-                   _buildTextField(
-                     controller: _otherActivityController,
-                     hintText: 'Masukkan Jenis Kegiatan Lainnya. Contoh : BLUG (BATAM LINUX)',
-                     validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-                   ),],
-                const SizedBox(height: 16),
-                _buildLabel('Nama Kegiatan'),
-                _buildTextField(controller: _namaKegiatanController, hintText: 'Masukkan Nama Kegiatan. Contoh: PBL TRPL318', validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null),
-                
-                const SizedBox(height: 16),
-                _buildLabel('Penanggung Jawab'),
-                
-                _buildSearchableDropdown(
-                  controller: _pjSearchController,
-                  hint: 'Pilih atau Cari Penanggung Jawab',
-                  items: _penanggungJawabList,
-                  onSelected: (val) {
-                  setState(() { 
-                  _penanggungJawab = val; 
+            const SizedBox(height: 24),
+            Text('Detail Kegiatan dan Penanggung Jawab',
+                style: GoogleFonts.poppins(
+                    color: const Color(0xFF3949AB),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            _buildLabel('Jenis Kegiatan'),
+            _buildDropdown(
+                value: _jenisKegiatan,
+                hint: 'Pilih Kegiatan',
+                items: _jenisKegiatanList,
+                onChanged: (v) => setState(() => _jenisKegiatan = v),
+                validator: (v) => v == null ? 'Wajib diisi' : null,
+                uniqueId: 'jenis_kegiatan'),
+
+            if (_jenisKegiatan == 'Lainnya') ...[
+              const SizedBox(height: 16),
+              _buildLabel('Kegiatan (Lainnya)'),
+              _buildTextField(
+                controller: _otherActivityController,
+                hintText:
+                    'Masukkan Jenis Kegiatan Lainnya. Contoh : BLUG (BATAM LINUX)',
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+              ),
+            ],
+            const SizedBox(height: 16),
+            _buildLabel('Nama Kegiatan'),
+            _buildTextField(
+                controller: _namaKegiatanController,
+                hintText: 'Masukkan Nama Kegiatan. Contoh: PBL TRPL318',
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null),
+
+            const SizedBox(height: 16),
+            _buildLabel('Penanggung Jawab'),
+
+            _buildSearchableDropdown(
+              controller: _pjSearchController,
+              hint: 'Pilih atau Cari Penanggung Jawab',
+              items: _penanggungJawabList,
+              onSelected: (val) {
+                setState(() {
+                  _penanggungJawab = val;
                   if (val != null) {
-                  _pjSearchController.text = val;
-                    }
-                  });
-                  FocusScope.of(context).unfocus(); 
-                  },
-                ),
-
-                const SizedBox(height: 24),
-                Text('Detail Penggunaan Ruangan', style: GoogleFonts.poppins(color: const Color(0xFF3949AB), fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 16),
-                _buildLabel('Ruangan'),
-                _buildSearchableDropdown(
-                  controller: _ruanganSearchController,
-                  hint: 'Pilih atau Cari Ruangan',
-                  items: _ruanganList,
-                  onSelected: (val) {
-                    setState(() { _ruangan = val; _selectedDayBookings = []; });
-                    if (val != null) { _updateSelectedRoomData(val); }
-                    FocusScope.of(context).unfocus();
-                  },
-                ),
-                
-                const SizedBox(height: 16),
-
-                if (_ruangan != null && _selectedRoomData != null) ...[
-                  _buildLabel('Detail Ruangan'),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _buildInfoRow('Ruangan', _selectedRoomData!.name),
-                        _buildInfoRow('Kode', _selectedRoomData!.code),
-                        _buildInfoRow('Gedung', _selectedRoomData!.buildingName),
-                        _buildInfoRow('Kapasitas', '${_selectedRoomData!.capacity} Mahasiswa'),
-                        const SizedBox(height: 16),
-                        Text('PIC Ruangan', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 8),
-                        Text(_selectedRoomData!.pic?.name ?? 'Nama PIC Tidak Tersedia', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
-                        Text(_selectedRoomData!.pic?.email ?? 'Email Tidak Tersedia', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-                        const SizedBox(height: 12),
-                        ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), elevation: 0), child: Text('Hubungi via WhatsApp', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white))),
-                      ]),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                _buildLabel('Tanggal Penggunaan'),
-                _buildTextField(
-                    controller: _tanggalController,
-                    readOnly: true,
-                    enabled: _ruangan != null, 
-                    onTap: _ruangan != null ? () => _pickDate(context) : null, 
-                    hintText: _ruangan != null 
-                    ? 'Pilih Tanggal Peminjaman' 
-                    : 'Pilih Ruangan Terlebih Dahulu',
-                    validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-                    ),
-                
-                if (_ruangan != null && _selectedDate != null) ...[
-                   const SizedBox(height: 16),
-                   _buildLabel('Kalender Jadwal Penggunaan Ruangan'),
-                   _buildCalendarSection(), 
-                ],
-
-                if (_selectedDate != null) ...[
-                   const SizedBox(height: 16),
-                  _buildLabel('Jam Mulai'),
-                  _buildDropdown(
-                      value: _jamMulai,
-                      hint: 'Pilih Jam',
-                      items: _jamMulaiList,
-                      uniqueId: 'jam_mulai',
-                      enabled: true,
-                      onChanged: (v) => setState(() => _jamMulai = v),
-                      validator: (v) => v == null ? 'Wajib diisi' : null),
-                  const SizedBox(height: 16),
-                  
-                  _buildLabel('Jam Selesai'),
-                  _buildDropdown(
-                      value: _jamSelesai,
-                      hint: 'Pilih Jam',
-                      items: _jamSelesaiList,
-                      uniqueId: 'jam_selesai',
-                      enabled: true,
-                      onChanged: (v) => setState(() => _jamSelesai = v),
-                      validator: (v) => v == null ? 'Wajib diisi' : null),
-                ] else ...[
-                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      "* Silakan pilih Ruangan danTanggal Penggunaan untuk menampilkan Kalender & Jam.",
-                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.orange[800], fontStyle: FontStyle.italic),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 20),
-                 Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFFFAFAFA),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0))),
-                    child: RichText(
-                        text: TextSpan(
-                            style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.black87,
-                                height: 1.5),
-                            children: const [
-                          TextSpan(text: 'Catatan : ', style: TextStyle(fontWeight: FontWeight.bold)),
-                          TextSpan(text: 'Pastikan Ruangan dan Tanggal sudah sesuai sebelum menyimpan.'),
-                        ]))),
-              ],
+                    _pjSearchController.text = val;
+                  }
+                });
+                FocusScope.of(context).unfocus();
+              },
             ),
-          ),
-        ),
-        Positioned(
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0), 
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, -2)
-              )
-              ],
-              ), 
-             child: SafeArea(
-      top: false, 
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24), 
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isSubmitting ? null : _handleSubmit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2962FF),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+
+            const SizedBox(height: 24),
+            Text('Detail Penggunaan Ruangan',
+                style: GoogleFonts.poppins(
+                    color: const Color(0xFF3949AB),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            _buildLabel('Ruangan'),
+            _buildSearchableDropdown(
+              controller: _ruanganSearchController,
+              hint: 'Pilih atau Cari Ruangan',
+              items: _ruanganList,
+              onSelected: (val) {
+                setState(() {
+                  _ruangan = val;
+                  _selectedDayBookings = [];
+                });
+                if (val != null) {
+                  _updateSelectedRoomData(val);
+                }
+                FocusScope.of(context).unfocus();
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            if (_ruangan != null && _selectedRoomData != null) ...[
+              _buildLabel('Detail Ruangan'),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0))),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoRow('Ruangan', _selectedRoomData!.name),
+                      _buildInfoRow('Kode', _selectedRoomData!.code),
+                      _buildInfoRow(
+                          'Gedung', _selectedRoomData!.buildingName),
+                      _buildInfoRow('Kapasitas',
+                          '${_selectedRoomData!.capacity} Mahasiswa'),
+                      const SizedBox(height: 16),
+                      Text('PIC Ruangan',
+                          style: GoogleFonts.poppins(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text(
+                          _selectedRoomData!.pic?.name ??
+                              'Nama PIC Tidak Tersedia',
+                          style: GoogleFonts.poppins(
+                              fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(
+                          _selectedRoomData!.pic?.email ??
+                              'Email Tidak Tersedia',
+                          style: GoogleFonts.poppins(
+                              fontSize: 12, color: Colors.grey[600])),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              elevation: 0),
+                          child: Text('Hubungi via WhatsApp',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white))),
+                    ]),
+              ),
+              const SizedBox(height: 16),
+            ],
+            _buildLabel('Tanggal Penggunaan'),
+            _buildTextField(
+              controller: _tanggalController,
+              readOnly: true,
+              enabled: _ruangan != null,
+              onTap: _ruangan != null ? () => _pickDate(context) : null,
+              hintText: _ruangan != null
+                  ? 'Pilih Tanggal Peminjaman'
+                  : 'Pilih Ruangan Terlebih Dahulu',
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Wajib diisi' : null,
+            ),
+
+            if (_ruangan != null && _selectedDate != null) ...[
+              const SizedBox(height: 16),
+              _buildLabel('Kalender Jadwal Penggunaan Ruangan'),
+              _buildCalendarSection(),
+            ],
+
+            if (_selectedDate != null) ...[
+              const SizedBox(height: 16),
+              _buildLabel('Jam Mulai'),
+              _buildDropdown(
+                  value: _jamMulai,
+                  hint: 'Pilih Jam',
+                  items: _jamMulaiList,
+                  uniqueId: 'jam_mulai',
+                  enabled: true,
+                  onChanged: (v) => setState(() => _jamMulai = v),
+                  validator: (v) => v == null ? 'Wajib diisi' : null),
+              const SizedBox(height: 16),
+              _buildLabel('Jam Selesai'),
+              _buildDropdown(
+                  value: _jamSelesai,
+                  hint: 'Pilih Jam',
+                  items: _jamSelesaiList,
+                  uniqueId: 'jam_selesai',
+                  enabled: true,
+                  onChanged: (v) => setState(() => _jamSelesai = v),
+                  validator: (v) => v == null ? 'Wajib diisi' : null),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  "* Silakan pilih Ruangan dan Tanggal Penggunaan untuk menampilkan Kalender & Jam.",
+                  style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.orange[800],
+                      fontStyle: FontStyle.italic),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+            
+            // --- BAGIAN CATATAN ---
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE0E0E0))),
+              child: RichText(
+                  text: TextSpan(
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.black87,
+                          height: 1.5),
+                      children: const [
+                    TextSpan(
+                        text: 'Catatan : ',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(
+                        text:
+                            'Pastikan Ruangan dan Tanggal sudah sesuai sebelum menyimpan.'),
+                  ])),
+            ),
+
+            // --- TOMBOL SIMPAN (SEKARANG DI DALAM CHILDREN COLUMN) ---
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2962FF),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'Simpan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'Simpan',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
+          ], 
+        ),
         ),
       ),
-    ),
-  ),
-),
-      ],
     );
   }
 
@@ -827,6 +889,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
             headerStyle: HeaderStyle(formatButtonVisible: false, titleCentered: true, titleTextStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
             calendarStyle: CalendarStyle(selectedDecoration: const BoxDecoration(color: Color(0xFFFFA726), shape: BoxShape.circle), selectedTextStyle: const TextStyle(color: Colors.white), todayDecoration: BoxDecoration(color: const Color(0xFFFFA726).withValues(alpha: 0.3), shape: BoxShape.circle), todayTextStyle: const TextStyle(color: Colors.black), markerDecoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle)),
             calendarBuilders: CalendarBuilders(selectedBuilder: (context, day, focusedDay) { return _buildCustomDay(context, day, focusedDay, isSelected: true); }, todayBuilder: (context, day, focusedDay) { return _buildCustomDay(context, day, focusedDay, isToday: true); }, defaultBuilder: (context, day, focusedDay) { return _buildCustomDay(context, day, focusedDay); }),
+            availableGestures: AvailableGestures.horizontalSwipe,         
           ),
         ),
         const SizedBox(height: 24), _buildBookingList(),

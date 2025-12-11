@@ -188,22 +188,54 @@ class _TambahPenggunaDialogState extends State<TambahPenggunaDialog> {
                   
                   // 1. WORKSPACE (Dinamis sesuai Ruangan)
                   _buildLabel("Workspace Ruangan"),
-                  DropdownButtonFormField<Workspace>(
-                    key: ValueKey(_selectedWorkspace?.id),
-                    value: _selectedWorkspace,
-                    hint: Text("Pilih Workspace", style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[500])),
-                    isExpanded: true,
-                    menuMaxHeight: 250,
-                    items: _workspaceList.map((ws) {
-                      return DropdownMenuItem(
-                        value: ws,
-                        child: Text(ws.displayName, style: GoogleFonts.poppins(fontSize: 14), overflow: TextOverflow.ellipsis),
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedWorkspace = val),
-                    validator: (v) => v == null ? 'Wajib diisi' : null,
-                    decoration: _inputDecoration(),
-                  ),
+                  // LOGIKA BARU: Cek apakah list workspace kosong
+                  if (_workspaceList.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.red.shade400, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              "Data Workspace belum di-set oleh admin.",
+                              style: GoogleFonts.poppins(
+                                fontSize: 13, 
+                                color: Colors.red.shade700
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    DropdownButtonFormField<Workspace>(
+                      key: ValueKey(_selectedWorkspace?.id),
+                      value: _selectedWorkspace,
+                      hint: Text("Pilih Workspace",
+                          style: GoogleFonts.poppins(
+                              fontSize: 14, color: Colors.grey[500])),
+                      isExpanded: true,
+                      menuMaxHeight: 250,
+                      items: _workspaceList.map((ws) {
+                        return DropdownMenuItem(
+                          value: ws,
+                          child: Text(ws.displayName,
+                              style: GoogleFonts.poppins(fontSize: 14),
+                              overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedWorkspace = val),
+                      validator: (v) => v == null ? 'Wajib diisi' : null,
+                      decoration: _inputDecoration(),
+                    ),
                   
                   const SizedBox(height: 20),
                   

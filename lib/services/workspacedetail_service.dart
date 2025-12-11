@@ -7,7 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workspace.dart'; 
 
 class WorkspaceDetailService {
-  
+  //hp fisik
+  // final String baseUrl = 'http://10.65.235.18:8000/api';
   // 2. Pastikan IP ini sama dengan service lain
   final String baseUrl = 'http://10.0.2.2:8000/api'; 
 

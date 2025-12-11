@@ -4,6 +4,8 @@ import 'user_session.dart';
 import '../models/pj_models.dart';
 
 class PjService {
+  //hp fisik
+  // final String _baseUrl = 'http://10.65.235.18:8000/api';
   // GANTI IP SESUAI PERANGKAT
   final String _baseUrl = 'http://10.0.2.2:8000/api'; 
 

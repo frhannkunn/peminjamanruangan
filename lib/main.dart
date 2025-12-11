@@ -15,7 +15,12 @@ void main() async {
   await _requestPermission();
   _setupFCMListeners();
   _checkInitialMessage();
-  print("CEK TOKEN ${await FirebaseMessaging.instance.getToken()}");
+  try {
+    String? token = await FirebaseMessaging.instance.getToken();
+    print("✅ CEK TOKEN BERHASIL: $token");
+  } catch (e) {
+    print("⚠️ Gagal dapat token (Abaikan, aplikasi lanjut jalan): $e");
+  }
   await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }

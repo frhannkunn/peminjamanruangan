@@ -10,8 +10,10 @@ import '../models/workspace.dart';
 
 class LoanService {
   // ⚠️ GANTI IP SESUAI PERANGKAT
-  // Emulator: 10.0.2.2
+  
   // HP Fisik: IP Laptop (Cth: 192.168.1.x)
+  // final String _baseUrl = 'http://10.65.235.18:8000/api';
+  // Emulator: 10.0.2.2
   final String _baseUrl = 'http://10.0.2.2:8000/api'; 
 
   // --- HELPERS ---

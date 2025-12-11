@@ -6,6 +6,8 @@ import '../models/pic.dart';
 import 'user_session.dart'; 
 
 class PicService {
+  //hp fisik
+  // final String baseUrl = 'http://10.65.235.18:8000/api';
   // ⚠️ PASTIKAN IP INI SUDAH BENAR SESUAI LAPTOP ANDA
   final String baseUrl = 'http://10.0.2.2:8000/api'; 
 
