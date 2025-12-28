@@ -1,10 +1,11 @@
 // login.dart
 import 'package:flutter/material.dart';
 import '../widgets/footbar_peminjaman.dart';
-import '../widgets/footbar_pj.dart';
+import '../widgets/footbar_pj.dart';  
 import '../widgets/footbar_pic.dart';
 import '../services/auth_service.dart';
-import '../services/user_session.dart'; 
+import '../services/user_session.dart';
+import '../services/fcm_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,8 +20,9 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // BUAT INSTANCE DARI AUTH SERVICE
+  
   final AuthService _authService = AuthService();
+  final FCMService _fcmService = FCMService(); 
 
   // FUNGSI _login()
   Future<void> _login() async {
@@ -32,23 +34,23 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Panggil service
+      // 1. Panggil service login
       final user = await _authService.login(username, password);
 
-      // 
-      // ⬇️=================================================⬇️
-      //         ** INI ADALAH BARIS YANG DIPERBAIKI **
-      //    Menyimpan semua data user (NIK/NIM, Nama, Email, dll)
-      //    ke SharedPreferences agar bisa dibaca oleh halaman Profil.
-      //
+      // 2. Simpan data session user
       await UserSession.saveUserData(user);
-      // ⬆️=================================================⬆️
-      //
 
-      // Jika service sukses, 'user' akan berisi data
-      // Key 'roles' dan 'name' harus sesuai dengan JSON dari Laravel
-      final String userRole = user['roles'] ?? 'Mahasiswa'; // Default jika null
-      final String userName = user['name'] ?? 'User';      // Default jika null
+      // 3. Update Token FCM ke Server (Agar notifikasi jalan)
+      // Kita bungkus try-catch kecil agar jika notifikasi gagal, login tetap jalan
+      try {
+        await _fcmService.getTokenAndSendToServer();
+      } catch (e) {
+        print("Warning: Gagal update FCM Token: $e");
+      }
+
+      // Ambil data role dan nama
+      final String userRole = user['roles'] ?? 'Mahasiswa'; 
+      final String userName = user['name'] ?? 'User';      
 
       if (!mounted) return;
 
@@ -56,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(content: Text("Login berhasil sebagai $userRole ✅")),
       );
 
-      // Arahkan berdasarkan role
+      // 4. Arahkan berdasarkan role
       if (userRole == 'Mahasiswa') {
         Navigator.pushReplacement(
           context,
@@ -68,6 +70,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       } else if (userRole == 'Laboran Jurusan') {
+        // ✅ PERBAIKAN: Gunakan FootbarPj di sini agar import tidak warning
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const FootbarPj()),
@@ -78,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const FootbarPic()),
         );
       } else {
-        // Default (jika rolenya tidak dikenal, arahkan ke suatu tempat)
+        // Default (jika role tidak dikenal)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const FootbarPic()),
@@ -88,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
       // Tangkap error yang dilempar dari service
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        // Tampilkan pesan error dari service
         SnackBar(content: Text(e.toString().replaceAll("Exception: ", ""))),
       );
     } finally {
@@ -100,7 +102,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // (Build method Anda SAMA PERSIS, tidak perlu diubah)
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

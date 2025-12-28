@@ -11,6 +11,7 @@ class Loan {
   final String loanDate;
   final String startTime;
   final String endTime;
+  final String createdAt;
   final String studentId;
   final String studentName;
   final String studentEmail;
@@ -20,7 +21,9 @@ class Loan {
   final int status;
   final String? lectureComment;
   final String? picComment;
-  
+  // ✅ TAMBAHAN BARU: Tanggal Respon
+  final String? lectureResponseDate;
+  final String? picResponseDate;
   // Relasi
   final List<LoanUser>? loanUsers;
 
@@ -34,12 +37,15 @@ class Loan {
     required this.loanDate,
     required this.startTime,
     required this.endTime,
+    required this.createdAt,
     required this.studentId,
     required this.studentName,
     required this.studentEmail,
     required this.status,
     this.lectureComment,
     this.picComment,
+    this.lectureResponseDate, // ✅ Add this
+    this.picResponseDate,     // ✅ Add this
     this.loanUsers,
   });
 
@@ -70,11 +76,15 @@ class Loan {
       loanDate: json['loan_date']?.toString() ?? '',
       startTime: json['start_time']?.toString() ?? '',
       endTime: json['end_time']?.toString() ?? '',
-      
+      // <--- TAMBAHAN: Ambil dari JSON (created_at)
+      createdAt: json['created_at']?.toString() ?? '',
       studentId: json['student_id']?.toString() ?? '',
       studentName: json['student_name']?.toString() ?? '',
       studentEmail: json['student_email']?.toString() ?? '',
-      
+      // ✅ TANGKAP DATA TANGGAL DARI API
+      // Pastikan nama key 'lecture_response_date' sesuai dengan response API Anda
+      lectureResponseDate: json['lecture_response_date']?.toString(), 
+      picResponseDate: json['pic_response_date']?.toString(),
       loanUsers: users,
     );
   }

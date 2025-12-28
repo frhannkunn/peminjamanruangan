@@ -157,7 +157,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Kita gunakan FutureBuilder untuk menunggu data detail (users list, dll)
     return FutureBuilder<PeminjamanPjDetailModel>(
       future: _detailFuture,
       builder: (context, snapshot) {
@@ -174,8 +173,6 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
         }
 
         final _dataDetail = snapshot.data!;
-        
-        // Logic Approval Button: Hanya muncul jika status == Menunggu
         final bool needsApproval = _dataDetail.status == "Menunggu Persetujuan Penanggung Jawab";
 
         return Scaffold(
@@ -183,9 +180,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Detail Peminjaman',
@@ -204,11 +199,82 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // 1. Header Status
                   _buildFormHeaderCard(_dataDetail),
                   const SizedBox(height: 24),
-                  _buildFormCard(_dataDetail),
+
+                  // =========================================
+                  // BAGIAN 2: PECAHAN KARTU (MULAI DARI SINI)
+                  // =========================================
+
+                  // Kartu A: Detail Kegiatan
+                  _buildSectionCard(
+                    title: 'Detail Kegiatan dan Penanggung Jawab',
+                    content: Column(
+                      children: [
+                        _buildReadOnlyField(label: 'Jenis Kegiatan', value: _dataDetail.jenisKegiatan),
+                        // ✅ TAMBAHAN: Munculkan 'Kegiatan (Lainnya)' jika ada datanya
+                        if (_dataDetail.jenisKegiatan == 'Lainnya' || _dataDetail.activityOther != null)
+                          _buildReadOnlyField(
+                            label: 'Kegiatan (Lainnya)', 
+                            value: _dataDetail.activityOther ?? '-' // Pastikan null safety
+                          ),
+                        _buildReadOnlyField(label: 'Nama Kegiatan', value: _dataDetail.namaKegiatan),
+                        _buildReadOnlyField(label: 'Penanggung Jawab', value: _dataDetail.penanggungJawab),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Kartu B: Detail Peminjam
+                  _buildSectionCard(
+                    title: 'Detail Peminjaman Ruangan',
+                    content: Column(
+                      children: [
+                        _buildReadOnlyField(
+                          label: 'NIM / NIK / Unit Pengaju', 
+                          value: _dataDetail.nimNip, 
+                          helperText: "Jika tidak memiliki NIM, dapat diisi dengan NIK KTP"
+                        ),
+                        _buildReadOnlyField(label: 'Nama Pengaju', value: _dataDetail.namaPengaju),
+                        _buildReadOnlyField(label: 'Alamat E-mail Pengaju', value: _dataDetail.emailPengaju),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Kartu C: Detail Penggunaan
+                  _buildSectionCard(
+                    title: 'Detail Penggunaan Ruangan',
+                    content: Column(
+                      children: [
+                        _buildReadOnlyField(label: 'Ruangan', value: _dataDetail.ruangan),
+                        _buildReadOnlyField(
+                          label: 'Tanggal Penggunaan', 
+                          value: _dataDetail.tanggalPenggunaan, 
+                          suffixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey[600], size: 20)
+                        ),
+                        Row(
+                          children: [
+                            Expanded(child: _buildReadOnlyField(label: 'Jam Mulai', value: _dataDetail.jamMulai)),
+                            const SizedBox(width: 15),
+                            Expanded(child: _buildReadOnlyField(label: 'Jam Selesai', value: _dataDetail.jamSelesai)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // =========================================
+                  // AKHIR BAGIAN 2
+                  // =========================================
+
                   const SizedBox(height: 24),
+                  
+                  // List Pengguna (Tetap)
                   _buildUserListCard(_dataDetail),
+                  
+                  // Form Approval (Jika Perlu)
                   if (needsApproval) ...[
                     const SizedBox(height: 24),
                     _buildApprovalSection(),
@@ -228,57 +294,54 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     Color statusColor = data.statusColor;
     String chipText = status;
 
-    if (status == "Menunggu Persetujuan Penanggung Jawab") {
-      chipText = "Menunggu\nPersetujuan\nPenanggung\nJawab";
+    // Logic bungkus teks status jika panjang
+    if (status.contains("Menunggu Persetujuan")) {
+       chipText = status.replaceAll(" ", "\n");
     }
-    else if (status == "Menunggu Persetujuan PIC") {
-      chipText = "Menunggu\nPersetujuan\nPIC";
-    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A39D9),
-        borderRadius: BorderRadius.circular(25),
+        color: const Color(0xFF1c36d2), // Warna Biru Khas PIC
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(40),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+            color: Colors.black.withAlpha(40), 
+            blurRadius: 10, 
+            offset: const Offset(0, 4)
+          )
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
               'Form\nPengajuan\nPenggunaan\nRuangan',
               style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
+                color: Colors.white, 
+                fontSize: 18, 
+                fontWeight: FontWeight.bold, 
+                height: 1.3
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-            constraints: const BoxConstraints(minHeight: 50),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            constraints: const BoxConstraints(minWidth: 130),
             decoration: BoxDecoration(
-              color: statusColor,
-              borderRadius: BorderRadius.circular(15),
+              color: statusColor, 
+              borderRadius: BorderRadius.circular(12)
             ),
-            child: Center(
-              child: Text(
-                chipText,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  height: 1.3,
-                ),
+            child: Text(
+              chipText, 
+              textAlign: TextAlign.center, 
+              style: GoogleFonts.poppins(
+                color: Colors.white, 
+                fontWeight: FontWeight.w600, 
+                fontSize: 13, 
+                height: 1.3
               ),
             ),
           ),
@@ -287,74 +350,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
-  Widget _buildFormCard(PeminjamanPjDetailModel data) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildReadOnlyField(
-            label: "Jenis Kegiatan",
-            value: data.jenisKegiatan,
-          ),
-          _buildReadOnlyField(
-            label: "Nama Kegiatan",
-            value: data.namaKegiatan,
-          ),
-          _buildReadOnlyField(
-            label: "NIM / NIK / Unit Pengaju",
-            value: data.nimNip,
-            helperText: "Jika tidak memiliki NIM, dapat diisi dengan NIK KTP",
-          ),
-          _buildReadOnlyField(
-            label: "Nama Pengaju",
-            value: data.namaPengaju,
-          ),
-          _buildReadOnlyField(
-            label: "Alamat E-Mail Pengaju",
-            value: data.emailPengaju,
-          ),
-          _buildReadOnlyField(
-            label: "Penanggung Jawab",
-            value: data.penanggungJawab,
-          ),
-          _buildReadOnlyField(
-            label: "Tanggal Penggunaan",
-            value: data.tanggalPenggunaan,
-          ),
-          _buildReadOnlyField(label: "Ruangan", value: data.ruangan),
-          Row(
-            children: [
-              Expanded(
-                child: _buildReadOnlyField(
-                  label: "Jam Mulai",
-                  value: data.jamMulai,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildReadOnlyField(
-                  label: "Jam Selesai",
-                  value: data.jamSelesai,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  
 
   Widget _buildUserListCard(PeminjamanPjDetailModel data) {
     final List<LoanUser> allUsers = data.listPengguna;
@@ -631,19 +627,55 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
     );
   }
 
+  Widget _buildReadOnlyField({
+    required String label,
+    required String value,
+    String? helperText,
+    Widget? suffixIcon, // Tambahan parameter icon
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
+          const SizedBox(height: 8),
+          TextFormField(
+            initialValue: value,
+            readOnly: true,
+            maxLines: null, // Flexible height
+            style: GoogleFonts.poppins(color: Colors.black),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey[100],
+              suffixIcon: suffixIcon,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            ),
+          ),
+          if (helperText != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0, left: 2.0),
+              child: Text(helperText, style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600])),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionCard({required String title, required Widget content}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(15), 
         boxShadow: [
           BoxShadow(
-            color: const Color(0x1A000000),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+            color: const Color(0x1A000000), 
+            spreadRadius: 1, 
+            blurRadius: 8, 
+            offset: const Offset(0, 4)
+          )
+        ]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,70 +684,12 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
             decoration: const BoxDecoration(
-              color: Color(0xFF1c36d2),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(15),
-                topRight: Radius.circular(15),
-              ),
+              color: Color(0xFF1c36d2), 
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15))
             ),
-            child: Text(
-              title,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: Text(title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           Padding(padding: const EdgeInsets.all(15.0), child: content),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReadOnlyField({
-    required String label,
-    required String value,
-    String? helperText,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            initialValue: value,
-            readOnly: true,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.grey[100],
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          if (helperText != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4.0, left: 2.0),
-              child: Text(
-                helperText,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
         ],
       ),
     );

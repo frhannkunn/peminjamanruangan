@@ -1060,7 +1060,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.delete, size: 16),
-                  label: const Text("Delete"),
+                  label: const Text("Hapus"),
                   onPressed: () async {
                     // 🔥 LOGIKA DELETE USER VIA API 🔥
                     if (pengguna.id != null && _currentLoanId != null) {
@@ -1077,7 +1077,7 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
                       setState(() => _daftarPengguna.removeAt(index));
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade900, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 16)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2D42), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 16)),
                 ),
               ),
             ],

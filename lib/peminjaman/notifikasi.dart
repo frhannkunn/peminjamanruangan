@@ -47,10 +47,13 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
     super.initState();
     // 2. Logika: Jika ada pesan dari Push Notification, masukkan ke paling atas list
     if (widget.message != null && widget.message != "No Message") {
+      // Cek apakah pesan mengandung kata "Ditolak" atau "Rejected"
+      bool isPositive = !widget.message!.toLowerCase().contains("ditolak");
+
       notifications.insert(0, NotificationItem(
-        isApproved: true, // Default true (atau sesuaikan logika Anda)
+        isApproved: isPositive, // Icon akan menyesuaikan isi pesan
         title: "Pesan Baru Masuk",
-        description: widget.message!, // Isi pesan dari FCM
+        description: widget.message!,
       ));
     }
   }

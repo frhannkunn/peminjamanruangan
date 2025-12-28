@@ -37,6 +37,7 @@ class PeminjamanPic {
   String jenisKegiatan;
   String namaKegiatan;
   String namaPeminjam;
+  String tanggalMasuk;
 
   PeminjamanPic({
     required this.id,
@@ -48,6 +49,7 @@ class PeminjamanPic {
     required this.jenisKegiatan,
     required this.namaKegiatan,
     required this.namaPeminjam,
+    required this.tanggalMasuk,
   });
 
   factory PeminjamanPic.fromJson(Map<String, dynamic> json) {
@@ -88,6 +90,7 @@ class PeminjamanPic {
       jenisKegiatan: mapActivity(json['activity_type']),
       namaKegiatan: json['activity_name'] ?? json['activity_description'] ?? '-',
       namaPeminjam: json['user'] != null ? json['user']['name'] : '-',
+      tanggalMasuk: json['formatted_updated_at'] ?? '-',
     );
   }
 
@@ -113,7 +116,8 @@ class PeminjamanPicDetailModel {
   String tanggalPenggunaan;
   String ruangan;
   String jamMulai;
-  String jamSelesai;
+  String jamSelesai; 
+  final String? activityOther;
   
   List<LoanUser> listPengguna; 
   
@@ -138,6 +142,7 @@ class PeminjamanPicDetailModel {
     required this.listPengguna,
     required this.status,
     required this.rawStatus,
+    this.activityOther,
     this.picComment,
     this.picApprovalStatus,
   });
@@ -171,6 +176,7 @@ class PeminjamanPicDetailModel {
     return PeminjamanPicDetailModel(
       id: json['id'].toString(),
       jenisKegiatan: mapActivity(json['activity_type']),
+      activityOther: json['activity_other']?.toString(),
       namaKegiatan: json['activity_name'] ?? json['activity_description'] ?? '-',
       nimNip: json['user']?['nik_nim'] ?? '-',
       namaPengaju: json['user']?['name'] ?? '-',

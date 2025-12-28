@@ -409,10 +409,12 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
 
   Widget _buildSectionDetailKegiatan() {
     return _buildSectionCard(
-      title: 'Detail Kegiatan dan Penganggung Jawab',
+      title: 'Detail Kegiatan dan Penanggung Jawab',
       content: Column(
         children: [
           _buildFormTextField('Jenis Kegiatan', _dataDetail!.jenisKegiatan),
+         if (_dataDetail!.jenisKegiatan == 'Lainnya' || _dataDetail!.activityOther != null)
+             _buildFormTextField('Kegiatan (Lainnya)', _dataDetail!.activityOther ?? '-'),
           _buildFormTextField('Nama Kegiatan', _dataDetail!.namaKegiatan),
           _buildFormTextField('Penanggung Jawab', _dataDetail!.penanggungJawab),
         ],

@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
-// Import model dan service
 import '../models/loan.dart';
 import '../models/room.dart';
 import '../models/lecturer.dart';
 import '../services/loan_service.dart';
 import '../services/room_service.dart';
 import '../services/user_session.dart';
-
-// Import screen terkait
 import 'form_peminjaman.dart';
 import 'qr.dart';
 import 'detail_peminjaman.dart';
-// import 'tambah_pengguna.dart'; // Jika diperlukan
+
 
 class PeminjamanScreen extends StatefulWidget {
   const PeminjamanScreen({super.key});
@@ -143,6 +139,29 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     }
   }
 
+  // Format tanggal created_at menjadi lebih mudah dibaca
+  String _formatSubmitDate(String dateStr) {
+    if (dateStr.isEmpty) return "-";
+    try {
+      // 1. Parse string tanggal
+      // Laravel biasanya kirim data UTC "YYYY-MM-DD HH:mm:ss" tanpa huruf 'Z'.
+      // Agar DateTime.parse membacanya sebagai UTC, kita tambahkan 'Z' di akhir.
+      String timeString = dateStr;
+      if (!timeString.endsWith('Z')) {
+        timeString = "$timeString" "Z"; // Tambahkan Z manual
+      }
+
+      final dateUtc = DateTime.parse(timeString);
+
+      // 2. Konversi ke Waktu Lokal HP (WIB otomatis +7 jam)
+      final dateLocal = dateUtc.toLocal();
+
+      return DateFormat('dd MMM yyyy, HH:mm').format(dateLocal);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
   List<DropdownMenuItem<String>> _buildGroupedDropdownItems() {
     List<DropdownMenuItem<String>> items = [];
     items.add(const DropdownMenuItem(
@@ -159,10 +178,13 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
 
       for (var room in rooms) {
         items.add(DropdownMenuItem(
-          value: room.name,
+          value: room.name, 
           child: Padding(
             padding: const EdgeInsets.only(left: 16.0),
-            child: Text(room.name),
+            child: Text(
+              "${room.code} - ${room.name}", 
+              overflow: TextOverflow.ellipsis
+            ),
           ),
         ));
       }
@@ -452,10 +474,12 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
     final filteredList = _allLoans.where((loan) {
       final searchLower = _searchController.text.toLowerCase();
       final roomName = _getRoomName(loan.roomsId);
+      final roomCode = _getRoomCode(loan.roomsId);
       final statusStr = _mapStatusToString(loan.status);
       
       final matchesSearch = searchLower.isEmpty ||
           roomName.toLowerCase().contains(searchLower) ||
+          roomCode.toLowerCase().contains(searchLower) ||
           loan.studentName.toLowerCase().contains(searchLower) ||
           loan.activityName.toLowerCase().contains(searchLower);
       
@@ -472,13 +496,13 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
 
     return Column(children: [
       Row(children: [
-        Text("Search:", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text("Cari:", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(width: 8),
         Expanded(
             child: TextField(
                 controller: _searchController,
                 onChanged: (value) => setState(() {}),
-                decoration: _inputDecoration(hint: "Cari...", suffixIcon: const Icon(Icons.search, color: Colors.grey)))),
+                decoration: _inputDecoration(hint: "Cth: GU. 601...", suffixIcon: const Icon(Icons.search, color: Colors.grey)))),
       ]),
       const SizedBox(height: 16),
       if (filteredList.isEmpty)
@@ -566,8 +590,33 @@ class _PeminjamanScreenState extends State<PeminjamanScreen> {
                             maxLines: 1,
                           ),
 
-                          Text('ID: ${loan.id}',
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                          // --- PERUBAHAN DISINI ---
+                          // Kita ganti Text ID biasa dengan Row agar bisa menampung Tanggal Submit
+                          Row(
+                            children: [
+                              Text('ID: ${loan.id}',
+                                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+                              
+                              const SizedBox(width: 8),
+                              const Text("|", style: TextStyle(color: Colors.grey)), // Pemisah
+                              const SizedBox(width: 8),
+                              
+                              // Ikon Jam Kecil
+                              const Icon(Icons.access_time, size: 12, color: Colors.grey),
+                              const SizedBox(width: 4),
+
+                              // Tanggal Submit (Diajukan)
+                              Text(
+                                _formatSubmitDate(loan.createdAt), // Fungsi format ada di bawah
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11, 
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic // Miring biar terlihat info tambahan
+                                ),
+                              ),
+                            ],
+                          ),
+                          // -------------------------
                         ],
                       ),
                     ),

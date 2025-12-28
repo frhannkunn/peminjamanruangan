@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/pic.dart'; // Import Model PIC
 import '../../services/pic_service.dart'; // Import Service PIC
 import '../../services/user_session.dart'; // Import User Session
-import 'validasi_pic.dart'; 
+import 'validasi_pic.dart';
+import '../../models/room.dart'; 
+import '../../services/room_service.dart';
 
 class HomePicPage extends StatefulWidget {
   const HomePicPage({super.key});
@@ -15,22 +17,21 @@ class HomePicPage extends StatefulWidget {
 
 class _HomePicPageState extends State<HomePicPage> {
   final PicService _picService = PicService();
+  final RoomService _roomService = RoomService();
   
   // State Data
   List<PeminjamanPic> _allPeminjaman = []; // Data asli dari API
   List<PeminjamanPic> _filteredPeminjaman = []; // Data hasil filter/search
+  List<Room> _roomsList = [];
   bool _isLoading = true;
   String _userName = "PIC"; // Default name
 
   // Variabel Filter UI
-  String? _selectedRuangan = '- Hanya Tampilkan Ruangan Saya -';
+  // Variabel Filter UI
+  String? _selectedRuangan = 'PIC'; // <--- Gunakan value 'PIC' agar defaultnya benar
   String? _selectedStatus = '- Semua Status -';
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _ruanganOptions = [
-    '- Hanya Tampilkan Ruangan Saya -', // Value API: 'PIC'
-    'Semua Ruangan', // Value API: 'All'
-  ];
 
   final List<String> _statusOptions = [
     '- Semua Status -',
@@ -46,6 +47,7 @@ class _HomePicPageState extends State<HomePicPage> {
     super.initState();
     _loadUserProfile();
     _fetchData();
+    _fetchRooms();
     
     // Listener untuk search bar
     _searchController.addListener(_runFilter);
@@ -68,15 +70,32 @@ class _HomePicPageState extends State<HomePicPage> {
     }
   }
 
+  Future<void> _fetchRooms() async {
+    try {
+      final groupedRooms = await _roomService.getGroupedRooms();
+      List<Room> allRooms = [];
+      groupedRooms.forEach((key, value) {
+        allRooms.addAll(value);
+      });
+
+      if (mounted) {
+        setState(() {
+          _roomsList = allRooms;
+        });
+      }
+    } catch (e) {
+      print("Gagal memuat list ruangan: $e");
+    }
+  }
+
   // 2. Fetch Data dari API
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     try {
       // Mapping Filter UI ke API Params
-      String roomsIdParam = 'PIC'; // Default Ruangan Saya
-      if (_selectedRuangan == 'Semua Ruangan') {
-        roomsIdParam = 'All';
-      }
+      String roomsIdParam = _selectedRuangan ?? 'PIC';
+      
+      
 
       String statusParam = 'All';
       // Mapping Status UI ke ID API
@@ -392,42 +411,56 @@ class _HomePicPageState extends State<HomePicPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-
-          // --- 1. STATUS UTAMA (PILL ATAS - DINAMIS) ---
-          Row(
-            children: [
-              Text(
-                'ID: ${peminjaman.id}',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 20),
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 13,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: peminjaman.statusColor, 
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    peminjaman.status, 
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // [REVISI BAGIAN INI: Tanggal & Jam di bawah Nama Ruangan]
+    const SizedBox(height: 4), // Jarak sedikit
+    Row(
+      children: [
+        Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+        const SizedBox(width: 5),
+        Text(
+          peminjaman.tanggalMasuk, // Contoh: "17 Dec 2025, 22:28"
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
+        ),
+      ],
+    ),
+    // ---------------------------------------------------------
+
+    const SizedBox(height: 12), // Beri jarak agak lega ke baris ID
+
+    // --- Baris ID dan Status (Tidak berubah layoutnya) ---
+    Row(
+      children: [
+        Text(
+          'ID: ${peminjaman.id}',
+          style: GoogleFonts.poppins(
+            color: Colors.grey[600],
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(width: 20),
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+            decoration: BoxDecoration(
+              color: peminjaman.statusColor, 
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              peminjaman.status, 
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
 
           const SizedBox(height: 12),
 
@@ -560,6 +593,31 @@ class _HomePicPageState extends State<HomePicPage> {
       ),
     );
 
+    List<DropdownMenuItem<String>> roomItems = [];
+
+    roomItems.add(DropdownMenuItem(
+      value: 'PIC',
+      child: Text('- Hanya Tampilkan Ruangan Saya -', style: GoogleFonts.poppins(fontSize: 14)),
+    ));
+
+    // 2. Opsi Semua Ruangan
+    roomItems.add(DropdownMenuItem(
+      value: 'All',
+      child: Text('Semua Ruangan', style: GoogleFonts.poppins(fontSize: 14)),
+    ));
+
+    // 3. Opsi Ruangan dari Database (Kode - Nama)
+    for (var room in _roomsList) {
+      roomItems.add(DropdownMenuItem(
+        value: room.id.toString(), // Pastikan value API menerima ID string
+        child: Text(
+          "${room.code} - ${room.name}", // FORMAT: Kode - Nama
+          style: GoogleFonts.poppins(fontSize: 14),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -570,20 +628,16 @@ class _HomePicPageState extends State<HomePicPage> {
         const SizedBox(height: 8),
         DropdownButton2<String>(
           isExpanded: true,
-          value: _selectedRuangan,
+          value: roomItems.any((item) => item.value == _selectedRuangan) ? _selectedRuangan : 'PIC',
           underline: const SizedBox(),
-          items: _ruanganOptions.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, style: GoogleFonts.poppins(fontSize: 14)),
-            );
-          }).toList(),
+          items: roomItems,
           onChanged: (val) {
              setState(() => _selectedRuangan = val);
              _fetchData(); // Trigger fetch saat filter berubah
           },
           buttonStyleData: buttonStyle,
           dropdownStyleData: DropdownStyleData(
+            maxHeight: 300, // Membatasi tinggi agar bisa discroll jika banyak
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: Colors.white,

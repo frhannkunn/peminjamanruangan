@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:intl/intl.dart';
 import 'detail_pengajuan_pj.dart';
 // Import Model & Service
 import '../models/pj_models.dart';
@@ -81,6 +82,28 @@ class _HomePjPageState extends State<HomePjPage> {
         return matchesStatus && matchesSearch;
       }).toList();
     });
+  }
+
+  // --- HELPER FORMAT TANGGAL SUBMIT (NEW) ---
+  String _formatSubmitDate(String dateStr) {
+    if (dateStr.isEmpty) return "-";
+    try {
+      // 1. Pastikan format UTC (tambahkan Z jika perlu)
+      String timeString = dateStr;
+      if (!timeString.endsWith('Z')) {
+        timeString = "$timeString" "Z";
+      }
+      
+      // 2. Parse sebagai UTC lalu convert ke Local (WIB)
+      final dateUtc = DateTime.parse(timeString);
+      final dateLocal = dateUtc.toLocal();
+
+      // 3. Format output: 17 Des 2025, 15:30
+      // Pastikan import 'package:intl/intl.dart';
+      return DateFormat('dd MMM yyyy, HH:mm').format(dateLocal);
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   // --- NAVIGASI ---
@@ -374,6 +397,7 @@ class _HomePjPageState extends State<HomePjPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. NAMA RUANGAN
           Text(
             peminjaman.ruangan,
             style: GoogleFonts.poppins(
@@ -381,20 +405,45 @@ class _HomePjPageState extends State<HomePjPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          
+          // 2. (BARU) BARIS ID DAN TANGGAL SUBMIT
+          // Posisi ini strategis agar PJ langsung lihat kapan data masuk
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            child: Row(
+              children: [
+                Text(
+                  'ID: ${peminjaman.id}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text("|", style: TextStyle(color: Colors.grey)),
+                const SizedBox(width: 8),
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  _formatSubmitDate(peminjaman.createdAt), // Panggil Helper
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.blue[800], // Warna biru biar menonjol
+                    fontWeight: FontWeight.w600, 
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-          // BADGE ATAS
+          const SizedBox(height: 4),
+
+          // 3. BADGE STATUS (ID dihapus dari sini karena sudah pindah ke atas)
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'ID: ${peminjaman.id}',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 20),
+              // Hapus Text ID yang lama disini
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -422,6 +471,8 @@ class _HomePjPageState extends State<HomePjPage> {
             ],
           ),
           const SizedBox(height: 12),
+          
+          // ... Sisa kode (Badge Bawah, Detail Row, Tombol) tetap sama ...
 
           // BADGE BAWAH (Status PJ)
           Row(

@@ -8,6 +8,7 @@ class PeminjamanPj {
   String ruangan;
   String status;
   String rawStatus;
+  final String createdAt; // <--- 1. TAMBAHAN VARIABEL BARU
   String tanggalPinjam;
   String jamKegiatan;
   String jenisKegiatan;
@@ -18,6 +19,7 @@ class PeminjamanPj {
     required this.ruangan,
     required this.status,
     required this.rawStatus,
+    required this.createdAt, // <--- 2. TAMBAHAN CONSTRUCTOR
     required this.tanggalPinjam,
     required this.jamKegiatan,
     required this.jenisKegiatan,
@@ -56,6 +58,8 @@ class PeminjamanPj {
           : "Unknown Room",
       status: mapStatus(json['status']),
       rawStatus: json['status'].toString(),
+      // 3. AMBIL DARI JSON (Pastikan key sesuai dengan API Laravel: 'created_at')
+      createdAt: json['created_at']?.toString() ?? '',
       tanggalPinjam: json['formatted_date'] ?? json['loan_date'] ?? '-',
       jamKegiatan: "${json['start_time']} - ${json['end_time']}",
       jenisKegiatan: mapActivity(json['activity_type']),
@@ -77,6 +81,7 @@ class PeminjamanPjDetailModel {
   String ruangan;
   String jamMulai;
   String jamSelesai;
+  final String? activityOther;
   
   // PERBAIKAN 1: Ubah tipe data jadi List<LoanUser>
   List<LoanUser> listPengguna; 
@@ -99,6 +104,7 @@ class PeminjamanPjDetailModel {
     required this.listPengguna,
     required this.status,
     required this.rawStatus,
+    this.activityOther,
   });
 
   factory PeminjamanPjDetailModel.fromJson(Map<String, dynamic> json) {
@@ -131,6 +137,7 @@ class PeminjamanPjDetailModel {
     return PeminjamanPjDetailModel(
       id: json['id'].toString(),
       jenisKegiatan: mapActivity(json['activity_type']),
+      activityOther: json['activity_other']?.toString(),
       namaKegiatan: json['activity_name'] ?? json['activity_description'] ?? '-',
       nimNip: json['user']?['nik_nim'] ?? '-',
       namaPengaju: json['user']?['name'] ?? '-',

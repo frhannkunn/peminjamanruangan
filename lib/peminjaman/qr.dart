@@ -93,7 +93,8 @@ class _QrScreenState extends State<QrScreen> {
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
@@ -172,6 +173,7 @@ class _QrScreenState extends State<QrScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                    
                     child: Text(
                       "Unduh",
                       style: GoogleFonts.poppins(
@@ -192,6 +194,7 @@ class _QrScreenState extends State<QrScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                    
                     child: Text(
                       "Kembali",
                       style: GoogleFonts.poppins(
@@ -201,8 +204,10 @@ class _QrScreenState extends State<QrScreen> {
                 ),
               ],
             )
+            
           ],
         ),
+      ),
       ),
     );
   }
