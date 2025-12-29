@@ -226,7 +226,7 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
                           _buildSectionHistory(),
                         ], // <--- KOMA DISINI
                         
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
@@ -238,12 +238,12 @@ class _ValidasiPicPageState extends State<ValidasiPicPage> {
   // --- WIDGET SECTIONS ---
   Widget _buildSectionHistory() {
      return _buildSectionCard(
-       title: 'Status Approval PIC',
+       title: 'Keterangan Approval PIC',
        content: Column(
          crossAxisAlignment: CrossAxisAlignment.start,
          children: [
-            _buildDetailRow('Status', _dataDetail!.status),
-            const SizedBox(height: 10),
+            // _buildDetailRow('Status', _dataDetail!.status),
+            // const SizedBox(height: 10),
             _buildDetailRow('Komentar PIC', _dataDetail!.picComment ?? '-'),
          ],
        )

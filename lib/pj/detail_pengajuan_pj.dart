@@ -279,7 +279,7 @@ class _DetailPengajuanPjPageState extends State<DetailPengajuanPjPage> {
                     const SizedBox(height: 24),
                     _buildApprovalSection(),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),

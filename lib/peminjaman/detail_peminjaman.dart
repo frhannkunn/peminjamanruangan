@@ -347,7 +347,9 @@ class _DetailPeminjamanScreenState extends State<DetailPeminjamanScreen> {
                               ),
                           ],
                         ),
-                      )
+                      ),
+                      // Memberi jarak aman di bawah agar tidak tertutup nav bar HP
+                      const SizedBox(height: 50),
                     ],
                   ),
                 ),

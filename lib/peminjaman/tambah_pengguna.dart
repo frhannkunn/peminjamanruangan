@@ -267,32 +267,41 @@ class _TambahPenggunaDialogState extends State<TambahPenggunaDialog> {
                     if (_selectedRole == 'Dosen' || _selectedRole == 'Laboran') ...[
                       _buildLabel("Pilih $_selectedRole *"),
                       LayoutBuilder(builder: (context, constraints) {
-                        return DropdownMenu<String>(
-                          width: constraints.maxWidth,
-                          menuHeight: 250,
-                          controller: _dosenSearchController,
-                          enableFilter: true, // Bisa ketik & enter
-                          requestFocusOnTap: true,
-                          hintText: "Ketik Nama $_selectedRole...",
-                          textStyle: GoogleFonts.poppins(fontSize: 14),
-                          inputDecorationTheme: InputDecorationTheme(
-                            filled: true,
-                            fillColor: Colors.grey.shade100,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          ),
-                          dropdownMenuEntries: _lecturerStrings.map((item) {
-                            return DropdownMenuEntry<String>(
-                              value: item,
-                              label: item,
-                              style: ButtonStyle(textStyle: WidgetStateProperty.all(GoogleFonts.poppins(fontSize: 14))),
-                            );
-                          }).toList(),
-                          onSelected: (value) {
-                            FocusScope.of(context).unfocus(); // Tutup keyboard saat dipilih
-                          },
-                        );
-                      }),
+                      return DropdownMenu<String>(
+                        width: constraints.maxWidth,
+                        menuHeight: 250,
+                        controller: _dosenSearchController, // Controller ini harus dipaksa update
+                        enableFilter: true,
+                        requestFocusOnTap: true,
+                        hintText: "Ketik Nama $_selectedRole...",
+                        textStyle: GoogleFonts.poppins(fontSize: 14),
+                        inputDecorationTheme: InputDecorationTheme(
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        ),
+                        // Pastikan list entry ini benar
+                        dropdownMenuEntries: _lecturerStrings.map((item) {
+                          return DropdownMenuEntry<String>(
+                            value: item,
+                            label: item,
+                            style: ButtonStyle(textStyle: WidgetStateProperty.all(GoogleFonts.poppins(fontSize: 14))),
+                          );
+                        }).toList(),
+                        
+                        // 🔥 PERBAIKAN UTAMA ADA DI SINI 🔥
+                        onSelected: (String? value) {
+                          if (value != null) {
+                            setState(() {
+                              // Kita Paksa Text Controller untuk mengikuti nilai yang dipilih
+                              _dosenSearchController.text = value; 
+                            });
+                          }
+                          FocusScope.of(context).unfocus(); // Tutup keyboard
+                        },
+                      );
+                    }),
                     ] 
                     // JIKA MAHASISWA / UMUM -> Muncul Input Manual
                     else ...[

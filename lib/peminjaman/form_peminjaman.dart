@@ -1041,51 +1041,180 @@ class _FormPeminjamanScreenState extends State<FormPeminjamanScreen> {
     );
   }
 
-  Widget _buildPenggunaCard(Pengguna pengguna, int index) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ... (Header sama) ...
-        Padding(padding: const EdgeInsets.only(left: 4.0, bottom: 8.0), child: Text("Pengguna Ruangan ${index + 1}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16))),
-        Container(
-          margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(16.0), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
-          child: Column(
-            children: [
-              _buildDetailRowCard('Pengguna Ruangan', pengguna.nama),
-              _buildDetailRowCard('Jenis Pengguna', pengguna.role),
-              _buildDetailRowCard('ID Pengguna', pengguna.nim),
-              _buildDetailRowCard('Nomor Workspace', pengguna.workspace),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.delete, size: 16),
-                  label: const Text("Hapus"),
-                  onPressed: () async {
-                    // 🔥 LOGIKA DELETE USER VIA API 🔥
+  Future<bool> _showDeleteDialog(BuildContext context) async {
+  return await showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // --- Icon Tanda Tanya ---
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEBEBF9), // Background ungu muda
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.question_mark_rounded,
+                color: Color(0xFF7D7AF3), // Warna icon ungu
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // --- Judul ---
+            Text(
+              "Konfirmasi Hapus",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // --- Deskripsi ---
+            Text(
+              "Data pengguna ini akan dihapus secara permanen.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // --- Tombol Aksi ---
+            Row(
+              children: [
+                // Tombol Hapus (Merah)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true), // Return true
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF2D42),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      "Ya, hapus",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                // Tombol Cancel (Abu-abu)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(false), // Return false
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9E9E9E), // Abu-abu
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  ) ?? false; // Default return false jika dialog ditutup paksa
+}
+
+ Widget _buildPenggunaCard(Pengguna pengguna, int index) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // ... (Header dan kode sebelumnya tetap sama) ...
+      Padding(
+        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0), 
+        child: Text("Pengguna Ruangan ${index + 1}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16))
+      ),
+      Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200)
+        ),
+        child: Column(
+          children: [
+            _buildDetailRowCard('Pengguna Ruangan', pengguna.nama),
+            _buildDetailRowCard('Jenis Pengguna', pengguna.role),
+            _buildDetailRowCard('ID Pengguna', pengguna.nim),
+            _buildDetailRowCard('Nomor Workspace', pengguna.workspace),
+            const SizedBox(height: 10),
+            
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.delete, size: 16),
+                label: const Text("Hapus"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF2D42),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16)
+                ),
+                // 🔥 LOGIKA BARU DI SINI 🔥
+                onPressed: () async {
+                  // 1. Tampilkan Dialog Konfirmasi dulu
+                  bool confirm = await _showDeleteDialog(context);
+
+                  // 2. Jika user tekan "Ya, hapus" (true), baru jalankan logika hapus
+                  if (confirm) {
                     if (pengguna.id != null && _currentLoanId != null) {
                       try {
-                         // Hapus dari server
-                         await _loanService.deleteLoanUser(_currentLoanId!, pengguna.id!);
-                         // Hapus dari list lokal
-                         setState(() => _daftarPengguna.removeAt(index));
+                        // Hapus dari server
+                        await _loanService.deleteLoanUser(_currentLoanId!, pengguna.id!);
+                        // Hapus dari list lokal
+                        setState(() => _daftarPengguna.removeAt(index));
+                        
+                        // Opsional: Tampilkan feedback sukses
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text("Data berhasil dihapus"))
+                        );
                       } catch (e) {
-                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal hapus: $e")));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text("Gagal hapus: $e"))
+                        );
                       }
                     } else {
                       // Jika ID null (belum sync), hapus lokal aja
                       setState(() => _daftarPengguna.removeAt(index));
                     }
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF2D42), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 16)),
-                ),
+                  }
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
   
   // 🔥 WIDGET: DropdownMenu (Native Flutter - Searchable)
   Widget _buildSearchableDropdown({
